@@ -1,0 +1,3 @@
+[submodule "Everest/python-api"]
+	path = Everest/python-api
+	url = https://gitlab.com/everest/python-api
