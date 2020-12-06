@@ -1,0 +1,13 @@
+*.pyc
+*.token
+
+**/__pycache__/
+
+*.sol
+*.log
+*.nl
+
+**.back
+**.XXX
+pyomo-everest/examples/
+pyomo-everest/ssop/miscTest/
