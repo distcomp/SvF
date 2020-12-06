@@ -1,3 +1,6 @@
 [submodule "Everest/python-api"]
 	path = Everest/python-api
 	url = https://gitlab.com/everest/python-api
+[submodule "pyomo-everest"]
+	path = pyomo-everest
+	url = https://github.com/distcomp/pyomo-everest
