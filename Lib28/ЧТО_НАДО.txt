@@ -1,0 +1,9 @@
+  python  2.7
+  numpy
+  pyoma
+
+
+
+
+LIN
+              09.06  EROS1\_AFTER   обработка результатов 

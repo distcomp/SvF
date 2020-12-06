@@ -1,0 +1,36 @@
+CVNumOfIter     0
+CVstep          21  
+
+Select x, t  from  ../Spring5.dat As Tb  
+
+GRID:	
+        t ∈ [ -1.,  2.5, 0.025 ]
+	X = [ -0.1, 2.2, 0.1   ]
+	V = [ -1,   1.5, 0.1   ]
+
+VAR:    
+        x ( t ) ;   	  	#  t ∈ [ , 2.5,0.025];  x ∈ [ -10.,10 ]; <=7;  >= -6
+	v ( t )
+				
+VAR:    f ( X, V );    PolyPow = 6  
+ 
+DIF1 = Central 
+
+EQ:	
+        d2/dt2(x) ==  f(x,v);  #t <> 1
+ 	v == d/dt(x)
+
+OBJ:    f.Complexity ( Penal[0], Penal[1] )/x.V.sigma2 + x.MSD()
+
+Draw x
+
+Pl = Polyline (x, v, None, ‘Trajectory’)
+Pl.Y[0]  = Pl.Y[1]
+Pl.Y[-1] = Pl.Y[-2]
+
+Draw f Trajectory;LC:red
+
+
+EOF
+
+

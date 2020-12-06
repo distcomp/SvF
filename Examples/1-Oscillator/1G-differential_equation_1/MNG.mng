@@ -1,0 +1,27 @@
+CVNumOfIter     1
+CVstep          21  
+
+RunMode = P&L
+
+
+Select 	time AS t, position AS x  from  ../Spring5.xlsx  
+
+
+t_min = -1.0-0.025
+t_max =  2.5+0.025
+
+SET:	t   = [t_min,  t_max,  0.025]
+
+SET:	X = [  0, 2.2, 0.05  ]
+ 
+VAR:    x ( t ) #;  VarType = G   
+#	f ( X );  PolyPow = 5
+	f ( X );  VarType = G  #PolyPow = 5
+
+EQ:	d/dt(x) = f(x)
+
+OBJ:   	x.MSD() + f.Complexity ( Penal[0] )
+  
+Draw	
+
+
