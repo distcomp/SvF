@@ -10,7 +10,7 @@ The technology and underlying mathematical algorithms are described in the follo
 2. Соколов, А.В.; Волошинов, В.В. Выбор математической модели: баланс между сложностью и близостью к измерениям. International Journal of Open Information
 Technologies, 2018, 6(9) C. 33-41, [PDF](http://injoit.org/index.php/j1/article/view/612) 
 
-Current repository is the public version of [private SvF](https://gitlab.com/sashasok/svf)
+Current repository is the public version of the [private SvF repository](https://gitlab.com/sashasok/svf).
 
 # How to cite
 Please, cite the first of the above articles if you'll use the technology.
