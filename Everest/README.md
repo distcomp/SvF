@@ -1,9 +1,3 @@
-
-Получить токен
-python everest.py get-token -server_uri https://optmod.distcomp.org -u sokol -l ssop | tee .token
-
-python everest.py get-token -server_uri https://optmod.distcomp.org -u sokol -l ssop -t 2592000 | tee .token30d
-
 # Python API for Everest
 
 A Python wrapper around Everest REST API.
@@ -27,5 +21,6 @@ Not needed, just place everest.py in your project.
 ```
 python everest.py get-token -u EVEREST_USER -l TOKEN_LABEL
 ```
+By default, the token will be valid in for 7 days.
 
 1. See test.py for examples of API usage.
