@@ -1,14 +1,15 @@
 # SvF
-Implementation of SvF-technology of regularized identification of mathematical models by experimental data.
+**SvF** stands for "Simplicity vs Fitting" and is a short title of a method of balanced regularized identification of mathematical models by experimental data.
 
-The technology of balanced identification of mathematical models (the so-called SvF-technology, from Simplicity vs Fitting) proposes a promising area of applied mathematics, combining methods of structural mathematical modeling, optimization, adaptive regularization and distributed computing.
+The SvF-technology proposes a promising area of applied mathematics, combining methods of structural mathematical modeling, optimization, adaptive regularization and distributed computing.
 
 The author of the SvF-technology is [Alexander Sokolov](https://scholar.google.ru/citations?user=mtE_u_YAAAAJ&hl=en&oi=sra), [sashasok](https://gitlab.com/sashasok).
 
 The technology and underlying mathematical algorithms are described in the following articles:
 1. Sokolov A. V., Voloshinov V. V. Model Selection by Balanced Identification: the Interplay of Optimization and Distributed Computing // Open Computer Science, 2020, 10 — p. 283–295. [DOI: 10.1515/comp-2020-0116](https://doi.org/10.1515/comp-2020-0116)
 2. Соколов, А.В.; Волошинов, В.В. Выбор математической модели: баланс между сложностью и близостью к измерениям. International Journal of Open Information
-Technologies, 2018, 6(9) C. 33-41, [PDF](http://injoit.org/index.php/j1/article/view/612) 
+Technologies, 2018, 6(9) C. 33-41, [PDF](http://injoit.org/index.php/j1/article/view/612)
+3. 
 
 Current repository is the public version of the [private SvF repository](https://gitlab.com/sashasok/svf).
 
