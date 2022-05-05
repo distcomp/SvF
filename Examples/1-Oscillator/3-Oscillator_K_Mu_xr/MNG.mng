@@ -12,7 +12,7 @@ Var:    x ( t )
 	μ  #   will be substituted on 'muu'   
 	xr
 
-DIF1 = Central          
+SchemeD1 = Central          
 EQ:	
         d2/dt2(x) == - K * ( x - xr ) - μ * v    
  	v == d/dt(x)

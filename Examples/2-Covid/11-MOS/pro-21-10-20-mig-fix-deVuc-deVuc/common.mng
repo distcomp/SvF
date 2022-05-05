@@ -1,0 +1,127 @@
+
+INCLUDE:  get_data.mng
+
+def to_npp ( int_date ) :
+	return int ( (to_date(int_date)-to_date(begDate)).days )
+
+SET:  Loc1   = [to_npp('2020-04-15'), to_npp('2020-06-01'), 1]
+      Loc2   = [to_npp('2020-10-04'), to_npp('2021-01-18'), 1]
+      uL2    = [to_npp('2021-03-28'), to_npp('2021-04-26'), 1]
+      Loc3   = [to_npp('2021-05-01'), to_npp('2021-05-10'), 1]
+      uL3    = [to_npp('2021-05-11'), to_npp('2021-06-07'), 1]
+      Loc4   = [to_npp('2021-06-09'), to_npp('2021-06-19'), 1]
+      uL4    = [to_npp('2021-07-14'), to_npp('2021-07-21'), 1]
+      Loc5   = [to_npp('2021-09-29'), to_npp('2021-10-03'), 1]
+
+maxFb = .8 #0.6  #9  #6
+
+Imax = 16
+
+tam = 14
+st = 1
+max_Imun = 280
+
+GRID:    ta  = [ 0, tam,    st, tai ]
+	 ta1 = [ 0, tam-st, st, tai ]
+
+#Var: 	b ( ta ); PolyPow = 10;  >= 0; ∫r(ta,dta*b(ta)) = 1; \ 
+#Var: 	b ( ta );   >= 0; ∫r(ta,dta*b(ta)) = 1;  b(0)=0; b(1)<0.005; b(2)<0.007;  b(tam)=0; #b(tam-1)<0.005; 
+Param:	b ( ta ) = b(ta).sol ; #  >= 0; ∫r(ta,dta*b(ta)) = 1;  b(0)=0; b(1)<0.005; b(2)<0.007;  b(tam)=0; #b(tam-1)<0.005; 
+							  
+
+Set:	testS = [ 0, 9, -30 ]
+Var:	F(testS) > 0;    d/dtestS(F) >= 0  #.3;
+#Var:	F(testS) > 0;  F(0)<=0.01;  d/dtestS(F) >= 0  #.3;
+#Var:	F(testS) > 0;  PolyPow = 6;   F(0)<=0.01;  d/dtestS(F) >= 0  #.3;
+
+Data = Select * from DataAll where date <= endDate
+
+nC3 = Data.nC[0]+Data.nC[1]+Data.nC[2]
+
+tMaxData = int ( Data.t[-1] )
+if prognose :  tMax = to_npp ( proDate ) 
+else        :  tMax = tMaxData
+
+GRID:    t   =  [         ,    tMax,  st, ti  ]    	# Time - number of point (first=0)
+	 tp  =  [ t.min+st,    tMax,  st, tpi  ] 
+	 tPro = [ tMaxData+1,  tMax,  st, ti  ]
+	 t365 = [ 0, max_Imun, 1]
+	 
+	 
+Param:	Vac (t)
+Param:	Exch (t)
+
+nCRdate = Select * from ../nC-Rus/nCR(t).sol
+Param:	nCR ( t ) 
+for t_nCR in range ( int(nCRdate.t[-1]), t.max ) : nCR.grd[t_nCR+1] = nCR.grd[t_nCR] 
+
+nTdate = Select * from ../nT/nT(t).sol
+Param:	nT ( t )	
+for t_nT in range ( int(nTdate.t[-1]), t.max ) : nT.grd[t_nT+1] = nT.grd[t_nT] 
+
+if prognose :
+    for iv in tPro.Val :
+        tt = int (iv)
+        nCR.grd[tt] = nCR.grd[tt-1] 
+        nT.grd[tt]  = nT.grd[tt-1] 
+        Vac.grd[tt] = Vac.grd[tt-1] + proVacc
+        Exch.grd[tt] = Exch.grd[tt-1]
+        
+for tt in range ( int(tMax), timeVacc-1, -1 ) :  Vac.grd[tt] = Vac.grd[tt-timeVacc]    # сдвиг на 2 недели
+	
+#Draw nCR 
+#Draw Vac
+#Draw Exch
+	
+	
+Param: dVac (t)
+
+for i in range( 1, int(tMax)+1 ) :
+	if i>0 : dVac.grd[i] =  Vac.grd[i] - Vac.grd[i-1]
+#Draw dVac
+
+curentTabl = Data
+	
+Var:	Mig ( t )
+	MigCoef > 0.05; < 0.2                 #  миграция  5%
+	ActR > 3; < 4 
+
+Var:	nC ( t )  >= 0 
+	n (t, ta)>= 0;  
+	N  ( t )  >= 0;   N = ∫r(ta,dta*n(t,ta));   N < 1000000*0.30;  #N(0) < nC3/3*100; 
+	n0 >= 0;  	
+	np >0.75; <=0.8  	
+Var:	R0  ( t ) >= 0; <= Imax;   R0(tMax) = R0(tMax-1); \
+			  d/dLoc2(R0(Loc2)) <0;  d/duL2(R0(uL2)) >0; \
+			  d/dLoc3(R0(Loc3)) <0;  d/duL3(R0(uL3)) >0; \
+			  d/dLoc4(R0(Loc4)) <0;  d/duL4(R0(uL4)) >0; # \ ##.005;  ###########################
+#			  d/dLoc5(R0(Loc5)) <0; 
+	IS ( t ) >= 0;   # IS * b <= maxFb;  			
+	B  ( t ) >= 0;
+	Anti(t) > 0; < 1
+	VacImm (t) >=0
+#Var:	Imun (t365) >0.0;  d/dt365(Imun) <=0; Imun(0)= 1; Imun(max_Imun)= 0.  
+Param:  Imun (t365) = Imun(t365).sol
+Var:	Vacc (t365) >0.0;  d/dt365(Vacc) <=0; Vacc(0)= effVacc; Vacc(max_Imun)= 0.  
+#Param:  Vacc (t365) = Vacc(t365).sol
+
+EQ:      if ti+st <= t.max:   (n(t+st,ta1+st)-n(t,ta1))/st = -( IS(t)*b(ta1) )*n(t,ta1)
+#	 B (t) = R0(t) * (1-Anti(t)) * (1-VacImm(t)*effVacc) * ∫r(ta,dta*b(ta)*n(t,ta)) * (1. + Mig(t)/nC(t))
+	 B (t) = R0(t) * (1-Anti(t)) * (1-VacImm(t)) * ∫r(ta,dta*b(ta)*n(t,ta)) * (1. + Mig(t)/nC(t))
+	 n(tp,0) = B(tp-st) # + Mig(tp)
+	 n(0,ta) = n0 * (np**ta)
+	 IS(t) = F(nT(t))
+         nC(t)  = IS(t) * ∫r(ta1,dta1*b(ta1)*n(t,ta1) )
+	nC(0)+nC(1)+nC(2) >= nC3/3
+	nC(0)+nC(1)+nC(2) <= nC3*3
+#	Anti = ∫r(max(1,t-max_Imun),t,dtp*B(tp-1)*Imun(t-tp)) / 1000000  #  доля  за полгода  - 250
+#	Anti = ∫r(max(0,t-max_Imun),t,dtp*B(tp)*Imun(t-tp)) / 1000000  #  доля  за полгода  - 280  max_Imun
+	Anti = ∫(max(0,t-max_Imun),t,dtp*B(tp)*Imun(t-tp)) / 1000000  #  доля  за полгода  - 280  max_Imun
+	VacImm = ∫(max(0,t-max_Imun),t,dtp*dVac(tp)*Vacc(t-tp))   #  доля  за полгода  - 280  max_Imun
+#        n(t,tam) >= 2*nC(t)
+	Mig = (ActR * nCR - nC) * MigCoef * Exch
+
+	
+
+
+

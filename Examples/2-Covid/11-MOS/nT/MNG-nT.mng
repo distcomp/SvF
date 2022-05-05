@@ -1,0 +1,31 @@
+TaskName		COVID-RUS-NT	
+
+CVNumOfIter     7
+
+Runmode = 'L&L'
+
+INCLUDE:  get_data.mng
+
+Data = Select nT, t, date from DataAll where date <= endDate
+tMaxData = int ( Data.t[-1] )
+
+GRID:    t   = [         ,   ,  1, ti  ]    	# Time - number of point (first=0)
+
+Var:	nT  ( t )  >= 0;	nT(tMaxData-1)=nT(tMaxData) 
+
+MakeSets_byParam t 9 2
+
+co.resF = 'MNG-nT.res'
+
+Obj:     nT.MSDnan() + nT.ComplSig2(Penal[0]) 
+
+Draw 
+
+#EOF
+
+#EOTask   ######################################################
+
+
+
+
+

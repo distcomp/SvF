@@ -1,0 +1,26 @@
+ChDir  ../nT
+#INCLUDE:  ../nT/MNG-nT.mng
+INCLUDE:  ../nT/MNG-nT.odt
+
+EOTask   ######################################################
+
+
+ChDir  ../nC-Rus
+INCLUDE:  ../nC-Rus/MNG-nCR.mng
+
+EOTask   ######################################################
+
+SetStartDir
+#ChDir  ../7-2Week-mig
+INCLUDE:  MNG.mng
+
+EOF      ######################################################
+
+
+
+
+
+
+
+
+

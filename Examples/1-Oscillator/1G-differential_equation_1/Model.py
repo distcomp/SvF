@@ -18,13 +18,13 @@ def createGr ( Task, Penal ) :
  											# x(t)
     x = Funs[0];  x__f = x
     x__i = Var ( Funs[0].A[0].NodS,domain=Reals, initialize = 1 )
-    x.grd = x__i ; Gr.x =  x__i
+    x.var = x__i ; Gr.x =  x__i
     x.InitByData()
     def fx(t) : return x__f.F([t])
  											# f(X); VarType=G
     f = Funs[1];  f__f = f
     f__i = Var ( Funs[1].A[0].NodS,domain=Reals, initialize = 1 )
-    f.grd = f__i ; Gr.f =  f__i
+    f.var = f__i ; Gr.f =  f__i
     f.InitByData()
     def ff(X) : return f__f.F([X])
  											# d/dt(x)=f(x)
@@ -34,7 +34,7 @@ def createGr ( Task, Penal ) :
         )
     Gr.conEQ0 = Constraint(t.FlNodSm,rule=EQ0 )
 
-    x.mu = Gr.mu; x.testSet = co.testSet; x.teachSet = co.teachSet
+    x.mu = Gr.mu; x.testSet = co.testSet; x.teachSet = co.teachSet;
  											# x.MSD()+f.Complexity([Penal[0]])
     def obj_expression(Gr):  
         return (
@@ -55,11 +55,11 @@ def print_res(Task, Penal, f__f):
     OBJ_ = Gr.OBJ ()
     print (  '    OBJ =', OBJ_ )
     f__f.write ( '\n    OBJ ='+ str(OBJ_)+'\n')
-    tmp = (x.MSD())()
+    tmp = (x.MSD())
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tx.MSD() =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tx.MSD() ='+ stmp+'\n')
-    tmp = (f.Complexity([Penal[0]]))()
+    tmp = (f.Complexity([Penal[0]]))
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tf.Complexity([Penal[0]]) =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tf.Complexity([Penal[0]]) ='+ stmp+'\n')

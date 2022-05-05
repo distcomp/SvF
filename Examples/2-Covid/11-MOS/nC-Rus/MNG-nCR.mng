@@ -1,0 +1,19 @@
+TaskName		COVID-RUS-nCR	
+Runmode = 'L&L'
+
+CVNumOfIter     7
+
+INCLUDE:  get_data.mng
+
+Data = Select nCR, t, date from DataAll where date <= endDate
+
+GRID:    t   = [         ,   ,  1, ti  ]    	# Time - number of point (first=0)
+Var:	nCR  ( t )  >= 0;	#nT(tMax-1)=nT(tMax) 
+
+MakeSets_byParam t 9 2
+co.resF = 'MNG-nCR.res'
+Obj:     nCR.MSDnan() + nCR.ComplSig2(Penal[0]) 
+Draw 
+
+
+

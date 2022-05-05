@@ -1,0 +1,52 @@
+
+TaskName		COVID-RUS	
+#DIF1 = Backward
+CVNumOfIter     0
+
+#CVstep = 8
+OptStep     = [-0.0, -0.0001, -0.0001, -0.0001 ]
+Runmode = 'L&L'
+
+#proTime = 0  #180
+prognose = False
+
+INCLUDE:  common.mng
+
+MakeSets_byParam t 9 2
+co.resF = 'MNG.res'
+#Obj:     b.Compl (Penal[0])    \
+Obj:     nC.MSDnan() +R0.ComplMean2 (Penal[0])  \
+         + F.ComplMean2 (Penal[1])  \ 
+	 + Anti.MSDnan_no_mu()*0.03 \
+	 + B.Mean()*0.0000001
+#         + Vacc.ComplMean2(Penal[2]) \
+#	 + nT.MSDnan() + nT.ComplSig2(0.03) # 0.05
+#	 + Imun.Compl(Penal[3]) \
+
+
+#Draw Imun
+
+Dat = Select nC As nCr, t AS tr from DataAll  		 # where date <= endTime 
+Var: nCr(tr)
+
+DRaw nCr;DC:r;LW:0;MS:0 nC;DC:b;LW:2
+Draw B Mig
+
+#Draw
+
+EOTask
+
+
+include: PROG_DR.mng
+
+
+
+
+
+
+
+
+
+
+
+

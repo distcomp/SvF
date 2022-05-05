@@ -1,0 +1,190 @@
+
+TaskName		COVID-RUS-PROG	
+
+prognose = True
+Norm = False #True
+
+INCLUDE:  common.mng
+
+Task.ReadSols()
+
+#Draw Vac VacImm;LC:b
+
+#Draw B Mig
+#Draw N nCR
+Draw Vacc
+
+realProg = True
+realProg = False
+
+
+Dat = Select nC As nCr, nT, nCR, t, t AS tr from DataAll   #where date <= proTime 
+Var: nCr(tr)
+nCr.V.name = 'verification set'
+
+#nCRdate = Select * from ../nC-MO/nMO(t).sol
+Param:	nCMO ( t ) = ../nC-MO/nCMO(t).sol
+
+#Draw nCR
+Draw nC nCR nCMO;LC:g
+
+#GRID:    tPro = [ 500,  tMax,  st, ti  ]
+
+for iv in tPro.Val :
+	t9 = int (iv)
+#	print ('{',t,Anti.grd[t])
+	if realProg :
+		R0.grd[t9] = R0.grd[t9-1] + 0.013             ##########################
+		if R0.grd[t9] > 2.5:  R0.grd[t9] = 2.5       ##########################
+		nT.grd[t9] = nT.grd[t9-1] - 0.04             ##########################
+		if nT.grd[t9] < 4.5:  nT.grd[t9] = 4.5       ##########################
+		IS.grd[t9] = fF(nT.grd[t9])
+#		IS.grd[t9] = IS.grd[t9-1] - 0.001             ##########################
+#		if IS.grd[t9] < 0.1:  IS.grd[t9] = 0.1       ##########################
+	
+	for tau in  ta1.NodS :
+	#	ta = int (tau)
+#		print ('ta',tau, b.grd[tau])
+		n.grd[t9,tau+1] = n.grd[t9-1,tau] * ( 1 - IS.grd[t9-1]*b.grd[tau] ) 
+	n.grd[t9,0]= B.grd[t9-1] #+ Mig.grd[t9]
+	VacImm.grd[t9] = sum ((dayVac.grd[tt+1]*Vacc.grd[t9-tt-1]+dayVac.grd[tt]*Vacc.grd[t9-tt])*0.5  for tt in range(t9-max_Imun, t9) ) 
+	Anti.grd[t9] = sum ((B.grd[tt+1]*Imun.grd[t9-tt-1]+B.grd[tt]*Imun.grd[t9-tt])*0.5  for tt in range(t9-max_Imun, t9) )  / 1000000  
+	Mig.grd[t9] = (ActR.grd * nCR.grd[t9-1] - nC.grd[t9-1]) * MigCoef.grd * Exch.grd[t9]
+#	B.grd[t9] = R0.grd[t9] * (1-Anti.grd[t9]) * (1-VacImm.grd[t9]*effVacc)  * sum ( b.grd[tau] * n.grd[t9,tau] for tau in ta.NodS ) \
+	B.grd[t9] = R0.grd[t9] * (1-Anti.grd[t9]) * (1-VacImm.grd[t9])  * sum ( b.grd[tau] * n.grd[t9,tau] for tau in ta.NodS ) \
+	  * (1.+Mig.grd[t9]/nC.grd[t9])
+#	Anti.grd[t9] = sum ((B.grd[tt+1]*Imun.grd[t9-tt-1]+B.grd[tt]*Imun.grd[t9-tt])*0.5  for tt in range(t9-max_Imun, t9) )  / 1000000    # iteration
+#	B.grd[t9] =  R0.grd[t9] * (1-Anti.grd[t9]) * (1-VacImm.grd[t9]*effVacc)  * sum ( b.grd[tau] * n.grd[t9,tau] for tau in ta.NodS )  # ВЛИЯЕТ СЛАБО
+	nC.grd[t9]  = IS.grd[t9] * sum ( b.grd[tau] * n.grd[t9,tau]  for tau in ta1.NodS )
+	N.grd[t9] = sum ( n.grd[t9,tau]  for tau in ta1.NodS )
+
+#Draw Vac VacImm;LC:g
+
+#Draw B
+
+
+Dat = Select date As month, t AS tm from DataAll     where month%100==1		# month
+for i in t.NodS :  
+	if i >= Dat.tm[-1]+30 :  Dat.AppendRec (0, Dat.tm[-1]+367./12)  #30)
+print ('MMM', Dat.tm)
+Var: month(tm)
+month.V.dat[:] = -0.2;  month.V.name = '';  month.A[0].oname = 't' 
+
+DatY = Select date As year, t AS tm from DataAll     where year%10100==1		# year
+for i in Dat.tm[:] :  
+	print (i, DatY.tm[-1])
+	if i >= DatY.tm[-1]+364 :  DatY.AppendRec (0, i)
+print ('YYY', DatY.tm)
+Var: year(tm)
+year.V.dat[:] = -0.2;  year.V.name = '';  year.A[0].oname = 't';  
+
+
+DatTod = Select tm, ROWNUM as today from Dat     where today <= 2			# today
+Var: today(tm)
+today.V.name= ''
+
+Param: SB (t)
+for i in t.NodS :
+	if i == 0 : SB.grd[i] = 0 
+	else      : SB.grd[i] = SB.grd[i-1] + (B.grd[i-1]+B.grd[i])*0.5/10000  #1000000*100
+
+
+#Legend = False
+if not Norm : 
+	nC.grd[:]   	*= (PopulMln/1000)
+	nC.V.dat[:] 	*= (PopulMln/1000)
+	nCr.V.dat[:] 	*= (PopulMln/1000)
+	N.grd[:]   	*= (PopulMln/1000)
+	B.grd[:]   	*= (PopulMln/1000)
+	year.V.dat[:]   *= (PopulMln/1000)
+#	month.V.dat[9]  *= (PopulMln/1000)
+#	month.V.dat[21] *= (PopulMln/1000)
+	
+vave3 = sum ( nC.grd[int(iv)] for iv in range (tMaxData+1,  tMax+1 ) ) 
+print 	('1 may   ', vave3)
+vave3 = sum ( nC.grd[int(iv)] for iv in range (tMaxData+1,  tMax+1-30 ) ) 
+print 	('1 april   ', vave3)
+vave3 = sum ( nC.grd[int(iv)] for iv in range (tMaxData+1,  653 ) )
+print 	('NY   ', vave3)
+
+#Draw B
+
+today.V.dat[0] = -0.4;  today.V.dat[1] = 9.5;  today.A[0].min = Data.NoR-1;  today.A[0].dat[:] = 0;  				# nC
+nC.A[0].oname = 't';  
+co.Draw_data_str = ''
+Ylabel_x=0.2
+nCdata = nC.Clone();  nCdata.V.name= 'nCdata'; Task.AddFun (nCdata); nCdata.V.name= 'teaching set'
+nC.V.dat = None; nC.V.oname= 'nC model'; nC.V.draw_name= 'nC - новые случаи (тыс.чел.)';
+Draw month;LW:0;MS:0;DC:black;DMS:5;DM:| year;DMS:12 today;DLW:1;DC:y nCr;DC:green;LW:0;MS:0;DLW:0;DMS:3;DM:. nCdata;MS:0;LW:0;DC:b nC;LW:2
+Ylabel_x=0.03
+co.Draw_data_str = '-data'
+
+Draw N;DC:green;LW:2;MS:0 nC;DC:b;LW:2 month;LW:0;DC:black;DMS:5;DM:| year;DMS:12 
+
+# Imun.A[0].oname = 't'
+# Draw Imun
+
+Im = Anti.Clone();  Im.V.name= 'Immunized'; Im.V.dat = None; Task.AddFun (Im);  
+#Im.grd[:] = ( 1- (1-Anti.grd[:]) * (1- VacImm.grd[:]*effVacc) )*100
+Im.grd[:] = ( 1- (1-Anti.grd[:]) * (1- VacImm.grd[:]) )*100
+Anti.grd[:] *= 100;  Anti.V.dat[:] *= 100;  Vac.grd[:] *= 100
+VacImm.grd[:] *= 100; 
+
+Param: LostImm (t)
+LostImm.grd[:] = SB.grd[:] - Anti.grd[:]
+Legend = True
+today.V.draw_name = '% населения Москвы'
+month.V.dat[:] = -3;  year.V.dat[:] = -3; today.V.dat[0] = 0;  today.V.dat[1] = 100; today.V.oname = 'Antibody (%)';  
+Draw SB;LC:g  Anti;LC:r;DMS:4  LostImm;LC:b month;LW:0;MS:0;DC:black;DMS:5;DM:| year;DMS:12 today;DLW:1;DC:y
+
+Param: LostImmDay (t)
+LostImmDay.grd[1:int(t.max)] = (LostImm.grd[1:int(t.max)] - LostImm.grd[0:int(t.max)-1])*PopulMln*10
+LostImmDay.grd[int(t.max)] = LostImmDay.grd[int(t.max)-1]
+today.V.dat[1] = 70;
+Draw B;LC:g  LostImmDay;LC:b month;LW:0;MS:0;DC:black;DMS:5;DM:| year;DMS:12 today;DLW:1;DC:y
+
+month.V.dat[:] = -3;  year.V.dat[:] = -3; today.V.dat[0] = 0;  today.V.dat[1] = 65; today.V.oname = 'Immunization';  
+VacImm.V.dat = None
+Ylabel_x=0.15
+Im.oname = 'Immunized'
+Draw Immunized;LC:g  Anti;LC:r;DMS:4  VacImm;LC:b month;LW:0;MS:0;DC:black;DMS:5;DM:| year;DMS:12 today;DLW:1;DC:y
+
+#Legend = False
+R0A = R0.Clone();  R0A.V.name= 'R0A'; Task.AddFun (R0A);  R0A.grd[:] = R0A.grd[:]*(1-Anti.grd[:]/100); R0A.V.oname= 'R0A';
+#R0V = R0.Clone();  R0V.V.name= 'R0V'; Task.AddFun (R0V);  R0V.grd[:] = R0V.grd[:]*(1-VacImm.grd[:]*effVacc/100); R0V.V.oname= 'R0V';
+R0V = R0.Clone();  R0V.V.name= 'R0V'; Task.AddFun (R0V);  R0V.grd[:] = R0V.grd[:]*(1-VacImm.grd[:]/100); R0V.V.oname= 'R0V';
+R0AV = R0.Clone();  R0AV.V.name= 'R0AV'; Task.AddFun (R0AV);  R0AV.grd[:] = R0AV.grd[:]*(1-Im.grd[:]/100); R0AV.V.oname= 'R0AV';
+month.V.dat[:] = .7;  month.grd[:] = 1; month.V.name=''; month.V.oname=''; month.V.draw_name=''; year.V.dat[:] = .7;  year.grd[:] = 1;
+today.V.dat[0] = .7;  today.V.dat[1] = 3; today.grd[:] = 1;  today.V.draw_name = 'Индекс Репродукции';
+Draw R0AV;LC:g R0A;LC:r R0V;LC:b R0;LC:black month;LW:1;LC:black;LSt:dotted;MS:0;DC:black;DMS:5;DM:| year;DMS:12;LW:0 today;DLW:1;DC:y
+
+today.V.dat[0] = -.5;  today.V.dat[1] = 11; month.V.dat[:] = -.2;  year.V.dat[:] = -0.2; today.V.oname = 'Тесты/1000';
+draw nT month;LW:0;MS:0;DC:black;DMS:5;DM:| year;DMS:12;LW:0 today;DLW:1;DC:y
+
+
+r = nC.Clone();  r.V.name= 'r'; r.V.dat = None; Task.AddFun (r);  
+month.V.name = ''
+for i in t.NodS :
+	if i <= 4 : r.grd[i] = 30
+	else :      r.grd[i] = (nC.grd[i]-nC.grd[i-1])/nC.grd[i-1]*100
+#	else :      r.grd[i] = (N.grd[i]-N.grd[i-1])/N.grd[i-1]*100
+
+month.V.dat[:] = -6;   month.grd[:] = 0;  year.V.dat[:] = -6;
+today.V.dat[0] = -6;  today.V.dat[1] = 30; 
+#print ('PPP', year.A[0].dat[1])
+Draw r;LC:r  month;LW:1;LC:black;LSt:dotted;MS:0;DC:black;DMS:5;DM:| year;DMS:12;LW:0 today;DLW:1;DC:y
+
+
+
+month.V.dat[:] = .0;  month.grd[:] = .0;  year.V.dat[:] = .0;  year.grd[:] = 0;
+Draw month;LW:0;MS:0;DC:black;DMS:5;DM:| year;DMS:12;LW:0 IS;LC:g;LW:2
+
+nC_N = nC.Clone();  nC_N.V.name= 'nC_N'; nC_N.V.dat = None; Task.AddFun (nC_N);  nC_N.Divide(N);  nC_N.Mult(100);  nC_N.V.oname = '% Выявленных'
+Draw month;LW:0;MS:0;DC:black;DMS:5;DM:| year;DMS:12;LW:0 nC_N;LC:g;LW:2
+
+Draw
+
+EOF
+
+#############
+

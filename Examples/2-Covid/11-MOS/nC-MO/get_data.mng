@@ -1,0 +1,40 @@
+
+Popul = 12636312.
+PopulMln = Popul / 1000000.
+PopulContrMln = (145934460-Popul)/1000000.
+PopulMO_Mln = 7708499/1000000.
+
+proVucc  = 12000.0 /Popul #*  доля
+#proVucc  = 20000.0 /Popul #*  доля
+effVucc  = 0.916  #0.976
+timeVucc = 14
+
+begDate = 20200319
+endDate = 20211201
+#proDate = 20220101
+proDate = 20220503
+
+useNaN = True
+
+DataAll = Select nCMos As nC, nCRus as nCR, nCMosObl as nCMO, ROWNUM AS t, date, Anti, nTest as nT, Exch  from ../../Moscow.xlsx \
+											where date >= begDate and date <= proDate 
+DataAll.nCR[:] = ( DataAll.nCR[:] - DataAll.nC[:] ) / PopulContrMln #* 3
+
+DataAll.nCMO[:] /= PopulMO_Mln
+
+DataAll.nC[:] /= PopulMln
+DataAll.nT[:] /= (5*Popul/1000) 
+DataAll.Anti[:] /= 100
+#Interpolate (DataAll.Vuc)
+#Extrapolate (DataAll.Vuc)
+Interpolate (DataAll.Exch)
+Extrapolate (DataAll.Exch)
+
+#DataAll.Vuc[:] /= Popul
+
+#Param: Exch(t)
+#Draw Exch
+#Param:  nCR(t)
+#	nC(t)
+#Draw nCR nC;DC:r
+

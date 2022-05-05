@@ -1,66 +1,55 @@
 # -*- coding: UTF-8 -*-
 import sys
 import platform
-LibVersion = 'Lib28'
+LibVersion = 'Lib29'
 if platform.system() == 'Windows':
     path_SvF = "C:/_SvF/"
 else:
-    path_SvF = "/home/sokol/C/SvF/"
+    path_SvF = "/mnt/hgst2/ext4/git_work/SvF/"
 sys.path.append(path_SvF + LibVersion)
-sys.path.append(path_SvF + "Pyomo_Everest/pe")
-import COMMON as co
-co.path_SvF = path_SvF
-co.tmpFileDir = co.path_SvF + 'TMP/'
+sys.path.append(path_SvF + "Everest/python-api")
+sys.path.append(path_SvF + "pyomo-everest/ssop")
+import COMMON as SvF
+SvF.path_SvF = path_SvF
+SvF.tmpFileDir = SvF.path_SvF + 'TMP/'
 from CVSets import *
 from Table  import *
 from Task   import *
 from MakeModel import *
 from GIS import *
 
-co.Task = TaskClass()
-Task = co.Task
-co.mngF = 'Oscillator_K_Mu_xr_ChDir.odt'
-co.Preproc = False
-co.CVNumOfIter = 50
- 											# CVstep      = 21  			# кол-во подмножеств для процедуры кросс-валидации      			
-co.CVstep   = 21
- 											# DIF1 	= Central        		# использование центральной схемы аппроксимации производной	       		
-co.DIF1 = 'Central'
- 											# Select x, t  from  ../Spring5.dat   # считывание данных    
-Tab.Select ( 'x,t from ../Spring5.dat' )
- 											# GRID:      t  ∈ [ -1., 2.5, 0.025 ] # область определения функции x(t) и v(t)      
+SvF.Task = TaskClass()
+Task = SvF.Task
+SvF.mngF = 'MNG.mng'
+SvF.CVNumOfIter = 1
+ 											# CVstep          21
+SvF.CVstep = 21
+ 											# Select x, t  from  ../Spring5.dat
+Table ( '../Spring5.dat','curentTabl','x,t' )
+ 											# GRID:
+ 											#         t  ∈ [ -1.,  2.5, 0.025 ]
 t=Grid('t',-1.0,2.5,0.025,'i__t','t')
-Task.AddGrid(t)
- 											# Var:    	x ( t ) 			# искомая функция   				
-x = Fun('x',[t],False); 
-Task.InitializeAddFun ( x )
-x__f = x
+ 											# Var:    x ( t )
+x = Fun('x',[t],False,-1,1, '') 
 def fx(t) : return x.F([t])
- 											# 	v ( t )			# искомая функция				
-v = Fun('v',[t],False); 
-Task.InitializeAddFun ( v )
-v__f = v
+ 											#     v ( t )
+v = Fun('v',[t],False,-1,1, '') 
 def fv(t) : return v.F([t])
- 											# 	K   			# неизвестный параметр – жесткость пружины 	  			
-K = Fun('K',[],False); 
-Task.InitializeAddFun ( K )
-K__f = K
+ 											#     K
+K = Fun('K',[],False,-1,1, '') 
 fK = K.grd
- 											# 	Δx  			# неизвестный параметр - смещение точки крепления (Deltax)	 			
-Deltax = Fun('Deltax',[],False); 
-Task.InitializeAddFun ( Deltax )
-Deltax__f = Deltax
-fDeltax = Deltax.grd
- 											# 	μ     			# неизвестный параметр - вязкость среды (в формуле Стокса), 	    			
-muu = Fun('muu',[],False); 
-Task.InitializeAddFun ( muu )
-muu__f = muu
+ 											#     μ  #   will be substituted on 'muu'
+muu = Fun('muu',[],False,-1,1, '') 
 fmuu = muu.grd
- 											# 					#    (в программе заменяется на muu)   					     
- 											# # EQ:   d2/dt2(x) == - K * (x - Δx) - μ*v  # обычная запись ур-ия – без редактора формул      
- 											# EQ:          # Формулы набираются в редакторе формул         \frac{d^2}{dt^2}(x) == - K * ( x - \Delta x ) -\mu * v 
- 											#           			     # дифференциальное ур-ие 1-ого порядка         v == \frac {d}{dt}(x)
- 											# OBJ:    x.Complexity ( Penal[0])/x.V.sigma2 + x.MSD()   # критерий выбора     from __future__ import division
+ 											#     xr
+xr = Fun('xr',[],False,-1,1, '') 
+fxr = xr.grd
+ 											# SchemeD1 = Central
+SvF.SchemeD1 = "Central"
+ 											# EQ:
+ 											#         d2/dt2(x) == - K * ( x - xr ) - μ * v
+ 											#      v == d/dt(x)
+ 											# OBJ:    x.Complexity ( Penal[0] ) / x.V.sigma2 + x.MSD()from __future__ import division
 from  numpy import *
 
 from Lego import *
@@ -70,42 +59,47 @@ def createGr ( Task, Penal ) :
     Funs = Task.Funs
     Gr = ConcreteModel()
     Task.Gr = Gr
-    if com.CV_NoR > 0:
-        Gr.mu = Param ( range(com.CV_NoR), mutable=True, initialize = 1 )
+    if SvF.CV_NoR > 0:
+        Gr.mu = Param ( range(SvF.CV_NoR), mutable=True, initialize = 1 )
 
-    t = Task.Grids[0]
- 											# x(t)
-    x = Funs[0];  x__f = x
-    x__i = Var ( Funs[0].A[0].NodS,domain=Reals, initialize = 1 )
-    x.grd = x__i ; Gr.x =  x__i
+    x.var = Var ( x.A[0].NodS,domain=Reals, initialize = 1 )
+    Gr.x =  x.var
     x.InitByData()
-    def fx(t) : return x__f.F([t])
- 											# v(t)
-    v = Funs[1];  v__f = v
-    v__i = Var ( Funs[1].A[0].NodS,domain=Reals, initialize = 1 )
-    v.grd = v__i ; Gr.v =  v__i
-    v.InitByData()
-    def fv(t) : return v__f.F([t])
- 											# K
-    K = Funs[2];  K__f = K
-    K__i = Var ( domain=Reals, initialize = 1 )
-    K.grd = K__i ; Gr.K =  K__i
-    K.InitByData()
-    fK = K__i
- 											# Deltax
-    Deltax = Funs[3];  Deltax__f = Deltax
-    Deltax__i = Var ( domain=Reals, initialize = 1 )
-    Deltax.grd = Deltax__i ; Gr.Deltax =  Deltax__i
-    Deltax.InitByData()
-    fDeltax = Deltax__i
- 											# muu
-    muu = Funs[4];  muu__f = muu
-    muu__i = Var ( domain=Reals, initialize = 1 )
-    muu.grd = muu__i ; Gr.muu =  muu__i
-    muu.InitByData()
-    fmuu = muu__i
+    def fx(t) : return x.F([t])
 
-    x.mu = Gr.mu; x.testSet = co.testSet; x.teachSet = co.teachSet
+    v.var = Var ( v.A[0].NodS,domain=Reals, initialize = 1 )
+    Gr.v =  v.var
+    v.InitByData()
+    def fv(t) : return v.F([t])
+
+    K.var = Var ( domain=Reals, initialize = 1 )
+    Gr.K =  K.var
+    K.InitByData()
+    fK = K.var
+
+    muu.var = Var ( domain=Reals, initialize = 1 )
+    Gr.muu =  muu.var
+    muu.InitByData()
+    fmuu = muu.var
+
+    xr.var = Var ( domain=Reals, initialize = 1 )
+    Gr.xr =  xr.var
+    xr.InitByData()
+    fxr = xr.var
+ 											# d2/dt2(x)==-K*( x-xr)- muu*v
+    def EQ0 (Gr,i__t) :
+        return (
+          ((fx((i__t+t.step))+fx((i__t-t.step))-2*fx(i__t))/t.step**2)==-fK*(fx(i__t)-fxr)-fmuu*fv(i__t)
+        )
+    Gr.conEQ0 = Constraint(t.mFlNodSm,rule=EQ0 )
+ 											# v== d/dt(x)
+    def EQ1 (Gr,i__t) :
+        return (
+          fv(i__t)==((fx((i__t+t.step))-fx((i__t-t.step)))/t.step *0.5)
+        )
+    Gr.conEQ1 = Constraint(t.mFlNodSm,rule=EQ1 )
+
+    x.mu = Gr.mu; x.testSet = SvF.testSet; x.teachSet = SvF.teachSet;
  											# x.Complexity([Penal[0]])/x.V.sigma2+x.MSD()
     def obj_expression(Gr):  
         return (
@@ -124,11 +118,11 @@ def print_res(Task, Penal, f__f):
     OBJ_ = Gr.OBJ ()
     print (  '    OBJ =', OBJ_ )
     f__f.write ( '\n    OBJ ='+ str(OBJ_)+'\n')
-    tmp = (x.Complexity([Penal[0]])/x.V.sigma2)()
+    tmp = (x.Complexity([Penal[0]])/x.V.sigma2)
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tx.Complexity([Penal[0]])/x.V.sigma2 =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tx.Complexity([Penal[0]])/x.V.sigma2 ='+ stmp+'\n')
-    tmp = (x.MSD())()
+    tmp = (x.MSD())
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tx.MSD() =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tx.MSD() ='+ stmp+'\n')
@@ -136,16 +130,16 @@ def print_res(Task, Penal, f__f):
     return
 
 
-com.Task.createGr  = createGr
+SvF.Task.createGr  = createGr
 
-com.Task.print_res = print_res
+SvF.Task.print_res = print_res
 
-co.lenPenalty = 1
+SvF.lenPenalty = 1
 
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
- 											# Draw								# отображение функций								
+ 											# Draw
 
 Task.Draw (  '' )
- 											# EOF								# конец обработки задания								
+ 											# EOF
