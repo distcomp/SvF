@@ -2,13 +2,54 @@
 
 from  numpy import *
 import sys
+from datetime import date
+from copy import deepcopy
 
 FLOMAX = sys.float_info.max
+RADpGRAD = pi/180
+GRADpRAD = 180/pi
+
+CLASS_TXT = type('a')
+CLASS_INT = type(1)
+
+#border =
+
+def Border (arr, vals):
+    ret = deepcopy (arr)
+    ret[:] = 0
+    for i,a in enumerate (arr) :
+        for v in vals :
+            if abs (a-v) < 1e-10 : ret[i] = 1
+#    print (arr, ret)
+    return ret
+
+
+def Interpolate ( ar ) :
+    ib = -1
+    for i, a in enumerate (ar) :
+        if not isnan(a) :
+            if ib != -1 :
+                for ii in range(ib+1,i) :
+                    ar[ii] = ar[ib] * (i-ii)/float(i-ib) + a * (ii-ib)/float(i-ib)    #a=ar[i]
+            ib = i
+
+def Extrapolate ( ar ) :                    #  предполагается что не заполнен только хвост
+    ib = 0
+    for i, a in enumerate (ar) :
+#        print (i,a)
+        if ib == 0 :
+            if isnan(a) : continue             #  ищем не пустую
+            else : ib = 1
+        elif isnan (a) :        #  едем в конец ищем  nan
+            ar[i] = ar[i-1] + ( ar[i-1] - ar[i-2] )
+#            print (ar[i])
 
 def tetta (x) :
     return 0.5 + 0.5 * x / (.001+x*x)**0.5
 #    return 0.5 + 0.5 * x / sqrt (.001+x*x)
 
+def ind_0_1 (x) :
+    return  0.5 * x / (.001+x*x)**0.5 - 0.5 * (x-1) / (.001+(x-1)*(x-1))**0.5
 
 def tetta_old (x) :
     if   x < 0 :  return 0
@@ -20,14 +61,29 @@ def floatGradNaN ( txt ) :
             return float(txt)
         except:
 #            if txt is None: return NaN
-            print ('TXT',txt)
+ #           print ('TXT',txt)
             try :
                 gra = txt.index('°')
-                print ('TXT',txt,gra)
+                print ('GRAD:',txt)
                 if gra >= 0:
                     return float(txt[:gra]) + float(txt[gra + 1:]) / 60.
-            except:   return NaN
+            except:
+                if not txt is None : print ('TO FLOAT', txt)
+                return NaN
 
+
+def days_epoch (txt_date) :
+
+    return ( ( date.fromisoformat(txt_date) - date.fromisoformat('0001-01-01')).days)
+
+def to_date ( intORtxt ) :
+    if type(intORtxt)==CLASS_TXT: return date.fromisoformat( intORtxt )
+    elif type(intORtxt) != CLASS_INT:  intORtxt = int (intORtxt)
+#    print (type(intORtxt))
+    y = intORtxt // 10000
+    m = (intORtxt % 10000) // 100
+    d = intORtxt % 100
+    return date (y,m,d)
 
 def strTOnum (txt) :
     num = 0
@@ -47,6 +103,16 @@ def isfloat(value):
         return True
     except ValueError:
         return False
+
+def is_nan(value):
+    if is_str(value): return False
+    try:
+        return isnan(value)
+    except ValueError:
+        return False
+
+def is_str(txt):
+    return ( type(txt) == type('a') )
 
 
 def printS ( *ss ) :    # если в конце собранной строки стоит '|' - то нет '\n'

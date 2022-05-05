@@ -175,7 +175,7 @@ def AzimutInit ( cen_lat_grad, cen_lon_grad ) :     # B,  L
         co.cos_lat_center_rad = cos ( co.lat_center_rad )
 
 
-def LatLonToAzimut ( lat_grad, lon_grad ) :     # B,  L
+def LatLonToAzimut_scalar ( lat_grad, lon_grad ) :     # B,  L
           lo = lon_grad * RADpGRAD
           la = lat_grad * RADpGRAD
           sin_la = sin ( la )
@@ -192,3 +192,56 @@ def LatLonToAzimut ( lat_grad, lon_grad ) :     # B,  L
           return km_x, km_y
 
 
+def AzimutToLatLon ( km_x, km_y ):  # B,  L  return lat_grad, lon_grad
+        Xkm = km_x / EARTH
+        Ykm = km_y / EARTH
+        Z = 1. - Xkm*Xkm - Ykm*Ykm
+        if ( Z < 0 ) :  return  None, None
+
+        Z = sqrt ( Z )
+        sin_lat = sin ( co.lat_center_rad )
+        cos_lat = cos ( co.lat_center_rad )
+        ar = Z * sin_lat + Ykm * cos_lat
+        if ( ar >  1. ): ar =  1
+        if ( ar < -1. ):  ar = -1
+        mat_y  = asin ( ar )
+
+        cos_la = cos ( mat_y  )
+        if ( fabs ( cos_la ) < 1.0e-20 ) : ar = 1;
+        else 				             : ar = Xkm / cos_la;
+        if ( ar >  1 ) : ar =  1;
+        if ( ar < -1 ) : ar = -1;
+        if((Z-sin(mat_y)*sin_lat)*cos_la*cos_lat<0.):
+            mat_x = 180+(co.lon_center_rad-asin(ar))/RADpGRAD
+        else :
+            mat_x =     (co.lon_center_rad+asin(ar))/RADpGRAD
+        mat_y /= RADpGRAD
+
+        if ( mat_x <    0. ): mat_x += 360
+        if ( mat_x >  360. ): mat_x -= 360
+        if ( mat_x < -180. ): mat_x += 360
+        if ( mat_x >  180. ): mat_x -= 360
+
+#        print (mat_x, mat_y)
+        return  mat_y, mat_x        # lat_grad, lon_grad
+
+
+
+def  arrayLatLonToAzimut(lat, lon, x, y) :
+        for i in range(x.shape[0]):  x[i],y[i] = LatLonToAzimut( float(lat[i]),float(lon[i]) )
+
+def  arrayAzimutToLatLon (lat, lon, x, y) :
+        for i in range(lat.shape[0]):  lat[i], lon[i]  = AzimutToLatLon(x[i], y[i])
+
+def LatLonToAzimut ( lat_grad, lon_grad ) :     # B,  L     äëÿ ÷èñåë è ÌÀÑÑÈÂÎÂ
+ #       print ('type(lat_grad)', type(lat_grad))
+        if type(lat_grad) == type(1.0):
+            return LatLonToAzimut_scalar(lat_grad, lon_grad)
+        else:
+            NoR = len(lat_grad)
+#            print ('lat_grad****', NoR)
+            x = zeros(NoR, float64)
+            y = zeros(NoR, float64)
+            for i in range (NoR) :
+                x[i],y[i] = LatLonToAzimut_scalar ( lat_grad[i], lon_grad[i] )
+            return x,y

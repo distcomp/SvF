@@ -1,39 +1,97 @@
 # -*- coding: cp1251 -*-
 
-from   numpy import *
+#from   numpy import *
 import   numpy as np
 from   os.path  import *
 import openpyxl
 import sys
-import COMMON as co
+#import COMMON as co
 from   Pars   import *
 ##from   InData import *
+from Parser    import *
+from Object    import *
+
+#def  TblFldV ( TblFld ) : return getTbl_tbl ( TblFld )
+#def  Tbl     ( nTbl ) :   return getTbl     ( nTbl   )
+
+def ParseSelect30(buf):  ##  разбор  Select
+    buf = buf.strip()
+    #       print (buf)
+    part = SplitIgnor(buf, 'Select ')
+    #      print (part)
+    leftName = part[0][:-1]
+    part = SplitIgnor(part[1], ' from ')
+    #        print (part)
+    Fields = part[0]
+    part = SplitIgnor(part[1], ' where ')
+    if len(part) == 1:
+        where = ''
+    else:
+        where = part[1]
+    part = SplitIgnor(part[0], ' As ')
+    FileName = part[0]
+    if len(part) == 2:
+        AsName = part[1]
+    else:
+        AsName = ''
+    if AsName == '':  AsName = leftName
+    #       print (leftName,'!', Fields, '!',FileName,'!'+AsName+'!'+where+'!' )
+    return leftName, Fields, FileName, AsName, where
 
 
-def  TblFldV ( TblFld ) : return co.Task.getTbl_tbl ( TblFld )
-def  Tbl     ( nTbl ) :   return co.Task.getTbl     ( nTbl   )
+def  Treat_FieldNames (raw_line) :
+        for itb, tb in enumerate ( SvF.Task.Objects ) :  #  from Tbls   Dat.X -> Dat.dat('X')
+            if tb.Otype == 'Table' :
+                tb.Oprint()
+ #               print ('tb.name',tb.name)
+                if findNamePos(raw_line, tb.name ) < 0 : continue
+                print('\nTABB ' + raw_line, tb.name)
+                pars = parser (raw_line)
+                itn = 0
+                while True :
+                    itn = pars.find_part(tb.name, itn)
+                    if itn < 0 : break;
+                    if itn+2 >= len (pars.items) : break
+                    if pars.items[itn+1].part != '.' : break
+                    fld = pars.items[itn+2].part
+                    print ('fld', fld)
+                    if ( fld !='dat' and fld !='AddField' and fld !='sR' and fld !='NoR'  and fld !='AppendRec' and
+                         fld != 'WriteSvFtbl' and fld != 'Flds' and fld != 'KillRowsByMask'
+                       ):
+                        pars.items[itn+2].part = 'dat(\''+fld+'\')'
+ #                       raw_line = SubstitudeName(raw_line, fld, 'dat(\''+fld+'\')')
+                        print ('\nTABA '+pars.join(), pars.items[itn].part, pars.items[itn+1].part, pars.items[itn+2].part)
+  #                      print('\nTABE ' + raw_line)
+                    itn += 3
+                raw_line = pars.join()
+                print('\nTABA ' + pars.join() )
+        return raw_line
 
 
 def joinTab(*Tabs):
         for itbl, tbl in enumerate(Tabs):
             if itbl == 0:
                 ret = deepcopy(tbl)
+                ret.name = 'joinTab_Result'
             else:
                 for fld in tbl.Flds:
                     if ret.getFieldNum(fld.name) == -1:
                         ret.Flds.append(deepcopy(fld))
             print(tbl.NoR)
 
-        co.Task.KillTbl(ret.name)  # kill the same name
-        co.Task.AddTbl(ret)  # Имя первой таблицы
-        co.curentTabl = ret
+## 30       SvF.Task.KillTbl(ret.name)  # kill the same name
+##        SvF.Task.AddTbl(ret)
+        ret.Add()
+        SvF.curentTabl = ret
         return ret
 
 
-def joinTabBy(By, *Tabs):
+def joinTabBy(By, *Tabs):                #  TMo = joinTabBy ( 't', TMos, Spline )
     for j, tbl in enumerate(Tabs):
         if j == 0:
+            print (tbl.NoR)
             ret = deepcopy(tbl)
+            ret.name = 'joinTabBy_Result'
             retByNum = ret.getFieldNum(By)
             if retByNum == -1:
                 print ( 'Err find Field by', By )
@@ -69,11 +127,10 @@ def joinTabBy(By, *Tabs):
                 else                 : tbj.KillRow (tbj.NoR-1)
             print('NoR RET TBJ', ret.NoR, tbj.NoR)
             ret = joinTab (ret, tbj)
-
-
-    co.Task.KillTbl(ret.name)  # kill the same name
-    co.Task.AddTbl(ret)  # Имя первой таблицы
-    co.curentTabl = ret
+## 30    SvF.Task.KillTbl(ret.name)  # kill the same name
+##    SvF.Task.AddTbl(ret)
+    ret.Add()
+    SvF.curentTabl = ret
     return ret
 
 
@@ -81,52 +138,36 @@ def appendTab(*Tabs):
         for itbl, tbl in enumerate(Tabs):
             if itbl == 0:
                 ret = deepcopy(tbl)
+                ret.name = 'appendTab_Result'
             else:
                 for ifld, rfld in enumerate(ret.Flds):
                     rfld.tb = append (rfld.tb, tbl.Flds[ifld].tb)
         ret.NoR = ret.Flds[0].tb.size
-#        print(ret.NoR)
-        co.Task.KillTbl(ret.name)  # kill the same name
-        co.Task.AddTbl(ret)  # Имя первой таблицы
-        co.curentTabl = ret
+        self.sR = range (self.NoR)
+## 30        SvF.Task.KillTbl(ret.name)  # kill the same name
+##        SvF.Task.AddTbl(ret)
+        ret.Add()
+        SvF.curentTabl = ret
         return ret
-
-
-def  Select ( buf ):
-                buf = buf.strip()
-                part = buf.split( ' from ' )
-                fields = part[0]
-                part = part[1].split( ' where ' )
-                fromFile = addDataPath ( part[0] )
-                if len (part) == 1 :                    #  no where
-                    where = ''
-                else :
-                    where = co.Task.substitudeDef(part[1])
-                print (fields, '\n', fromFile, '\n', where)
-                return Table ( fromFile, fields, where )
-
-
-
-def  arrayLatLonToAzimut(lat, lon, x, y) :
-        for i in range(x.shape[0]):  x[i],y[i] = LatLonToAzimut( lat[i],lon[i] )
 
 
 def  TblOperation (buf):
         if buf == '' : return
-        buf = co.Task.substitudeDef(buf)
+##30        buf = SvF.Task.substitudeDef(buf)
         buf = buf.replace(' ', '') 
-        print  (buf)
+ #       print  ('buf=', buf)
         parts = buf.split ( '=TblLatLonToAzimut(' )             #  LatLonToAzimut
         if len(parts)==1 : parts = buf.split ( '=TblLatLonToGaussKruger(' )    # LanLonToGaussKruger
         if len(parts)==2 :
             parts[1] = parts[1].split(')')[0]
-            if co.printL: print (parts)
+            if SvF.printL: print (parts)
             lefts = parts[0].split(',')
-            x_tbl = co.Task.getTbl_tbl (lefts[0])
-            y_tbl = co.Task.getTbl_tbl (lefts[1])
+            x_tbl = getTbl_tbl (lefts[0])
+            y_tbl = getTbl_tbl (lefts[1])
             rights = parts[1].split(',')
-            lat_tbl = co.Task.getTbl_tbl (rights[0])
-            lon_tbl = co.Task.getTbl_tbl (rights[1])
+            lat_tbl = getTbl_tbl (rights[0])
+            lon_tbl = getTbl_tbl (rights[1])
+            print (lefts, rights)
             if buf.find ('TblLatLonToAzimut') > 0 :
                 for i in range(x_tbl.shape[0]):  x_tbl[i],y_tbl[i] = LatLonToAzimut( lat_tbl[i],lon_tbl[i] )
             else :
@@ -136,25 +177,23 @@ def  TblOperation (buf):
         parts = buf.split ( '.AddField(' )             #  AddField
         if len(parts)==2 :
             parts[1] = parts[1].split(')')[0]
-            co.Task.getTbl(parts[0]).AddField( parts[1] )
+            getTbl(parts[0]).AddField( parts[1] )
             print ('AddField :', parts[1], 'to', parts[0])
             return
         
         parts = buf.replace ( ' ', '').split ( '=' )
         left  = parts[0]
         right = parts[1]
-        for itb, tb in enumerate ( co.Task.Tbls ) :
+        for itb, tb in enumerate ( SvF.Task.Tbls ) :
 #            print 'tb.name', tb.name
             for ifld, fld in enumerate (tb.Flds) :
                 right = right.replace ( tb.name +'.'+ fld.name,
-                                        'com.Task.Tbls['+str(itb)+'].Flds['+str(ifld)+'].tb')
+                                        'SvF.Task.Tbls['+str(itb)+'].Flds['+str(ifld)+'].tb')
         print (right)
 
-#        tb = com.Task.getTbl_tbl(left)
-        tb_num, fld_num = com.Task.getTblFieldNums (left)
-        com.Task.Tbls[tb_num].Flds[fld_num].tb = eval (right)
+        tb_num, fld_num = getTblFieldNums (left)
+        SvF.Task.Tbls[tb_num].Flds[fld_num].tb = eval (right)
         print ('Operation', parts)
-#        1/0
         return
        
 
@@ -164,34 +203,33 @@ class Field :
         self.tb       = None
         self.src_name = src_name
         self.src_num  = NaN
-        
+
     def Mprint ( self ) :  print ('Field :', self.name, self.src_name, self.src_num)
 
 
-
-class Table :
-    def __init__ ( self, fromFile, fields='*', where='' ): #, useNaN=False ) :
-        self.name      = ''
-        self.FileType  = 'tbl' 
+class Table (Object):
+    def __init__ ( self, fromFile, AsName='', fields='*', where_condition=None ): #
+        Object.__init__( self, AsName, 'Table')
+        if SvF.Compile :  return
+        self.fromFile = fromFile
+        self.FileType  = 'tbl'
         self.FileVer   = 0
         self.Flds      = []
-        
-###        self.cols    = []
-###        self.nums    = []
         self.NoC     = 0
         self.NoR     = 0
         self.sR      = []
-        self.useNaN  = co.useNaN
+        self.useNaN  = SvF.useNaN
+        self.fields_str  = fields
+        self.con_list = []                            # list of arguments for
+        self.where_condition = where_condition        #   where_condition
 
-        if co.printL : print ('\nSelect', fields, '\n  from', fromFile,'\n   where', where)
-
+        if self.name == '' : self.name = 'curentTabl'
+        if SvF.printL : print ('\nSelect', fields, '\n  from', fromFile, 'name:'+self.name+'|')
+        print('\n*Table*', fields, '\n  from', fromFile, 'name:'+self.name+'|')
         ff_nn = SplitIgnor ( fromFile, ' AS ' )     # Имя файла и таблицы
-        self.fromFile = ff_nn[0]
-        if len (ff_nn) > 1 : self.name = ff_nn[1]
-        else               : self.name = 'curentTabl'
 
         _fields = fields.split(',')                   # Fields
-        if co.printL : print (_fields)
+        if SvF.printL : print (_fields)
         for fld in _fields :
             part = SplitIgnor ( fld.strip(), ' AS ' )
             src_name = part[0]
@@ -199,27 +237,31 @@ class Table :
             else              : name = part[0]              # the same name
             self.Flds.append ( Field ( name, src_name ) )
             if src_name.upper() == 'ROWNUM' :  self.Flds[-1].src_num = -1
-            if co.printL : self.Flds[-1].Mprint()
+            if SvF.printL : self.Flds[-1].Mprint()
 
         root, ext = splitext(self.fromFile.upper())
-        if   co.Task.getTblNum(self.fromFile) !=-1 :  self.Read21_TBL ( where )
-        elif co.Task.getFunNum(self.fromFile) !=-1 :  self.Read28_FUN ( where )
-        elif   '.XLSX' == ext :                       self.Read21_XLSX( where )
-        elif   '.KML'  == ext :                       self.Read21_KML ( where )
-        elif   '.ASC'  == ext :                       self.Read27_ASC ( where )
-        else :                                        self.Read25_TXT ( where )
+#        if   getTblNum(self.fromFile) !=-1 :  self.Read30_TBL ( )
+        if   not getTbl(self.fromFile) is None :  self.Read30_TBL ( )
+        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( where_condition )  # надо переписать
+        elif   '.XLSX' == ext :                   self.Read30_XLSX( )
+        elif   '.KML'  == ext :                   self.Read21_KML ( where_condition )  # надо переписать
+        elif   '.ASC'  == ext :                   self.Read27_ASC ( where_condition )  # надо переписать
+        else :                                    self.Read30_TXT ( )
 
         print ('NoR =', self.NoR, '\n')
-        if co.printL :
+        if SvF.printL :
             for ifld, fld in enumerate (self.Flds) :
                 print ('Field :', fld.name, fld.src_name, fld.src_num, fld.tb.min(0), fld.tb.max(0))
 
         self.sR = range (self.NoR)
 
-        co.Task.KillTbl ( self.name )   # kill the same name
-        co.Task.AddTbl ( self )
-        co.curentTabl = self 
+## 30        SvF.Task.KillTbl ( self.name )   # kill the same name
+## 30        SvF.Task.AddTbl ( self )
+        SvF.curentTabl = self
 
+    def Oprint(self):
+        if SvF.Compile :  print('Oprint Compile', self.Otype, self.name)
+        else :            print('Oprint', self.Otype, self.name, "NoC", self.NoC, "NoR", self.NoR)
 
     def AddField( self, name ) :
         self.Flds.append ( Field ( name, '' ) )
@@ -258,9 +300,35 @@ class Table :
         for ofi in self.Flds:
            ofi.tb = delete(ofi.tb, num)
         self.NoR -= 1
+        self.sR = range (self.NoR)
+
+    def KillRowsByMask (self, x_name, y_name, Mask, MaskVal) :
+        xind = self.getFieldNum (x_name)
+        yind = self.getFieldNum (y_name)
+        NoR = 0
+        for i in self.sR:
+            mask_i = Mask.A[0].getPointNum (self.Flds[xind].tb[i])
+            mask_j = Mask.A[1].getPointNum (self.Flds[yind].tb[i])
+            if Mask.grd[mask_i,mask_j] == MaskVal : continue
+            for ofi in self.Flds:
+                ofi.tb[NoR] = ofi.tb[i]
+            NoR += 1
+        for ofi in self.Flds:
+            ofi.tb = resize(ofi.tb, NoR)
+        self.NoR = NoR
+        self.sR = range(self.NoR)
+
+    def AppendRec(self, *Parts):   # parts of Rec
+            for i_part, part in enumerate(Parts):
+#                print (i_part, part, self.Flds[i_part].tb)
+                self.Flds[i_part].tb = append (self.Flds[i_part].tb, part)
+ #               print(i_part, part, self.Flds[i_part].tb)
+            self.NoR += 1
+            self.sR = range (self.NoR)
+
 
     def Operation ( self, buf ) :
-        buf = co.Task.substitudeDef(buf)
+##30        buf = SvF.Task.substitudeDef(buf)
         part = buf.replace ( ' ', '').split ( '=' )
         print ('Operation', part)
         rightPart = part[1]
@@ -288,8 +356,30 @@ class Table :
    ###             self.tbl[i][0], self.tbl[i][1] = WGS84toGausKru(self.tbl[i][1], self.tbl[i][0], 0)
 #            print 'GaussKruger :', self.tbl[0][0], self.tbl[0][1]
 
+    def where_con_list (self) :          #    создает список номеров аргументов
+        if self.where_condition is None:  return
+        con_list = []
+        for a in self.fields_str.split(','):
+            if a.strip() == '*': continue
+            part = SplitIgnor(a, ' As ')
+            if len(part) == 1:   args = part[0]
+            else:                args = part[1]
+            fn = self.getFieldNum( args)
+            con_list.append (fn)
+#            print ('arrr', args, fn)
+        self.con_list = con_list
 
-    def Read21_XLSX ( self, where ) :
+
+    def CheckWhere (self, NoR) :       #   проверка  where
+        if self.where_condition is None: return True
+        args = []
+        for ff in self.con_list : args.append (self.Flds[ff].tb[NoR])
+        t_args = tuple(args)
+        return self.where_condition (*t_args)
+
+
+
+    def Read30_XLSX ( self ) :
         try :
             wb = openpyxl.load_workbook(self.fromFile)
             ws = wb[wb.get_sheet_names()[0]]
@@ -311,7 +401,7 @@ class Table :
 #                print name
                 names.append(name.strip())           # remuve end  blancs
             NoC = len (names)
-            if co.printL :  print ("TablesNames", names)
+            if SvF.printL :  print ("TablesNames", names)
 
             print ("TablesNames", names)
             for fld in self.Flds :
@@ -321,11 +411,10 @@ class Table :
                   except :    
                     print ("No Column for", fld.src_name, "*****************************")
                     exit (-1)
-                fld.Mprint()    
+                fld.Mprint()
 
-###            for fld in self.Flds :  self.nums.append( fld.src_num )    #  Kill
-###            for fld in self.Flds :  self.cols.append( fld.name )    #  Kill
-                    
+            self.where_con_list()       #   30
+
             self.NoC = len(self.Flds)  #(self.cols)
             maxNoR = ws.max_row  #50000
             for fld in self.Flds : fld.tb = zeros ( maxNoR, float64 ) 
@@ -334,15 +423,12 @@ class Table :
             ro = nameRow
             for t_raw in range (ws.max_row-nameRow)  :  #while (1) :
                 ro += 1
-#                print ro, ws.cell(row=ro,column=1).value
- #               if ws.cell(row=ro,column=1).value == None  : break
                 try :
-                    if str(ws.cell(row=ro,column=1).value) == '#END#' : break
+                    if str(ws.cell(row=ro,column=1).value) == '#END#' :
+                        print ('#END#', NoR)
+                        break
                     if str(ws.cell(row=ro,column=1).value)[0] == '#'  : continue
                 except ValueError:  pass
- #                   print '***********Row ommited***********  rownum=', ro, ws.cell(row=ro,column=1).value
-  #                  continue
-                wher = where[0:]
                 OK = True
                 for fld in self.Flds :
   #                  print (pceil.value, pceil.data_type )
@@ -350,27 +436,20 @@ class Table :
                         fld.tb[NoR] = NoR
                         continue
                     pceil = ws.cell(row=ro, column=fld.src_num + 1)
-#                    print (com.TaskName[:5])
-                    if com.TaskName[:5] == 'COVID' and fld.name == 'iso_code' :     ############################  COVID
- #                       print (pceil.value)
+                    if SvF.TaskName[:5] == 'COVID' and fld.name == 'iso_code' :     ############################  COVID
                         fld.tb[NoR] = strTOnum(str(pceil.value))
-#                    elif com.TaskName[:5] == 'COVID' and fld.name == 'date' :     ############################  COVID
-#                        fld.tb[NoR] = float(str(pceil.value).replace('-',''))
+                    elif SvF.TaskName[:8] == 'COVID-RW' and fld.name == 'date' :     ############################  COVID
+                        fld.tb[NoR] = float(str(pceil.value).replace('-',''))
                     else:
                         fld.tb[NoR] = floatGradNaN(ws.cell(row=ro,column=fld.src_num+1).value)
-#                        try :
- #                           fld.tb[NoR] = float ( ws.cell(row=ro,column=fld.src_num+1).value )
-  #                      except :
-   #                         fld.tb[NoR] = NaN
                     if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break    #continue
-#                    print (fld.tb[NoR])
                 if not OK: continue
-                if len (where) >= 3 :                       #check  where
-                    wher = where.replace('ROWNUM',str(NoR))
-                    for fld in self.Flds :   wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
- #                   if self.fromFile == '../Moscow.xlsx':
-  #                    print ('wher:', wher, NoR, ws.max_row)
-                    if eval (wher, {'strTOnum': strTOnum}) == False : continue
+                if self.CheckWhere ( NoR) == False : continue    #   30
+#                if not where is None:
+ #                   args = []
+  #                  for ff in con_list : args.append (self.Flds[ff].tb[NoR])
+   #                 t_args = tuple(args)
+    #                if where (*t_args) == False : continue
                 NoR += 1
                 if NoR >= maxNoR :                          # resize
                     maxNoR *= 2
@@ -379,6 +458,7 @@ class Table :
             for fld in self.Flds : fld.tb = resize (fld.tb, NoR ) 
             
             self.NoR = NoR
+            print (NoR)
 
     def setField_src_num( self, names ):        # ИСПОЛЬЗОВАТЬ В ДР ФУНКЦИЯХ !
             for fld in self.Flds:
@@ -395,7 +475,7 @@ class Table :
             self.NoC = len(self.Flds)
 
     def Read28_FUN(self, where ) :
-            srcFun = co.Task.getFun ( self.fromFile )
+            srcFun = getFun ( self.fromFile )
             names = []                                      # имена аргументов и функции
             for a in srcFun.A:   names.append ( a.name )
             names.append(srcFun.V.name)
@@ -407,8 +487,9 @@ class Table :
             for a in srcFun.A: srcNoR *= (a.Ub + 1)
             for fld in self.Flds : fld.tb = zeros ( srcNoR, float64 )
 
-            NoR = 0
+            self.where_con_list()   ############### 30
 
+            NoR = 0
             if srcFun.dim == 1:
                 Ax = srcFun.A[0]
 #                print (Ax.name)
@@ -421,11 +502,12 @@ class Table :
                             fld.tb[NoR] = srcFun.grdNaNreal(r)
                             if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break
                     if not OK: continue
-                    if len (where) >= 3 :                       #check  where
-                        wher = where.replace('ROWNUM',str(NoR))
-                        for fld in self.Flds :
-                            wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
-                        if eval (wher,{}) == False : continue
+                    if self.CheckWhere(NoR) == False: continue  ############### 30
+#                    if len (where) >= 3 :                       #check  where
+ #                       wher = where.replace('ROWNUM',str(NoR))
+  #                      for fld in self.Flds :
+   #                         wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
+    #                    if eval (wher,{}) == False : continue
                     NoR += 1
             elif srcFun.dim == 2:
                 Ax = srcFun.A[0]
@@ -441,18 +523,19 @@ class Table :
                             fld.tb[NoR] = srcFun.grdNaNreal(x,y)
                             if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break
                     if not OK: continue
-                    if len (where) >= 3 :                       #check  where
-                        wher = where.replace('ROWNUM',str(NoR))
-                        for fld in self.Flds :
-                            wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
-                        if eval (wher,{}) == False : continue
+                    if self.CheckWhere(NoR) == False: continue  ############### 30
+#                    if len (where) >= 3 :                       #check  where
+ #                       wher = where.replace('ROWNUM',str(NoR))
+  #                      for fld in self.Flds :
+   #                         wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
+    #                    if eval (wher,{}) == False : continue
                     NoR += 1
             for fld in self.Flds : fld.tb = resize (fld.tb, NoR )
             self.NoR = NoR
 
 
-    def Read21_TBL(self, where ) :    #  tbl -> fld.tb
-            source_tb = co.Task.getTbl ( self.fromFile )
+    def Read30_TBL( self ) :    #  tbl -> fld.tb
+            source_tb = getTbl ( self.fromFile )
             srcFlds = source_tb.Flds
             for fld in self.Flds :
                 if fld.src_name == '*' :
@@ -469,25 +552,21 @@ class Table :
             self.NoC = len(self.Flds)
             for fld in self.Flds : fld.tb = zeros ( source_tb.NoR, float64 ) 
 
+            self.where_con_list()   ############### 30
+
             NoR = 0
             for r in range (source_tb.NoR) :
-                wher = where[0:]
                 OK = True
                 for c, fld in enumerate(self.Flds) :
                     if fld.src_num==-1 :  fld.tb[NoR] = NoR
                     else:                 fld.tb[NoR] = source_tb.Flds[fld.src_num].tb[r]
-                    if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break    #continue
+                    if (not self.useNaN) and isnan(fld.tb[NoR]) : OK = False; break    #continue
                 if not OK: continue
-                if len (where) >= 3 :                       #check  where
-                    wher = where.replace('ROWNUM',str(NoR))
-                    for c , fld in enumerate(self.Flds) :
-                        wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
-                    if eval (wher,{'strTOnum': strTOnum}) == False : continue
+                if self.CheckWhere(NoR) == False: continue   ############### 30
+
                 NoR += 1
             for fld in self.Flds : fld.tb = resize (fld.tb, NoR )
             self.NoR = NoR
-
-
 
 
     def Read21_KML(self, where ) :   
@@ -508,7 +587,7 @@ class Table :
                     srcFlds[1].tb.append ( float(xyz[1]) )       
                     print (xyz)
             srcNoR = len(srcFlds[0].tb)
-#            source_tb = co.Task.getTbl ( self.fromFile )
+#            source_tb = getTbl ( self.fromFile )
             for fld in self.Flds :
                 if fld.src_name == '*' :
                     for s_fld in srcFlds : self.Flds.append ( Field ( s_fld.name, s_fld.name ) )
@@ -525,12 +604,7 @@ class Table :
             self.KillField ('*')
             for fld in self.Flds : fld.Mprint()
 
-                        # To Kill
-###            for fld in self.Flds :
-   ###             self.cols.append (fld.name)
- ###               self.nums.append (fld.src_num)
-      ###      print '***', self.cols ###, self.nums
-                
+
             self.NoC = len(self.Flds)
             for fld in self.Flds : fld.tb = zeros ( srcNoR, float64 ) 
 
@@ -553,23 +627,25 @@ class Table :
             self.NoR = NoR
 
 
-    def Read25_TXT( self, where ) :      #    tbl -> fld.tb
-        if co.printL: print ('Read25_TXT')
+    def Read30_TXT( self ) :   #    tbl -> fld.tb  №№№ !!! С кодировкой Видоуз не работает - съедает первую строку
+        if SvF.printL: print ('Read25_TXT')
         with open( self.fromFile, "r") as fi:
-            line1 = fi.readline()
+            line1 = fi.readline().strip('\ufeff\n')    # какая-то кодировка после Видоуз
+#            print ('!'+line1+'!')
             names_ver_type = line1.split('#SvFver_')      # Version & Type of File
+            print (names_ver_type)
             if len (names_ver_type) ==2 :
                 parts = names_ver_type[1].split('_')
                 self.FileVer  = int(parts[0])
                 self.FileType = parts[1].split()[0]       # убрать окон. строки
-            if co.printL : print ("FileVerType", self.FileVer, self.FileType)
-            
+            if SvF.printL : print ("FileVerType", self.FileVer, self.FileType)
+
             names = names_ver_type[0].split()
             if self.FileVer==0 and isfloat(names[0]) :       # if это число а не имя - таблица без назв столбцов
                 names = ['Col'+str(c) for c in range(len(names)) ]
                 fi.seek(0)
 
-            if co.printL :
+            if SvF.printL :
                 print ("TablesNames", names)
                 for fld in self.Flds :  fld.Mprint()
 
@@ -590,6 +666,8 @@ class Table :
             maxNoR = 50000;
             for fld in self.Flds : fld.tb = zeros ( maxNoR, float64 ) 
 
+            self.where_con_list()       # 30
+
             NoR = 0;
             if self.FileType != 'mtr2' and self.FileType != 'matr2' :                   #  tbl
               for line in fi :
@@ -598,30 +676,14 @@ class Table :
                 if len(nums_row) == 0: continue
                 if nums_row[0] == '#END#':  break
                 if nums_row[0][0] == '#'    :  continue
-                wher = where[0:]
                 OK = True
                 for fld in self.Flds :
                     if fld.src_num == -1 :   fld.tb[NoR] = NoR
                     else:
                         fld.tb[NoR] = floatGradNaN( nums_row[fld.src_num] )
-#                        try :
- #                           fld.tb[NoR] = float ( nums_row[fld.src_num] )
-  #                      except :
-   #                         gra = nums_row[fld.src_num].index('°')
-    #                        if gra >=0 :
-     #                           fld.tb[NoR] = float (nums_row[fld.src_num][:gra]) + float(nums_row[fld.src_num][gra+1:])/60.
-      #     #                     print (fld.tb[NoR], NoR)
-       #                     else :
-        #                        fld.tb[NoR] = NaN
                         if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break    #continue
                 if not OK: continue
-                if len (where) >= 3 :                       #check  where
-                    wher = where.replace('ROWNUM',str(NoR))
-                    for fld in self.Flds :
-#                        print 'fld.name', fld.name
-                        wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
- #                       print 'wher', wher
-                    if eval (wher, {}) == False : continue    
+                if self.CheckWhere(NoR) == False: continue      # 30
 
                 NoR += 1
                 if NoR >= maxNoR :                          # resize
@@ -670,7 +732,7 @@ class Table :
     def Read27_ASC( self, where ) :            # == 'matr Grid'               #    tbl -> fld.tb
         with open( self.fromFile, "r") as fi:
             names = ['X','Y','Z']
-            if co.printL :  print ("TablesNames", names)
+            if SvF.printL :  print ("TablesNames", names)
             for c in self.Flds :
                 try :
 #                    col_num = names.index(c.src_name) #[0])
@@ -687,8 +749,8 @@ class Table :
             YLLCORNER = float(fi.readline().split()[1])
             CELLSIZE  = float(fi.readline().split()[1])
             NDT  = float(fi.readline().split()[1])
-            if co.printL: print ("ReadGrig from", self.fromFile)  ###, self.cols  ###, self.nums
-            if co.printL: print (grdX, grdY, XLLCORNER, YLLCORNER, CELLSIZE, NDT)
+            if SvF.printL: print ("ReadGrig from", self.fromFile)  ###, self.cols  ###, self.nums
+            if SvF.printL: print (grdX, grdY, XLLCORNER, YLLCORNER, CELLSIZE, NDT)
 
             x1 = zeros(grdX, float64)
             x2 = zeros(grdY, float64)
@@ -768,7 +830,7 @@ class Table :
     def Old_Read19_ASC(self, _cols, where):  # == 'matr Grid'               #    tbl -> fld.tb
         with open(self.fromFile, "r") as fi:
             names = ['X', 'Y', 'Z']
-            if co.printL:  print ("TablesNames", names)
+            if SvF.printL:  print ("TablesNames", names)
             for c in _cols:
                 try:
                     col_num = names.index(c[0])
@@ -786,8 +848,8 @@ class Table :
             YLLCORNER = float(fi.readline().split()[1])
             CELLSIZE = float(fi.readline().split()[1])
             NDT = float(fi.readline().split()[1])
-            if co.printL: print ("ReadGrig from", self.fromFile, self.cols, self.nums)
-            if co.printL: print (grdX, grdY, XLLCORNER, YLLCORNER, CELLSIZE, NDT)
+            if SvF.printL: print ("ReadGrig from", self.fromFile, self.cols, self.nums)
+            if SvF.printL: print (grdX, grdY, XLLCORNER, YLLCORNER, CELLSIZE, NDT)
 
             x1 = zeros(grdX, float64)
             x2 = zeros(grdY, float64)

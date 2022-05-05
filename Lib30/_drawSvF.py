@@ -19,18 +19,19 @@ sys.path.append( path_Everest_python_api )
 #print (path_SvF)
 #print (path_SvF_Lib)
 
-import COMMON as co
-co.path_SvF   = path_SvF
-co.tmpFileDir = path_SvF + 'TMP/'
-co.token      = path_Everest_python_api +'/.token'
+import COMMON as SvF
+SvF.path_SvF   = path_SvF
+SvF.tmpFileDir = path_SvF + 'TMP/'
+SvF.token      = path_Everest_python_api +'/.token'
 import Task as ta
-co.Task = ta.TaskClass ()
+SvF.Task = ta.TaskClass ()
 
 print ( os.getcwd() )
 
 sys.path.append( os.getcwd() )
 
 import Draw as dra
+#SvF.Compile = False
 
 str = ''
 for na, a in enumerate (sys.argv) :

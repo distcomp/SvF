@@ -1,26 +1,20 @@
 # -*- coding: cp1251 -*-
 
 from  numpy import *
-
 from  GaKru import *
-
 import sys
 from   copy   import *
-
-
-
-import COMMON as com
+from Object import *
+#import COMMON as com
 from Tools import *
-
 import openpyxl
-
 
 def  getName ( obj ) :
         if type (obj) == type ('abc') : return obj
         return obj.name
 
-
 def myrange(mi_, ma_, st):  # mi <= ret  <= ma   ret[0] = mi  ret[-1] = ma  возможно округление 1е-10
+        if mi_ > ma_:  return []    # 08/07/2021
         mi = float(mi_)        #    conflict    float <-> float64   ???????????????????  #########################
         ma = float(ma_)
         ret = []
@@ -48,78 +42,31 @@ def myrange(mi_, ma_, st):  # mi <= ret  <= ma   ret[0] = mi  ret[-1] = ma  возм
         return ret
 
 
-class Vari :                  #  var  ###################################
-  def __init__ (self, name) :
-      self.name = name
-#      self.Dnum = -99
-#      self.num  = -99
-      self.avr     = 0
-      self.sigma   = 1
-      self.sigma2  = 1
-      self.average = 0
-      self.dat     = None           
-#      self.NoR = 0    ##################################### ???
-      
-  def Vprint(self) :
-#      print "Var", self.name, self.num, "NoR", self.NoR, "avr", self.avr, "sig", self.sigma
-      print ("Var", self.name, "avr", self.avr, "sig", self.sigma)
-
-  def Normalization (self, VarNormalization) :
-        if self.dat is None :  return
-        NoR = 0
-        self.average = 0
-        for m in self.dat:
-            if  not isnan(m):
-                self.average += m
-                NoR += 1
-        self.average = self.average / NoR
- #       print 'Vari', NoR, self.average
-        if NoR ==1 :
-            self.sigma2 = 1
-        else :
-            self.sigma2 = 0
-            for m in self.dat:
-                if  not isnan(m):
-                    self.sigma2 += (m-self.average)**2
-            self.sigma2 =  self.sigma2 / (NoR-1) 
-        self.sigma = sqrt ( self.sigma2 )
- #       self.Vprint()
-
-        self.avr = self.average
-        if VarNormalization == 'Y' :
-            for m in self.dat :   #####################
-               if not isnan(m):  m -= self.avr  ################
-#            for m in range(data.NoR):  #####################
- #              if data.tbl[m, self.num] != data.NDT:  data.tbl[m, self.num] -= self.avr  ################
-        else :
-            self.avr = 0
-
-class Grid:
+class Grid (Object):
     def __init__ (self, nameOrGrid, gmin=NaN, gmax=NaN, step=NaN, ind = None, oname = None) :
+#        Object.__init__(self, nameOrGrid, 'Grid')
         co.LastGrid = self
         self.className = 'Grid'
-#        print ('Grid', type(nameOrGrid))
         if type(nameOrGrid) == type('abc'):
-            self.name = nameOrGrid
+            name = nameOrGrid
             self.step = step
             self.min  =  gmin
             self.max  =  gmax
             self.ind  =  ind
             self.oname = oname
         else :
-            self.name  = nameOrGrid.name
+            name  = nameOrGrid.name
             self.step  = nameOrGrid.step
             self.min   = nameOrGrid.min
             self.max   = nameOrGrid.max
             self.ind   = nameOrGrid.ind
             self.oname = nameOrGrid.oname
-#            print ('oo', self.oname)
-        if com.printL : print ('Grid init by', self.name, self.min, self.max, self.step, self.ind)
+        Object.__init__(self, name, 'Grid')
+        if SvF.printL : print ('Grid init by', self.name, self.min, self.max, self.step, self.ind)
 
         if self.ind   is None : self.ind = 'i__' + self.name
         if self.oname is None : self.oname = self.name
         if isfloat(self.ind) : print (self.name, '****index must be a name:', self.ind);  exit(-1)
-
 
         self.Ub     =-1         # сетка от [0 до Ub]
         self.NodS   = [] #0
@@ -133,30 +80,49 @@ class Grid:
         self.FlNodSm  = 0
         self.ma_mi    = 0
 
-        self.dat = None             #  use in functions
+        self.dat = None             #  use in functions    !!!!!!!!   -self.min     !!!!!!!!!!
+        if SvF.Compile : return
 
-        if isfloat(self.min) and isfloat(self.max) and isfloat(self.step) :  #self.GridInit ()  # 20.12.19
-
-#            if not ( isnan(self.min) or isnan(self.max) or isnan(self.step) ) :  self.GridInit ()  # 20.12.19
- #           if ( isnan(self.min) or isnan(self.max) or isnan(self.step) ) :
-                self.GridInit ()  # 20.12.19
-        elif not com.Preproc :  self.GridInit ()
+#        if isfloat(self.min) and isfloat(self.max) and isfloat(self.step) :  #self.GridInit ()  # 20.12.19   30
+ #               self.GridInit ()  # 20.12.19
+#        elif not SvF.Preproc :  self.GridInit ()  30
+        self.GridInit()
         return
+
+    def Oprint(self) :
+        print(self.Otype, self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
+#    def myprint(self) :
+ #       print ("Grid", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
+  #  def Gprint(self) :
+   #     print ("Grid", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
+    #def printM(self):
+     #   printS (self.name+"{" + str(self.min), self.max, self.step, str(self.Ub) + '} |')
+#    def Aprint(self) :
+ #     print ("Arg", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
+
+
+
 
     def GridInit(self):
 
-            if isnan(self.min) and (not com.curentTabl is None) :
-                    data = com.curentTabl.getField_tb(self.oname)
-                    self.min = float(data.min(0))  ###   &&&&&&&&&&&&??????????????????? float64
-                    if com.printL: print ('self.min', self.min)
-            if isnan(self.max) and (not com.curentTabl is None) :
-                    data = com.curentTabl.getField_tb(self.oname)
-                    self.max = float(data.max(0))  ###   &&&&&&&&&&&&??????????????????? float64
-                    if com.printL: print ('self.max', self.max)
+#            if isnan(self.min) and (not SvF.curentTabl is None) :     30
+ #                   data = SvF.curentTabl.getField_tb(self.oname)
+  #                  mina = FLOMAX    # 29
+   #                 for d in data :
+    #                    if d < mina : mina = d
+     #               self.min = float (mina)
+      #              if SvF.printL: print ('self.min', self.min)
+       #     if isnan(self.max) and (not SvF.curentTabl is None) :
+        #            data = SvF.curentTabl.getField_tb(self.oname)
+         #           maxa = -FLOMAX    # 29
+          #          for d in data :
+           #             if d > maxa : maxa = d
+            #        self.max = float (maxa)
+             #       if SvF.printL: print ('self.max', self.max)
 
-            if isnan(self.min) or isnan(self.max) :  return
+#            if isnan(self.min) or isnan(self.max) :  return
 
-            if isnan(self.step): self.step = -50
+ #           if isnan(self.step): self.step = -50
             if self.step < 0: self.step = - (self.max - self.min) / self.step;
             self.ma_mi = self.max - self.min
             self.Normalization_UbSets()
@@ -169,9 +135,13 @@ class Grid:
         return ret
 
     def indByVal ( self, val ):
-        ret = int ( floor ( (val-self.min)/self.step + 0.499999999 ) )
+#        print (val, self.min)
+        if isnan( val ) :       # 29
+            return val
+        else :
+            return int ( floor ( (val-self.min)/self.step + 0.499999999 ) )
         ##  check ?????
-        return ret
+      ##  return ret
 
     def makeVal (self) :
         if co.printL == 1: print ('makeVal', self.Ub, self.step)
@@ -194,7 +164,9 @@ class Grid:
 #        if self.max==FLOMAX or self.min==-FLOMAX or self.step==FLOMAX : return
  #       if isnan( self.max ) or isnan( self.min ) or isnan( self.step ) : return
   #      if self.step < 0 : self.step = - (self.max-self.min) / self.step;       ####  Не убирать - для функций без измерений
+        if self.step == 0 : self.step = 1
         floatUb = (self.max - self.min) / self.step
+#        self.Oprint()
         self.Ub = int(ceil(floatUb))
 #        print self.Ub, self.max, self.min, self.step
         if self.Ub > 0 :
@@ -216,13 +188,6 @@ class Grid:
     def IndToVal (self, ind) :
         return self.min + ind * self.step
     
-    def myprint(self) :
-        print ("Grid", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
-    def Gprint(self) :
-        print ("Grid", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
-
-    def printM(self):
-        printS (self.name+"{" + str(self.min), self.max, self.step, str(self.Ub) + '} |')
 
     def Normalization_UbSets  (self) :
 
@@ -230,9 +195,6 @@ class Grid:
         self.setUb()
         self.makeSets()
 
-
-    def Aprint(self) :
-      print ("Arg", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
 
     def CutOutMinMax ( self, val ) :
         if val < self.min :
@@ -253,8 +215,12 @@ class Domain :
         self.visX  = float(visX)
         self.visY  = float(visY)
 
-        if com.Preproc : self.isDat = None
-        else           : self.Make_isDat()
+        self.isDat = None       # 30
+        if SvF.Compile : return
+        self.Make_isDat()
+
+# 30       if SvF.Preproc : self.isDat = None
+ #       else           : self.Make_isDat()
 
     def Make_isDat(self):
         if self.visX==0 and self.visY==0 : return
@@ -263,7 +229,7 @@ class Domain :
  #       print 'Make_neNDT',len(self.A[0].dat)
         A0 = self.A[0]
         mmm=A0.min
-        A0_dat = com.curentTabl.getField_tb(A0.oname)
+        A0_dat = SvF.curentTabl.getField_tb(A0.oname)
         if self.visX < 0: self.visX = - self.visX * A0.step;
 
         if self.dim == 1:
@@ -273,7 +239,8 @@ class Domain :
  #                   for m in range(self.NoR):
   #                      if self.V.dat[m] != self.NDT:
    #                         isDat[int(floor(0.499999999 + A0.dat[m] / A0.step))] = 1
-                for m in range(self.NoR):
+             ###   for m in range(self.NoR):
+                for m,A0dat in enumerate(A0_dat) :
 #                    for x in range(max(0, int(ceil((A0_dat[m] - self.visX) / A0.step))),
 #                                   min(A0.Ub, int(floor((A0_dat[m] + self.visX) / A0.step))) + 1):
                     for x in range(max(0, A0.indByVal(A0dat - self.visX)),
@@ -281,7 +248,7 @@ class Domain :
                             isDat[x] = 1
         else:
                 A1 = self.A[1]
-                A1_dat = com.curentTabl.getField_tb(A1.oname)
+                A1_dat = SvF.curentTabl.getField_tb(A1.oname)
                 if self.visY < 0: self.visY = - self.visY * A1.step;
 
                 #           self.gap = ones((A0.Ub + 1, A1.Ub + 1), int8)
@@ -293,6 +260,7 @@ class Domain :
                         for y in range(max(0, A1.indByVal(A1_dat[m] - self.visY)),
                                        min(A1.Ub, A1.indByVal(A1_dat[m] + self.visY)) + 1):
                             isDat[x, y] = 1
+#                            if not isnan(self.V.dat): isDat[x, y] = 1  # 29
 
 
 

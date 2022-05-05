@@ -33,7 +33,7 @@ NAME_Aditional  = '1234567890_'
 class  item:                                      #  etc для (,[,),]  - номера скобок и запятых
         def __init__ (self, part, type, lev ) :   #  
             self.part = part
-            self.type = type
+            self.type = type            # name, fun, var, grid, intr, int, sum, \\d, \\d2, (,) ...
             self.lev  = lev             #  уровень вложения скобок  ( .. ( .. ) .. )
             self.etc  = []              # etc для (,[,),]  - номера скобок и запятых
         def myprint (self) :
@@ -67,6 +67,13 @@ class  parser:
                     if self.items[itn].type == type and self.items[itn].part == part: return itn
             return -1
 
+    def find_part_type_but_point ( self, part, type, beg=0 ) :      # чтобы исключить   x.min   x.step
+            for itn in range(beg, len(self.items) ) :
+                    if self.items[itn].type == type and self.items[itn].part == part:
+                        if itn == len(self.items)-1 :   return itn
+                        if self.items[itn+1].part != '.' :   return itn
+            return -1
+
     def substAllNames (self, fin, sub) :
             for it in self.items :
                 if it.part == fin : it.part = sub
@@ -80,7 +87,7 @@ class  parser:
                     it.part = sub
 
 
-    def reparse_funs ( self, grids ) :
+    def reparse_funs ( self, grids = None ) :
             eq = self.join ()
             par = parser ( eq )
             self.items = par.items
@@ -209,10 +216,11 @@ class  parser:
             if it.type == 'name' or it.type == 'fun' :
                 if   it.part == '\\intr':  it.type = 'intr'              #  заменяем  name  на  intr  - integral  rectangle
                 elif it.part == '\\int':   it.type = 'int'               #  заменяем  name  на  int  - integral
+                elif it.part == '\\sum':   it.type = 'sum'               #  заменяем  name  на  int  - integral
                 elif it.part == '\\d':     it.type = '\\d'               #  заменяем  name  на
                 elif it.part == '\\d2':    it.type = '\\d2'              #  заменяем  name  на
                 else:
-                    if Task.getFunNum  ( it.part ) >= 0 :
+                    if not getFun  ( it.part ) is None :
                         it.type = 'var'                                         #  заменяем  name  на  var#5
                         continue
                         
@@ -251,9 +259,10 @@ class  parser:
             dt = dt.replace ( '(', '' ).replace ( ')', '' )             #  (t)  -> t
             body = args[-1][p_mult+1 : ]
             dt_grid = findGridByName ( all_grids, dt )
+ #           print ('dt_grid', dt_grid)
             integral_grids.append ( dt_grid )                      #  ГРИДЫ ПО КОТОРЫМ ИДЕТ ИНТЕГРИРОВАНИЕ 
             step = dt+'.step'       #  str(dt_grid.step)
-  #          print 'STEP dt_grid.step=',step
+ #           print ('STEP dt_grid.step=',step, dt_grid.min)
             if len (args) == 3 :
                 mi = args[0]   
                 ma = args[1]
@@ -287,6 +296,24 @@ class  parser:
         return integral_grids
 
 
+    def summa(self, all_grids):  # Σ(i=0,20,mu[i]*(x.V.dat[i]-x(x.A[0].dat[i]))**2)
+        if com.printL : print ('START SUM')
+
+        while self.find_type ( 'sum' ) >= 0 :
+            p_sum = self.find_type('sum')
+            args = self.Args (p_sum+1)
+            inde = args[0].split('=')[0]
+            lim_mi = args[0].split('=')[1]
+            body = 'sum(' + args[-1] + ' for ' + inde + ' in range ( ' + lim_mi + ', ' + args[1] + '+1 ) )'
+ #           print (body)
+            for j in range (self.items[p_sum+1].etc[0], self.items[p_sum+1].etc[-1]+1 ) :  self.items[j].part = ''   #  очишаем все
+            self.items[p_sum].part = body
+            self.reparse_funs ( all_grids )
+            return
+
+
+
+
     def dif1  ( self, dif_minus, dif_plus, grids ) :       #  DIF 1
                                                  #    d/dt(H2O(t))  ->   \d(t,H2O(t))
         find_d = False                                   
@@ -311,33 +338,54 @@ class  parser:
         self.reparse_funs ( grids ) 
             
 #        if self.find_type ( '\\d' ) == -1 :     return  dif_minus
-        if com.printL : print ('DIF '+ com.DIF1)
+        if com.printL : print ('DIF '+ com.SchemeD1[-1])
         for itn, it in enumerate(self.items) :
             if it.type == '\\d' :                        # par = [ '\d',  '\d',  lev, ]
-                    args = self.Args (itn+1)
+                args = self.Args (itn+1)
+#                print (args)
+                fun_name = args[1][:args[1].find ('(')]
+#                print ('fun_nameFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', fun_name)
+                if getFun(fun_name).type == 'p' :                   # Polynome
+ #                   print ('pppppppppppp', getFun (fun_name).V.name)
+                    dif1 = fun_name + '.dF_dX'+ args[1][args[1].find ('('):]  ## 30g+
+    #                dif1 = fun_name + '__f.dF_dX' + args[1][args[1].find('('):]
+                #                    print (dif1)
+#                    1/0
+                else :                                                      # grid func
                     gr_name = args[0]
  #                   print args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)'
                     plus_st  = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')  # t -> t+1
   #                  print 'plus_st', plus_st
                     minus_st = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + gr_name + '__p.step)')  # t -> t+1
-                    if   com.DIF1 == 'Forward' :
+
+                    for Sch in reversed(com.SchemeD1) :
+#                        print ('                                                             ', gr_name, Sch)
+                        parts = Sch.split(' ')
+                        Scheme = parts[0]
+                        if len(parts)== 1:   break
+                        elif parts[1] == gr_name: break
+                    if   Scheme == 'Forward' :
                         dif1 = '(' + plus_st + '-' + args[1] + ')/'+gr_name+'__p.step'
                         dif_minus.append(gr_name)
-                    elif com.DIF1 == 'Central' :
+                    elif Scheme == 'Central' :
                         dif1 = '(' + plus_st + '-' + minus_st + ')/'+gr_name+'__p.step *0.5'
                         dif_minus.append(gr_name)
                         dif_plus.append(gr_name)
-                    else :
+                    elif Scheme == 'Backward' :
                         dif1 = '(' + args[1] + '-' + minus_st + ')/'+gr_name+'__p.step'
                         dif_plus.append(gr_name)
-#                        print ("Not implemented yet:   " + com.DIF1);  exit (-1)
-                    it.part = '';  it.type = ''
-                    for p in range ( self.items[itn+1].etc[0]+1, self.items[itn+1].etc[-1] ) :
-                        self.items[p].part = ''
-                    self.items[p-1].part = dif1
+#                        print ("Not implemented yet:   " + com.SchemeD1);  exit (-1)
+                    else :
+                        print('\n**********************com.SchemeD1', com.SchemeD1[-1])
+                        1 / 0
+                it.part = '';  it.type = ''
+                for p in range ( self.items[itn+1].etc[0]+1, self.items[itn+1].etc[-1] ) :
+                    self.items[p].part = ''
+                self.items[p-1].part = dif1
 #                    dif_minus.append ( gr_name)
         self.reparse_funs ( grids ) 
-#        self.myprint()        
+        self.myprint()
+#        1/0
         if com.printL : print (self.join ())
         if com.printL : print ('DIF END')
         return  dif_minus, dif_plus
@@ -375,7 +423,7 @@ class  parser:
  #                   cop = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + step + ')')  # t -> t+1
   #                  copM = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + step + ')')  # t -> t-1
    #                 dif2 = '(' + cop + '+' + copM + '-2*' + args[1] + ')/' + step + '**2'
-                    print (dif2)
+                    print ('dif2:', dif2)
                     it.part = '';  it.type = ''
                     for p in range ( self.items[itn+1].etc[0]+1, self.items[itn+1].etc[-1] ) :
 #                        print self.items[p].part
@@ -394,15 +442,10 @@ class  parser:
 
                                         #  txt как строка так и parse
 def  getGRID26 ( txt, grids = []) :   #  if not list    # находим по имени и заменяем
-#                print ('T', txt)
+    #            print ('T', txt)
                 if com.printL : print ('getGRID26', txt)
-                if type (txt) == type ('abc') :
-#                        print 'string', type (txt)
-                        pars = parser ( txt )
-                else:
- #                   print (type(txt))
-  #                  1/0
-                    pars = txt
+                if type (txt) == type ('abc') :    pars = parser ( txt )
+                else:                              pars = txt
                 
                 for delim in ['\\inn', '='] :
                         p = pars.find_part ( delim )
@@ -435,7 +478,7 @@ def  getGRID26 ( txt, grids = []) :   #  if not list    # находим по и
  #                       if isnan(lis[3])  :  lis[3]= ''   #  for ind
  #                       for l in range(4) :
   #                          if lis[l] == ''
-  #                      print 'L', lis[2]
+ #                       print ('L', lis)
     #                    if not com.Preproc:
 #                            if isnan(lis[2]) :  lis[2]=-50
                         return Grid ( name, lis[0], lis[1], lis[2], lis[3], lis[4] )

@@ -3,23 +3,12 @@
 from  numpy import *
 import sys
 #from InData import * 
-from   GridVarArgs  import *
+from   GridArgs  import *
 from   math         import *
 
 import COMMON as com
 #import Table as Tab
 #from Table import *
-
-
-
-
-def findGridByName ( grids, name) :
-        for g in grids:
-#            print 'G', g.name, name, g.step
-            if g.name == name:
-                com.LastGrid = g
-                return g
-        return None
 
 
 def SplitIgnor ( str, delim ) :
@@ -49,18 +38,14 @@ def getfloatNaN (st) :
         if len(st)==0 : return NaN
         if st[0]=='*' : return NaN
 
-        if com.Preproc: return st
+## 30        if com.Preproc: return st
+        if com.Compile: return st
 
-        st = com.Task.substitudeDef ( st)
+##30        st = com.Task.substitudeDef ( st)
         for itb, tb in enumerate ( co.Task.Tbls ) :  #  from Tbls
 #            print 'tb.name', tb.name
             st = SubstitudeName ( st, tb.name+'.NoR', str(com.Task.Tbls[itb].NoR) ) 
             for ifld, fld in enumerate (tb.Flds) :
- #               print 'fld.name', fld.name, tb.name +'.'+ fld.name+'.min'
-#                vmin = com.Task.Tbls[itb].Flds[ifld].tb.min(0)    
- #               vmax = com.Task.Tbls[itb].Flds[ifld].tb.max(0)    
-  #              st = st.replace ( tb.name +'.'+ fld.name+'.min', str( vmin ) )
-   #             st = st.replace ( tb.name +'.'+ fld.name+'.max', str( vmax ) )
                 st = st.replace ( tb.name +'.'+ fld.name+'.min', str( com.Task.Tbls[itb].Flds[ifld].tb.min(0) ) )
                 st = st.replace ( tb.name +'.'+ fld.name+'.max', str( com.Task.Tbls[itb].Flds[ifld].tb.max(0) ) )
 #                print 'st', st
@@ -115,18 +100,15 @@ def getfloat (st) :
     except ValueError:
         if len(st)==0 : return FLOMAX
         if st[0]=='*' : return FLOMAX
-        if co.Preproc : return st
+## 30        if co.Preproc : return st
+        if co.Compile : return st
+
   #      print 'gf0', st
         st = com.Task.substitudeDef ( st)
         for itb, tb in enumerate ( co.Task.Tbls ) :  #  from Tbls
 #            print 'tb.name', tb.name
             st = SubstitudeName ( st, tb.name+'.NoR', str(com.Task.Tbls[itb].NoR) ) 
             for ifld, fld in enumerate (tb.Flds) :
- #               print 'fld.name', fld.name, tb.name +'.'+ fld.name+'.min'
-#                vmin = com.Task.Tbls[itb].Flds[ifld].tb.min(0)    
- #               vmax = com.Task.Tbls[itb].Flds[ifld].tb.max(0)    
-  #              st = st.replace ( tb.name +'.'+ fld.name+'.min', str( vmin ) )
-   #             st = st.replace ( tb.name +'.'+ fld.name+'.max', str( vmax ) )
                 st = st.replace ( tb.name +'.'+ fld.name+'.min', str( com.Task.Tbls[itb].Flds[ifld].tb.min(0) ) )
                 st = st.replace ( tb.name +'.'+ fld.name+'.max', str( com.Task.Tbls[itb].Flds[ifld].tb.max(0) ) )
 #                print 'st', st

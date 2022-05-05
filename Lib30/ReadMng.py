@@ -1,6 +1,11 @@
 # -*- coding: UTF-8 -*-
 from __future__ import division
-from  numpy import *
+
+from Object import *
+
+#import COMMON as co
+#from  numpy import *
+
 from  time import *
 #import os
 from  os  import listdir, getcwd, chdir
@@ -18,20 +23,23 @@ from Parser    import *
 from ModelFiles import *
 
 #from PyomoEverestEnv  import *
-import COMMON as co
+#import COMMON as co
 
 import io
 
 import ezodf
 
 def ReadMng ( ) :
+# SvF.Compile = True
 
- MngFile()
+ if SvF.EofTask == False :
+    SvF.mngF = MngFile()
 
-
- if co.Task == None : co.Task = TaskClass ()
- Task = co.Task
-
+ coMembers   = [ k for k in SvF.__dict__.keys() if not k.startswith("__")]        #  COMMON MEMBERS
+ coMembersUP = [ k.upper() for k in coMembers ]                              #  COMMON MEMBERS UP
+# if SvF.Task == None: SvF.Task = TaskClass()
+ SvF.Task = TaskClass()
+ Task = SvF.Task
 
  maxSigEst = 0           # оценка сигмы скольз. среднем
 
@@ -53,14 +61,14 @@ def ReadMng ( ) :
  #        if len(ret) == 0: return 'EOF'
 #         ret = ret.rstrip()                     # убираем послед. пробелы и т.д
          print (ret)
-         if not (co.SModelFile is None) :  Swr(' \t\t\t\t\t\t\t\t\t\t\t# ' + ret)
+         if not (SvF.SModelFile is None) :  Swr(' \t\t\t\t\t\t\t\t\t\t\t# ' + ret)
          ret = ret.split('\\#')[0].rstrip()     # comment in TEX formula
          ret = ret.split(  '#')[0].rstrip()       # убираем  comment и посл. пробелы
          if len(ret) == 0: continue
          if ret[-1] == '\\':                    # продолжение строки \\
              ret = ret[:-1]
              continue
-         ret = ret.replace('\t', '    ')
+#         ret = ret.replace('\t', '    ')
 
          for np, p in enumerate(ret) :
              if p!= ' ' : break
@@ -76,17 +84,20 @@ def ReadMng ( ) :
      buf = ret
      buf = UTF8replace(buf, '~', ' ')       # space in formula
      buf = UTF8replace(buf, '’', "'")
-     buf = UTF8replace(buf, '‘', "'")
+     buf = UTF8replace(buf, '’', "'")
+ #    buf = UTF8replace(buf, '\t', "    ")
      buf = UTF8replace(buf, '∫', '\\int')
+     buf = UTF8replace(buf, 'Σ', '\\sum')
      buf = UTF8replace(buf, '∈', '\\in ')
      buf = UTF8replace(buf, '√', 'sqrt')
      buf = UTF8replace(buf, '∙', '*')
-     buf = UTF8replace(buf, 'τ', 'tau')
+     buf = UTF8replace(buf, 'τ', 'tau1')       #  tau   - не ест Pioma
      buf = UTF8replace(buf, 'μ', 'muu')
      buf = UTF8replace(buf, '\\mu', 'muu')
      buf = UTF8replace(buf, '\\Delta', 'Delta')
      buf = UTF8replace(buf, 'π', 'pi')
      buf = UTF8replace(buf, 'α', 'alpha')
+#     buf = UTF8replace(buf, 'φ', 'fi')
      buf = UTF8replace(buf, 'σ', 'sigma')
      buf = UTF8replace(buf, 'ξ', 'xi')
 #     buf = UTF8replace(buf, '\'', 'apst')
@@ -94,12 +105,27 @@ def ReadMng ( ) :
      buf = UTF8replace(buf, 'Δ', 'Delta')
 #     print ('AFTER:', buf)
 
-     buf = UTF8replace(buf, '\\tau', 'tau')         # TEX
+     buf = UTF8replace(buf, '\\tau', 'tau1')         # TEX   tau   - не ест Pioma
 
      buf = UTF8replace(buf, '\\cdot', '*')
      buf = UTF8replace(buf, '\\limits', '')
      buf = UTF8replace(buf, '\\left', '')
      buf = UTF8replace(buf, '\\right', '')
+     buf = UTF8replace(buf, '\\!', '')
+     buf = UTF8replace(buf, '\\partial', 'd')       #  частная производная
+     buf = UTF8replace(buf,  '∂', 'd')       #  частная производная
+
+
+     while 1:           # \color {red}  ->  ''
+         p = buf.find('\\color')
+         if p < 0: break
+         p_br = buf.find('}',p)
+         buf = buf[:p] + buf[p_br+1:]
+ #        print( buf)
+  #       1/0
+
+
+
 
      be = 0                                     # \in  ->  \inn
      while 1:
@@ -123,19 +149,9 @@ def ReadMng ( ) :
                  if buf[n-1] == ' ' :  buf = buf[:n-1] + buf[n:]
         n += 1
      buf_up = buf.upper()                           # ИСКЛЮЧЕНИЯ
-#     p = buf_up.find ('FROM.')                     #  '.'    ???
- #    if p >= 0 : buf = buf[:p+4]+' '+buf[p+4:]
-  #   buf_up = buf.upper()
-   #  p = buf_up.find ('DATAPATH.')
-    # if p >= 0 : buf = buf[:p+8]+' '+buf[p+8:]     #  '.'    ???
      buf_up = buf.upper()
      p = buf_up.find ('SELECT*')
      if p >= 0 : buf = buf[:p+6]+' * '+buf[p+7:]
-#     if ( buf_up.find ('FROM .') < 0 and
- #         buf_up.find ('DATAPATH .') < 0 ) :            # DataPath ../    # from  ../Trajectories.tbl
-  #       buf = buf.replace(' .', '.');  buf = buf.replace('. ', '.')
-   #  if buf_up.find   ('SELECT *') < 0 :              # Select * from  ../Trajectories.tbl
-    #     buf = buf.replace(' *', '*');  buf = buf.replace('* ', '*')
 
      buf = buf.replace(' \\in', '\\in')
 
@@ -162,16 +178,13 @@ def ReadMng ( ) :
              return ret
      ret = buf
      buf = ''
-
      return ret
 
 
  def readFloat():
-#     return getfloat(readStr())
      txt = readEqStr()
-     if com.Preproc: return txt
+     if SvF.Compile : return txt
      ret=getfloatNaN( txt )
-
      if isnan(ret) :
          print ('ERR convertion:', txt)
          exit (-1)
@@ -179,7 +192,8 @@ def ReadMng ( ) :
 
  def readInt():
      txt = readEqStr()
-     if com.Preproc: return txt
+#30     if SvF.Preproc: return txt
+     if SvF.Compile : return txt
      ret=getfloatNaN( txt )
      if isnan(ret) :
          print ('ERR convertion:', txt)
@@ -188,7 +202,9 @@ def ReadMng ( ) :
 
  def readBool():
      txt = readEqStr()
-     if com.Preproc: return txt
+# 30     if SvF.Preproc: return txt
+     if SvF.Compile : return txt
+
      if txt == 'True'  : return True
      if txt == 'False' : return False
      print ('ERR convertion to Bool:', txt)
@@ -197,6 +213,9 @@ def ReadMng ( ) :
  def readEqStr():
         global buf
         if buf[0] == '=' : buf=buf[1:]    #  =Server
+        if buf[0] == '\'' and buf[-1] == '\'' :
+     ##       buf=buf[1:-1]   #  29    03.10.21
+            return buf[1:-1]  # 30g+
         return  readStr()
 
 
@@ -237,7 +256,6 @@ def ReadMng ( ) :
         buf = ''
         return ret
 #        rName = readStr()
-        return deepcopy( Task.getDef(rName) )
 #        return deepcopy( Task.getDef(rName) )
 
 
@@ -267,24 +285,6 @@ def ReadMng ( ) :
      return [xmi, ymi, xma, yma]
 
 
-#*********************************************  NEW 18 *******************************
-
- def getNameOld ( txt ):   # delete 2020-02
-        name = txt
-        min_pos = len(txt)
-        razd = ''
-        ost = ''
-        for delim in [ '(',')', '{','}' , ',' ] :
-            pos = txt.find (delim)
-            if pos !=-1 and pos < min_pos :
-                min_pos = pos
-        if min_pos < len(txt) :
-            name = txt[:min_pos]
-            razd = txt[min_pos]
-            ost  = txt[min_pos+1:]
-#        print name+'|'+razd+'|'+ost+'|'
-        return name, razd, ost
-
  global EmptyBuf
 
  def Is (Q, qqq) :
@@ -309,152 +309,187 @@ def ReadMng ( ) :
     if Q[-1] == ':' :  old_qlf = Q   # if Q in ['GRID:','VAR:','PARAM:','EQ:', 'DEF:','CODE:', 'OBJ:'] :
     printS  (Q+' |')
 
-    if   Is(Q, "TaskName" )   : co.TaskName = readEqStr(); nSwr( 'co.TaskName = \''+co.TaskName+'\''); nSwr( 'print(co.TaskName)')
+    if (Q in coMembersUP ) :
+#        print('Mem****************************', Q)
+        n = coMembersUP.index(Q)
+ #       print ('Q',Q)
+  #      print (coMembersUP[n], coMembers[n])
+        if coMembersUP[n] == 'SVFPREFIX' :
+            if buf[0] == '\'' or buf[0] == '\"' :  buf = buf[1:-1]
+            coMembersUP = [buf.upper() + k for k in coMembersUP]
+#            print('PPP', coMembersUP)
+        else :
+            if   coMembers[n] == "TaskName" and buf[0] != '\'' and buf[0] != '\"' : buf = '\'' + buf + '\''
+            elif coMembers[n] == 'useNaN' and buf == '' :  buf = 'True'
+## 30g+            elif Is(Q, "SchemeD1"):  SvF.SchemeD1 = readEqStr();  buf = '\"'+SvF.SchemeD1+'\"'    # 30
+            elif Is(Q, "SchemeD1"):  SvF.SchemeD1.append(readEqStr());  buf = '\"'+SvF.SchemeD1[-1]+'\"'    # 30
+            Swr('SvF.' + coMembers[n] + ' = ' + buf)
+#            print ('QQQQQQQQQQQQMEM', Q, buf)
+        buf = ''
+#    if   Is(Q, "TaskName" )   : SvF.TaskName = readEqStr(); nSwr( 'SvF.TaskName = \''+SvF.TaskName+'\''); nSwr( 'print(SvF.TaskName)')
     elif Is(Q, "ChDir" )      :
                     new_cwd = readEqStr();
                     os.chdir(new_cwd);   sys.path.append(os.getcwd())
-                    printS ( '*******************  change CWD:', getcwd() )
-    elif Is(Q, "VERSION" )    : co.Version  = readFloat();   nSwr( 'co.Version = ',co.Version)      #27
-    elif Is(Q, "Debag"  )     : co.Preproc  = False                                       #27
-    elif Is(Q, "Preproc"  )   : co.Preproc  = True                                         #27
-    elif Is(Q, "Compile"  )   : co.Preproc  = True                                         #27
-    elif Is(Q, "printL"  )    : co.printL   = readInt();     nSwr( 'co.printL = ',co.printL )  #27
-    elif Is(Q, "CVNUMOFITER") : co.CVNumOfIter = readInt();  nSwr( 'co.CVNumOfIter = ', co.CVNumOfIter)  #27
-    elif Is(Q, "CVSTEP" )     : co.CVstep      = readInt();  nSwr( 'co.CVstep   = ',co.CVstep) #27
-#    elif Is(Q, "OptStep"   )  : co.OptStep    = readFloat(); nSwr( 'co.OptStep  = ',co.OptStep)
-    elif Is(Q, "OptStep"   )  : co.OptStep    = readListFloat(); nSwr( 'co.OptStep  = ',co.OptStep)
-    elif Is(Q, "ExitStep"  )  : co.ExitStep   = readFloat(); nSwr( 'co.ExitStep = ',co.ExitStep)
-    elif(Is(Q, "RunSolver" ) or
-         Is(Q, "RunMode"   ) ) : co.RunMode = readEqStr();   nSwr( 'co.RunMode = \''+co.RunMode+'\'')
-    elif Is(Q, "Penalty"   )  : co.mngPenalty = readListFloat();  nSwr( 'co.mngPenalty = ',co.mngPenalty)
+#                    printS ( '*******************  change CWD:', getcwd() )
+    elif Is(Q, "SetStartDir") :
+                    os.chdir(SvF.startDir);
+#                    printS ( '*******************  Se CWD:', getcwd(), SvF.startDir )
+    elif Is(Q, "Use^forPower") :  SvF.UseHomeforPower = readBool(); ## 30 nSwr( 'SvF.UseHomeforPower = '+SvF.UseHomeforPower ) #28
+    elif Is(Q, "TabSize"  )   : TabSize  = readInt();   SvF.TabString = ' ' * TabSize
+## 30                nSwr( 'SvF.TabSize = ',SvF.TabSize )  #29
+##    elif Is(Q, "SchemeD1") :  SvF.DIF1 = readEqStr();  nSwr( 'SvF.DIF1 = \''+SvF.DIF1+'\'') #27
+###    elif Is(Q, "VERSION" )    : SvF.Version  = readFloat();   nSwr( 'SvF.Version = ',SvF.Version)      #27
+## 30    elif Is(Q, "Debag"  )     : SvF.Preproc  = False                                       #27
+##    elif Is(Q, "Preproc"  )   : SvF.Preproc  = True                                         #27
+  ##  elif Is(Q, "Compile"  )   : SvF.Preproc  = True                                         #27
+###    elif Is(Q, "printL"  )    : SvF.printL   = readInt();     nSwr( 'SvF.printL = ',SvF.printL )  #27
+###    elif Is(Q, "CVNUMOFITER") : SvF.CVNumOfIter = readInt();  nSwr( 'SvF.CVNumOfIter = ', SvF.CVNumOfIter)  #27
+###    elif Is(Q, "CVSTEP" )     : SvF.CVstep      = readInt();  nSwr( 'SvF.CVstep   = ',SvF.CVstep) #27
+###    elif Is(Q, "OptStep"   )  : SvF.OptStep    = readListFloat(); nSwr( 'SvF.OptStep  = ',SvF.OptStep)
+###    elif Is(Q, "ExitStep"  )  : SvF.ExitStep   = readFloat(); nSwr( 'SvF.ExitStep = ',SvF.ExitStep)
+###    elif(Is(Q, "RunSolver" ) or
+###         Is(Q, "RunMode"   ) ) : SvF.RunMode = readEqStr();   nSwr( 'SvF.RunMode = \''+SvF.RunMode+'\'')
+###    elif Is(Q, "Penalty"   )  : SvF.mngPenalty = readListFloat();  nSwr( 'SvF.mngPenalty = ',SvF.mngPenalty)
 
-    elif Is(Q,"py_max_iter")                   : co.py_max_iter                   = readInt();   nSwr( 'co.py_max_iter = ',co.py_max_iter)
-    elif Is(Q,"py_tol")                        : co.py_tol                        = readFloat(); nSwr( 'co.py_tol = ',co.py_tol)
-    elif Is(Q,"py_warm_start_bound_push")      : co.py_warm_start_bound_push      = readFloat(); nSwr( 'co.py_warm_start_bound_push = ',co.py_warm_start_bound_push)
-    elif Is(Q,"py_warm_start_mult_bound_push") : co.py_warm_start_mult_bound_push = readFloat(); nSwr( 'co.py_warm_start_mult_bound_push = ',co.py_warm_start_mult_bound_push)
-    elif Is(Q,"py_constr_viol_tol")            : co.py_constr_viol_tol            = readFloat(); nSwr( 'co.py_constr_viol_tol = ',co.py_constr_viol_tol)
+###    elif Is(Q,"py_max_iter")                   : SvF.py_max_iter                   = readInt();   nSwr( 'SvF.py_max_iter = ',SvF.py_max_iter)
+###    elif Is(Q,"py_tol")                        : SvF.py_tol                        = readFloat(); nSwr( 'SvF.py_tol = ',SvF.py_tol)
+###    elif Is(Q,"py_warm_start_bound_push")      : SvF.py_warm_start_bound_push      = readFloat(); nSwr( 'SvF.py_warm_start_bound_push = ',SvF.py_warm_start_bound_push)
+###    elif Is(Q,"py_warm_start_mult_bound_push") : SvF.py_warm_start_mult_bound_push = readFloat(); nSwr( 'SvF.py_warm_start_mult_bound_push = ',SvF.py_warm_start_mult_bound_push)
+###    elif Is(Q,"py_constr_viol_tol")            : SvF.py_constr_viol_tol            = readFloat(); nSwr( 'SvF.py_constr_viol_tol = ',SvF.py_constr_viol_tol)
 
-    elif Is(Q, "resFile"   )  : co.resF = readEqStr();       nSwr( 'co.resF = \''+co.resF+'\'')
-    elif Is(Q, "useNaN" )     :
-                        if len (buf) >= 4 :  co.useNaN = readBool()
-                        else              :  co.useNaN = True;
-                        nSwr( 'co.useNaN = ' + str(co.useNaN) )
-    elif Is(Q, "Select")      :
-                                tmp = buf.split('from')[1].split('As')   # ... from a.txt As Tb
-                                if len (tmp)==2 :
-                                    tb_name = tmp[1].replace(' ','')
-                                    Swr( tb_name + ' = Tab.Select ( \''+buf+'\' )')
-                                else :
-                                    Swr ( 'Tab.Select ( \''+buf+'\' )')                   #27
-                                if not co.Preproc : DataR = Tab.Select ( buf ) ;   # 27  !!!!!!!!!!!!!!!!!!!!!!!
+###    elif Is(Q, "resFile"   )  : SvF.resF = readEqStr();       nSwr( 'SvF.resF = \''+SvF.resF+'\'')
+###    elif Is(Q, "useNaN" )     :
+   ###                     if len (buf) >= 4 :  SvF.useNaN = readBool()
+      ###                  else              :  SvF.useNaN = True;
+         ###               nSwr( 'SvF.useNaN = ' + str(SvF.useNaN) )
     elif Is(Q, "DrawErr") :     Swr( '\nTask.DrawErr ()');                Task.DrawErr()
     elif Is(Q, "Draw") :        Swr( '\nTask.Draw (  \'' + buf + '\' )'); Task.Draw (buf)
     elif Is(Q, "DrawVar") :     Swr( '\nTask.DrawVar ()');                Task.DrawVar ()
-    elif Is(Q, "DrawTransp") :  Swr( '\nco.DrawTransp = True' );          co.DrawTransp = True
-    elif Is(Q, "MarkerSize") :  co.MarkerSize = readFloat();   nSwr( 'co.MarkerSize  = ',co.MarkerSize)
-    elif Is(Q, "MarkerColor") : co.MarkerColor = readEqStr();   nSwr( 'co.MarkerColor  = \''+co.MarkerColor+'\'')
-    elif Is(Q, "DataMarkerSize"): co.DataMarkerSize = readFloat(); nSwr( 'co.DataMarkerSize  = ',co.DataMarkerSize)
-    elif Is(Q, "DataLineWidth"): co.DataLineWidth = readFloat(); nSwr( 'co.DataLineWidth  = ',co.DataLineWidth)
-    elif Is(Q, "LineWidth"): co.LineWidth = readFloat(); nSwr( 'co.LineWidth  = ',co.LineWidth)
-    elif Is(Q, "LineColor"): co.LineColor = readEqStr(); nSwr( 'co.LineColor  = \''+co.LineColor+'\'')
+###    elif Is(Q, "DrawTransp") :  Swr( '\nSvF.DrawTransp = True' );          SvF.DrawTransp = True
+###    elif Is(Q, "Legend") :      SvF.Legend = readBool();  nSwr( '\nSvF.Legend = ',SvF.Legend)
+###    elif Is(Q, "DPI"):          SvF.DPI = readInt(); nSwr('SvF.DPI  = ', SvF.DPI)
+###    elif Is(Q, 'Xsize'):        SvF.Xsize = readFloat(); nSwr('SvF.Xsize  = ', SvF.Xsize)
+###    elif Is(Q, 'Ysize'):        SvF.Ysize = readFloat(); nSwr('SvF.Ysize  = ', SvF.Ysize)
+
+###    elif Is(Q, "graphic_file_type"): SvF.graphic_file_type = readEqStr();   nSwr('SvF.graphic_file_type  = \'' + SvF.graphic_file_type + '\'')
+###    elif Is(Q, "MarkerSize") :  SvF.MarkerSize = readFloat();   nSwr( 'SvF.MarkerSize  = ',SvF.MarkerSize)
+###    elif Is(Q, "MarkerColor") : SvF.MarkerColor = readEqStr();   nSwr( 'SvF.MarkerColor  = \''+SvF.MarkerColor+'\'')
+###    elif Is(Q, "DataColor") :   SvF.DataColor = readEqStr();   nSwr( 'SvF.DataColor  = \''+DataColor+'\'')
+###    elif Is(Q, "DataMarkerSize"): SvF.DataMarkerSize = readFloat(); nSwr( 'SvF.DataMarkerSize  = ',SvF.DataMarkerSize)
+    elif Is(Q, "DataLineWidth"): print ( '*********************** use DLW' );  exit (-1)  ##########################
+###    elif Is(Q, "LineWidth"): SvF.LineWidth = readFloat(); nSwr( 'SvF.LineWidth  = ',SvF.LineWidth)
+###    elif Is(Q, "LineColor"): SvF.LineColor = readEqStr(); nSwr( 'SvF.LineColor  = \''+SvF.LineColor+'\'')
+
     elif(Is(Q, "GRID:") or
-         Is(Q, "SET:")  ) :  WriteGrid27 ( buf )
+         Is(Q, "SET:")  ) :
+                    print('12', buf)
+                    buf = Treat_FieldNames(buf)
+                    print('12', buf)
+                    WriteGrid27 ( buf )
     elif Is(Q, "VAR:"   ) :  WriteVarParam26 ( buf, False )
     elif Is(Q, "PARAM:" ) :  WriteVarParam26 ( buf, True )
     elif Is(Q, "EQ:")     :  WriteModelEQ26 ( buf )
-    elif Is(Q, "DIF1")    :  co.DIF1 = readEqStr();  nSwr( 'co.DIF1 = \''+co.DIF1+'\'') #27
-    elif Is(Q, "Use^forPower") :  co.UseHomeforPower = readBool(); nSwr( 'co.seHomeforPower = '+co.UseHomeforPower ) #28
     elif Is(Q, "OBJL:" )  :  WriteModelOBJ19 ( Q,buf )
     elif Is(Q, "OBJU:" )  :
                             WriteModelOBJ_U (buf)
-                            if not co.Preproc :  SvFstart19p(Task)
+ ##                           if not SvF.Preproc :  SvFstart19p(Task)
     elif Is(Q, "OBJ:" ):
                             WriteModelOBJ19 ( Q,buf )
-                            if not co.Preproc : SvFstart19p ( Task )
-    elif Is(Q, "EoF"):
+##                            if not SvF.Preproc : SvFstart19p ( Task )
+    elif(Is(Q, "EoF") or
+         Is(Q, "EoTask") ):
 #                        if objective == 'N':  buf = 'OBJ: N';
-                        print ('EoF ************ END OF READ MNG ********************* EoF')
-                        co.SModelFile.close()
+                        print ('EoF ************', Q, ' in READ MNG ********************* EoF')
+                        SvF.SModelFile.close()
+                        if Q == 'EOTASK' :  SvF.EofTask = True
+                        else:               SvF.EofTask = False
+ #                       SvF.Compile = False
                         return Task
     elif Is(Q, "MakeSets_byParam") :
-            args = buf.split(' ');  args[0] = '\''+ args[0] + '\''
-            Swr('co.testSet, co.teachSet = MakeSets_byParam ( co.curentTabl, '+','.join(args)+' )' )
-            if not co.Preproc:
+            args = buf.split(' ');  #args[0] = '\''+ args[0] + '\''
+            print ("UUUUUUUUUUUUUUU", args)
+            col_name = '.dat(\''+args[0]+'\')'
+            Swr('SvF_MakeSets_byParam ( SvF.curentTabl'+col_name+', '+','.join(args[1:])+' )' )
+            if 0 :  ## 30 not SvF.Preproc:   #  Устарело
                 args = buf.split(' '); CVstep=0; CVmargin=0
                 if len (args) > 1: CVstep   = int(args[1])
                 if len (args) > 2: CVmargin = int(args[2])
-                co.testSet, co.teachSet = MakeSets_byParam(co.curentTabl, args[0], CVstep, CVmargin)
+                SvF.testSet, SvF.teachSet = MakeSets_byParam(SvF.curentTabl, args[0], CVstep, CVmargin)
     elif Is(Q, "MakeSets_byParts") :
             args = buf.split(' ')
-            Swr('co.testSet, co.teachSet = MakeSets_byParts ( co.curentTabl.NoR, '+','.join(args)+' )' )
-            if not co.Preproc:
+            Swr('SvF.testSet, SvF.teachSet = MakeSets_byParts ( SvF.curentTabl.NoR, '+','.join(args)+' )' )
+            if 0:  ## 30 not SvF.Preproc:
                 CVstep=7;  CVpartSize = 1;  CVmargin=0        # по умолчанию
                 if len (args) > 0: CVstep     = int(args[0])
                 if len (args) > 1: CVpartSize = int(args[1])
                 if len (args) > 2: CVmargin   = int(args[2])
-                co.testSet, co.teachSet = MakeSets_byParts(co.curentTabl.NoR, CVstep, CVpartSize, CVmargin)
+                SvF.testSet, SvF.teachSet = MakeSets_byParts(SvF.curentTabl.NoR, CVstep, CVpartSize, CVmargin)
     elif Is(Q, "WriteSvFtbl" ):
-                    Swr( '\nco.curentTabl.WriteSvFtbl (  \'' + buf + '\' )')
-                    if not co.Preproc: co.curentTabl.WriteSvFtbl ( readEqStr() )
-    elif Is(Q, "DataPath")  : co.DataPath = readEqStr(); nSwr( 'co.DataPath = \''+co.DataPath+'\'')
+                    Swr( '\nSvF.curentTabl.WriteSvFtbl (  \'' + buf + '\' )')
+## 30                    if not SvF.Preproc: SvF.curentTabl.WriteSvFtbl ( readEqStr() )
+    elif Is(Q, "DataPath")  : SvF.DataPath = readEqStr(); nSwr( 'SvF.DataPath = \''+SvF.DataPath+'\'')
     elif Is(Q, "SavePoints" )     :
-                        if len (buf) >= 4 :  co.SavePoints = readBool()
-                        else              :  co.SavePoints = True;
-                        nSwr( 'co.SavePoints = ' + str(co.SavePoints) )
+                        if len (buf) >= 4 :  SvF.SavePoints = readBool()
+                        else              :  SvF.SavePoints = True;
+                        nSwr( 'SvF.SavePoints = ' + str(SvF.SavePoints) )
 
- #   elif Is(Q, "SaveDeriv" )  :  co.SaveDeriv = True; nSwr( 'co.SaveDeriv = True')
-    elif Is(Q, "CODE:") :    WriteModelCode26 ( buf )
-    elif Is(Q, "EoD")   :    co.curentTabl = None;   Swr('co.curentTabl = None')
+ #   elif Is(Q, "SaveDeriv" )  :  SvF.SaveDeriv = True; nSwr( 'SvF.SaveDeriv = True')
+    elif Is(Q, "CODE:") :
+                            r_line = raw_line.split("CODE:")
+                            if len(r_line)==2 : raw_line = r_line[1]    # 17.01.22 убираем CODE:
+                            WriteModelCode26 ( raw_line ) #buf )
+    elif Is(Q, "EoD")   :    SvF.curentTabl = None;   Swr('SvF.curentTabl = None')
 
 ############################################# 27
-    elif Is(Q, "TBL:") :  Tab.TblOperation(buf);
+    elif Is(Q, "TBL:") :  Tab.TblOperation(buf)
     elif Is(Q, "DEF:") :  WriteModelDef26 ( buf )
 
-    elif Is(Q, "LocolSolverName" ) :  co.LocalSolverName = readEqStr()
-    elif Is(Q, "SolverName"      ) :  co.SolverName      = readEqStr()
-    elif Is(Q, "Hack_Stab"       ) :  co.Hack_Stab  = bool(readStr()=='True');
+    elif Is(Q, "LocolSolverName" ) :  SvF.LocalSolverName = readEqStr()
+    elif Is(Q, "SolverName"      ) :  SvF.SolverName      = readEqStr()
+    elif Is(Q, "Hack_Stab"       ) :  SvF.Hack_Stab  = bool(readStr()=='True');
 
-    elif ( Is(Q,"DataFile") or
-           Is(Q,"DataFile_Npp") ):   Tab.Select ( '* from '+buf )
-#    elif Is(Q, "NoMakeModel" )   :   co.MakeModel = False;
-    elif Is(Q, "CVNoBorder" )   :  co.CVNoBorder    = True
-    elif Is(Q, "NotCulcBorder") :  co.NotCulcBorder = True
-    elif qlf == "TASK"          :  co.Task.Name = readEqStr(); print (co.Task.Name)
-#    elif qlf == "CVPARTSIZE" :  co.CVpartSize = int(readStr());  Mng.CVside = float(readStr())
+#    elif ( Is(Q,"DataFile") or
+ #          Is(Q,"DataFile_Npp") ):   Tab.Select ( '* from '+buf )
+#    elif Is(Q, "NoMakeModel" )   :   SvF.MakeModel = False;
+    elif Is(Q, "CVNoBorder" )   :  SvF.CVNoBorder    = True
+    elif Is(Q, "NotCulcBorder") :  SvF.NotCulcBorder = True
+    elif qlf == "TASK"          :  SvF.Task.Name = readEqStr(); print (SvF.Task.Name)
+#    elif qlf == "CVPARTSIZE" :  SvF.CVpartSize = int(readStr());  Mng.CVside = float(readStr())
 #    elif qlf == "CVPARAM"    :  Mng.CVparam = readStr(); FuncR.Col.append ( Col(Mng.CVparam) );  #  print 'CVparamN', len(FuncR.Col)
 
  #   elif Is(Q, "SortedBy")   :  FuncR.SortedBy.name = readStr()
 
 #    elif Is(Q, "Grid")         : gri, buf = readGrid(buf); Task.Grids.append ( gri )
 
-#    elif Is(Q, "TranspGrid" )  :  co.TranspGrid  = 'Y'
-#    elif Is(Q, "SaveGrid"   )  :  co.SaveGrid    = 'Y'
+#    elif Is(Q, "TranspGrid" )  :  SvF.TranspGrid  = 'Y'
+#    elif Is(Q, "SaveGrid"   )  :  SvF.SaveGrid    = 'Y'
     elif Is(Q, "SaveSol") :
                             if len(buf) == 0 :  Task.SaveSol()
-                            else             :  Task.getFun(readStr()).SaveSol('')
-    elif Is(Q, "Prefix"   )    :  co.Prefix = readStr()
+                            else             :  getFun(readStr()).SaveSol('')
+    elif Is(Q, "Prefix"   )    :  SvF.Prefix = readStr()
 
-#    elif Is(Q, "OptStep"   ) : co.OptStep     = readFloat()
- #   elif Is(Q, "ExitStep"  ) : co.ExitStep     = readFloat()
-    elif Is(Q,"OptMode")     : co.OptMode = readEqStr()
+    elif Is(Q,"OptMode")     : SvF.OptMode = readEqStr()
 
     else :
-        if True : # co.Preproc :
-            tmp = raw_line.split('Select ')   #27   в одну строку !!!!!!!!!!!!!
- #           print 'tmp', tmp
-            if len (tmp) == 2:
-                Swr(tmp[0] + ' Select ( \'' + tmp[1] + '\' )')
- #               buf = ''
+#        print ('SvF.Preproc=', SvF.Preproc)
+        raw_line = Treat_FieldNames(raw_line)
+        if True : # SvF.Preproc :
+            raw_upp = raw_line.upper()
+            if raw_upp.find('SELECT ') >= 0:
+                WriteSelect30(raw_line)
+            elif raw_upp.find('TABLEWHERE') >= 0:
+                WriteTable30(raw_line)
             else :
                 Swr(raw_line)
-                if raw_line[0] != ' ' :             # 20.01.19
-                  raw_part = raw_line.split('=')  #  если = и в левой части нет ( [  добавляем в Def
-                  if len(raw_part)==2:
-                    if raw_part[0].find('(') < 0 and raw_part[0].find('[') < 0 and   \
-                       raw_part[1].find('(') < 0 and raw_part[1].find('[') < 0:
-                            Swr('Task.AddDef(\''+raw_part[0].strip()+'\',['+raw_part[1].strip()+'])')
-            if co.Preproc : buf = ''
-        if not co.Preproc :
+## 30                if raw_line[0] != ' ' :             # 20.01.19
+  ##                raw_part = raw_line.split('=')  #  если = и в левой части нет ( [  добавляем в Def
+    ##              if len(raw_part)==2:
+      ##              if raw_part[0].find('(') < 0 and raw_part[0].find('[') < 0 and   \
+        ##               raw_part[1].find('(') < 0 and raw_part[1].find('[') < 0:
+          ##                  Swr('Task.AddDef(\''+raw_part[0].strip()+'\',['+raw_part[1].strip()+'])')
+## 30            if SvF.Preproc :
+            buf = ''
+        if 0: ##  30 not SvF.Preproc :
 #          string = glfCase + buf
           string = raw_line
           string = string.replace(' ','')
@@ -468,7 +503,7 @@ def ReadMng ( ) :
             beg, args, end = getArgsFromBrackets (parts[0], '(')  # MU(50,50) = 10
             if not beg is None :
 #                print beg, args, end
-                f = Task.getFun ( beg )
+                f = getFun ( beg )
                 if not f is None :
                     f.SetPointValue ( args, parts[1] )
                     buf = ''
@@ -480,12 +515,11 @@ def ReadMng ( ) :
             defList = readListFloat()
             print ('=', defList)
     #        Task.AddDef(defName, defList)
-            Task.AddDef(parts[0], defList)
+ ## 30           Task.AddDef(parts[0], defList)
             buf = ''
           else:
             print ("********* Can't Understand: ", Q);  exit (-1)
     if EmptyBuf : buf = ''
-
 
 
 
@@ -494,10 +528,10 @@ def ReadMng ( ) :
     if Is(Q,"Polygon") :
                             defName = readStr()
                             defList = ReadPolygon(DataR.InFile)
-                            Task.AddDef(defName, defList)
+ ## 30                           Task.AddDef(defName, defList)
     elif Is(Q,"getMinMax") :
                     dn = Task.getDefNum(readStr())
-                    rect = getMinMax(Task.Def[dn][1][:])
+     ## 30               rect = getMinMax(Task.Def[dn][1][:])
                     Task.Def[dn][1] = rect
 #                    print 'MinMax', rect
     elif Is(Q,'GetRectLastFunc' ):
@@ -505,7 +539,7 @@ def ReadMng ( ) :
                         defList = [Task.Funs[0].A[0].min,Task.Funs[0].A[1].min,
                                    Task.Funs[0].A[0].max,Task.Funs[0].A[1].max]
     #                    print defName, defList
-                        Task.AddDef(defName, defList)
+    ## 30                    Task.AddDef(defName, defList)
     elif Is(Q,"RECTANGLE") :
                           rect = readListFloat()
                           rect = getMinMax (rect)
@@ -581,7 +615,7 @@ def ReadMng ( ) :
     elif Is(Q, "DIM" )      :  FuncR.dim = int(readStr())
 
 
-    elif qlf == "VARNORMALIZATION" :  co.VarNormalization = True
+    elif qlf == "VARNORMALIZATION" :  SvF.VarNormalization = True
 
     elif qlf == "READNAMETBLFROM" :
                                     ReadNameTblFrom  = readStr()
@@ -610,9 +644,7 @@ def ReadMng ( ) :
 
     elif qlf == "MAXSIGEST" :  maxSigEst = float(readStr());
 
-def  SvFstart19p ( Task ):
-#        star = imp.load_source('', 'SvFstart62.py')
- #       star.SvFstart19 ( Task )
-        from SvFstart62 import SvFstart19  #*
-        SvFstart19 ( Task )
+##def  SvFstart19p ( Task ):
+## 30        from SvFstart62 import SvFstart19  #*
+  ##      SvFstart19 ( Task )
 

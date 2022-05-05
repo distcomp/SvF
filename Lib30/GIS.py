@@ -1,27 +1,27 @@
 # -*- coding: cp1251 -*-
 from __future__ import division
-from  numpy import *
+#from  numpy import *
 from pyomo.environ import *
+from Object import *
 
 from Lego import *
-import COMMON as co
 from Task import *
-from Objects import *
 
-class Polyline:
+
+class Polyline (Object):
     def __init__( self, X, Y, Z=None, name='' ):         #  Polyline([1,2,3],..)    Polyline("X","Y",..)    Polyline(fun1,fun2,..)
- #           print ('A!'+str(type(X))+'L')
-            self.name = name
-            if name != '' :  addObject ( name, 'Polyline', self )
+            Object.__init__(self, name, 'Polyline')
+#            self.name = name
+## 30            if name != '' :  addObject ( name, 'Polyline', self )
             if type(X) == type ([]) :
                 self.X = X
                 self.Y = Y
                 self.Z = Z
             elif type(X) == type ('abc') :
-                self.X = deepcopy ( co.curentTabl.getField_tb(X) )
-                self.Y = deepcopy ( co.curentTabl.getField_tb(Y) )
+                self.X = deepcopy ( SvF.curentTabl.getField_tb(X) )
+                self.Y = deepcopy ( SvF.curentTabl.getField_tb(Y) )
                 if not (Z is None) :
-                    self.Z = deepcopy(co.curentTabl.getField_tb(Z))
+                    self.Z = deepcopy(SvF.curentTabl.getField_tb(Z))
             elif str(type(X)) == '<class \'numpy.ndarray\'>' :
                 self.X = X
                 self.Y = Y
@@ -73,6 +73,18 @@ class Polyline:
 #                        mask.grd[x, y] = pixVal
                         mask.PutPixel (x,y,pixVal, pixSize)
 
+
+def set_datValbyMask( CS,datVal, Mask,MaskVal ):  #  if Mask[..] == MaskVal  ->>  CS[..] = datVal
+    for i in CS.sR :
+        x = CS.A[0].dat[i]+CS.A[0].min
+        y = CS.A[1].dat[i]+CS.A[1].min
+        mask_i = Mask.A[0].getPointNum (x)
+        mask_j = Mask.A[1].getPointNum (y)
+        if Mask.grd[mask_i,mask_j] == MaskVal :
+            CS.V.dat[i] = datVal
+ #           print (i,mask_i,mask_j)
+#        print (i, CS.A[0].dat[i]+CS.A[0].min,CS.A[1].dat[i],CS.V.dat[i]+CS.A[1].min ,
+ #              Mask.A[0].getPointNum (CS.A[0].dat[i]+CS.A[0].min), Mask.A[1].getPointNum (CS.A[1].dat[i]+CS.A[1].min))
 
 
 def ArctanToGrad(DX):
@@ -300,7 +312,7 @@ def SaveProfil ( H, XY, step, fName ) :       #  рабртаем в ГК
 
 
 
-def makeDXDY(H, on_min_0 = True):
+def makeDXDY(H, on_min_0 = True):   #  наклон по x и y
     Hg = H.grd
 
     h = H.A[0].step
@@ -383,7 +395,7 @@ def makeIncline (DX,DY) :
              return ret
 
 
-def makeAngle(DX, DY):
+def makeAngle(DX, DY):   #grad
     ret = DX.CopyMtr()
     ret.V.name = 'Angle'
     ret.param = True
@@ -391,6 +403,15 @@ def makeAngle(DX, DY):
         for x in ret.A[1].NodS:
             ret.grd[y, x] = arctan2(DX.grd[y, x], DY.grd[y, x])/pi*180.
             #                   if ( DX.grd[y,x]==0 and DY.grd[y,x]==0 ) : print 'ret.grd[y,x]',ret.grd[y,x]
+    return ret
+
+def makeAngleRad(DX, DY):
+    ret = DX.CopyMtr()
+    ret.V.name = 'Angle'
+    ret.param = True
+    for y in ret.A[0].NodS:
+        for x in ret.A[1].NodS:
+            ret.grd[y, x] = arctan2(DX.grd[y, x], DY.grd[y, x])
     return ret
 
 

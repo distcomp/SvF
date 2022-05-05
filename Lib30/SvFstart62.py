@@ -18,6 +18,8 @@ from GaKru   import *
 from SurMin  import SurMin
 from Pars    import *
 from Tools   import *
+from Task    import Grd_to_Var
+from Task    import Var_to_Grd
 
 
 import Model as Mo
@@ -101,7 +103,7 @@ def SvFstart19 ( Task ) :
 
 
     print ('')
-    for f in Task.Funs :  f.printM()
+    for f in Task.Funs :  f.Oprint()
     print ('')
 
     if type(co.OptStep) == type('abc') :
@@ -154,17 +156,18 @@ def SvFstart19 ( Task ) :
 
 def testEstim (Gr, k) :  # k - testSet
     for ifu, fu in enumerate(co.Task.Funs):
-#        if (fu.V.dat is None) or fu.param : continue
         if fu.mu is None: continue
-#        if fu.V.dat.shape[0] != co.CV_NoR : continue
         if fu.NoR > co.CV_NoR : continue               # 25/04
         spart = 0
         npart = 0
+        if fu.CVval is None: fu.CVval = zeros(fu.NoR, float64)   # 2021/11  from MakeModel
+
         for s in fu.testSet[k]:
             if s >= fu.NoR        : continue                    #  25/04
             if isnan(fu.V.dat[s]) : continue
 
-            if co.Task.DeltaVal is None:  spart += fu.delta(s)() ** 2
+            fu.CVval[s] = fu.Ftbl(s)
+            if co.Task.DeltaVal is None:  spart += (fu.V.dat[s]-fu.CVval[s])**2   #fu.delta(s) ** 2               # 29
             else:                         spart += Task.DeltaVal(Gr, ifu, fu.V.dat, s) ** 2
             npart += 1
         if npart > 0:  print ('  ', spart, npart, sqrt(spart / npart), sqrt(spart / npart) / fu.V.sigma * 100.,)
@@ -209,23 +212,29 @@ def printMSD () :
        #     fu.myprint()
         #    print (fu.mu)
             if fu.mu is None:  continue
-            if co.Task.defMSDVal is None : fu.MSDv = fu.MSDnan()()
+            if co.Task.defMSDVal is None : fu.MSDv = fu.MSDnan()  ### ()
             else                         : fu.MSDv = co.Task.defMSDVal ( Gr, ifu )
             printS (fu.V.name, sqrt(fu.MSDv)*100.,' |')
     print ('')
 
 
+
 def get_sigCV( Penal, itera ):
     Task = co.Task
 #    reload (Mo)
+    co.Use_var = True       # 29
     Gr = Task.createGr(Task, Penal)
+    co.Use_var = False       # 29
+
     for fu in Task.Funs :  fu.CVresult = []
 
     Task.ReadSols('')
+ #   Grd_to_Var()
     if itera <= 0 : printS (' Load on Start ');   printMSD()
 
     resultss = solveProblemsNl(Gr, [[]], co.RunMode[0])
     Gr.solutions.load_from(resultss[0])
+    Var_to_Grd()
     Task.SaveSols('.tmp')#,0)
 
     print ('OBJ',Gr.OBJ())
@@ -254,6 +263,7 @@ def get_sigCV( Penal, itera ):
 
             Gr.solutions.load_from(results)
 
+            Var_to_Grd()
             testEstim(Gr, k)
 
         Estim = getEstimCV(Gr)
@@ -261,6 +271,8 @@ def get_sigCV( Penal, itera ):
 #        Mng.MSD   = MSD
  ###       Mng.sCrVa = sCrVa
     else : Estim = -1
+
+#    co.Use_var = False       # 29
 
     if Estim < co.optEstim :
             co.optEstim = Estim

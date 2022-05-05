@@ -5,6 +5,9 @@ import subprocess
 
 
 import COMMON as co
+
+from Task    import Grd_to_Var
+
 import platform
 
 from pyomo.environ import *
@@ -19,7 +22,7 @@ from ssop_session import *
 
 def Factory (optFile , py_max_iter, py_tol ): # , warm_start_bound_push      =1e-6,
     opt = SolverFactory(co.LocalSolverName)
-    opt.options["print_level"] = 4 #6
+    opt.options["print_level"] = 4 #4 #6
     opt.options['warm_start_init_point']      = 'yes'
     opt.options['warm_start_bound_push']      = co.py_warm_start_bound_push
     opt.options['warm_start_mult_bound_push'] = co.py_warm_start_mult_bound_push
@@ -27,10 +30,12 @@ def Factory (optFile , py_max_iter, py_tol ): # , warm_start_bound_push      =1e
     opt.options['mu_init']                    = 1e-6
     opt.options['max_iter']             = py_max_iter
     opt.options["tol"]                  = py_tol
+#    opt.options['acceptable_tol']       = 1e-10
+    opt.options['print_user_options']      = 'yes'
 
     if platform.system() != 'Windows':
             opt.options["linear_solver"] = 'ma57'
-
+ #           opt.options["linear_solver"] = 'ma86'
     if  optFile != None :
         if co.RunMode[0] != 'L' or co.RunMode[2] != 'L' :
  #           writeIpoptOptionsFile(opt.options, co.tmpFileDir+'/'+optFile)
@@ -51,11 +56,11 @@ def makeNlFile ( Gr, stab_file ) :
 #            print ("makeNlFile", stab_file)
             return symbol_map
 
-def setMuToTeach (Gr, teachSet = [] ) :
+def setMuToTeach (Gr, teachSet = [] ) :                     #  teachSet содержит кого выбрасываем
 #            for m in range(com.CV_NoR) : Gr.mu[m] = 1
         if co.CV_NoR > 0:
             Gr.mu[:] = 1
-            for s in teachSet          : Gr.mu[s] = 0
+            for s in teachSet  : Gr.mu[s] = 0
 
 
 
@@ -92,9 +97,9 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
                                      resources=[
                                                 ssop_config.SSOP_RESOURCES["pool-scip-ipopt"]
                                                 #ssop_config.SSOP_RESOURCES["hse"],
-                                                #ssop_config.SSOP_RESOURCES["vvvolhome2"],
+                                        #        ssop_config.SSOP_RESOURCES["vvvolhome2"],
                                                 #ssop_config.SSOP_RESOURCES["vvvoldell"],
-                                                #ssop_config.SSOP_RESOURCES["ui4.kiae.vvvol"],
+                                         #       ssop_config.SSOP_RESOURCES["ui4.kiae.vvvol"],
                                                 #ssop_config.SSOP_RESOURCES["govorun.vvvol"],
                                                 #ssop_config.SSOP_RESOURCES["vvvolhome"]
                                                ],
@@ -148,6 +153,7 @@ def  solveProblemsNl( Gr, teachSet, RunMo = 'L' ):   #  'L' - Local, 'N'- Nl loc
             resultss = []                                   #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
             for k in range(len(teachSet)):  # co.CV_NoSets):                                  # make   STABs
                 if k > 0: co.Task.ReadSols('.tmp')
+ #               Grd_to_Var()
                 setMuToTeach(Gr, teachSet[k])
        #         results = co.optFact.solve(Gr, tee=False, keepfiles=True)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
                 results = co.optFact.solve(Gr, tee=False)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
@@ -208,7 +214,7 @@ def get_termination_condition(results):
         print("TermCond:", results.solver.termination_condition, '\n')
         if (results.solver.Message.find('Search Direction becomes Too Small') >= 0
                 or results.solver.Message.find('Maximum Number of Iterations Exceeded') >= 0):
-            results.solver.termination_condition = TerminationCondition.optimal
+#            results.solver.termination_condition = TerminationCondition.optimal
             results.solver.status = pyomo.opt.SolverStatus.warning
         else:
             raise RuntimeError("Solver did not terminate with status = optimal")
