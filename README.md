@@ -5,8 +5,6 @@ The SvF-technology proposes a promising area of applied mathematics, combining m
 
 The author of the SvF-technology is [Alexander Sokolov](https://scholar.google.ru/citations?user=mtE_u_YAAAAJ&hl=en&oi=sra), [sashasok](https://gitlab.com/sashasok). 
 
-**The last version, 2021** is uploaded as an ZIP-archive [SvF-2021-11.zip](https://github.com/distcomp/SvF/blob/main/SvF-2021-11.zip). 
-
 The technology and underlying mathematical algorithms are described in the following articles:
 1. Sokolov A. V., Voloshinov V. V. Model Selection by Balanced Identification: the Interplay of Optimization and Distributed Computing // Open Computer Science, 2020, 10 — p. 283–295. [DOI: 10.1515/comp-2020-0116](https://doi.org/10.1515/comp-2020-0116)
 2. Соколов, А.В.; Волошинов, В.В. Выбор математической модели: баланс между сложностью и близостью к измерениям. International Journal of Open Information
