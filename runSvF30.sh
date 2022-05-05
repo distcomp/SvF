@@ -5,12 +5,14 @@ pyomo --version
 #echo "PYTHONPATH="$PYTHONPATH
 #echo "SVF_HOME="$SVF_HOME
 
-
+# Write correct path below !!!
+export SVFLIBPATH=/mnt/hgst2/ext4/git_work/SvF/Lib30
 
 echo $1
-echo  "python /mnt/hgst2/ext4/git_work/SvF/Lib30/_START.py" 
+echo  "python "$SVFLIBPATH"/_START.py" 
 
-python /mnt/hgst2/ext4/git_work/SvF/Lib30/_START.py $1
+python $SVFLIBPATH/_START.py $1
+
 #exit_code=$?
 
 #echo 'exit_code:'
