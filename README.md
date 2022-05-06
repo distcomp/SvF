@@ -26,5 +26,23 @@ or, if you have public key attached to your GITHUB account, then you can use ano
 
 If you know Russian read the Section 1 (software requirements) of [User Manual](https://github.com/distcomp/SvF/blob/main/SvF_UserGuide29v02.pdf) :
 
+1. OS Linux is the default recommendation
+2. Python 3.7.4+ (to save disk space, it is recommended to use the [Miniconda Python environment](https://docs.conda.io/en/latest/miniconda.html)
+3. Basic Python packages are (depending on the actual set of packages of your Python environment some other packages may be missed and should be installed according to *ModuleNotFoundError* messages)
+	* numpy 1.6.+
+   	* matplotlib 1.5.+
+   	* [Pyomo](http://www.pyomo.org/) 6.+, [Installation](https://pyomo.readthedocs.io/en/stable/installation.html) 
+4. For solving NLP problems (Nonlinear Mathematical Programming Problems with continuous variables and differentiable functions) you need [Ipopt](https://github.com/coin-or/Ipopt) solver. 
+	* For regular installation see native Ipopt documentation For regular installation see native [Ipopt documentation](https://coin-or.github.io/Ipopt/INSTALL.html).
+	* Full functional build with additional Linear Algebra libraries may be found here [https://gitlab.com/ssmir/solver-build-scripts](https://gitlab.com/ssmir/solver-build-scripts) (contact with this installation pack developers for disclosure of unclear details)
+	* For demonstrative or testing purposes "light" Ipopt build may be istalled as Python package:  
+$ conda install -c conda-forge ipopt  
+see [Pyomo documentation](https://pyomo.readthedocs.io/en/stable/installation.html#using-conda)
+5. For large-scale calculations, it is desirable to use the [Everest platform](http://everest.distcomp.org/), in particular, the [SSOP application](https://optmod.distcomp.org/apps/vladimirv/solve-set-opt-probs), which allows you to solve in parallel a set of optimization problems on computing resources connected to the Everest Optimization Portal [Everest Opt](https://optmod.distcomp.org). To do this, you will need to register on the site [https://everest.distcomp.org](https://everest.distcomp.org) или [https://optmod.distcomp.org](https://optmod.distcomp.org).
 
-# How to run
+# Test run  
+1. Open running script runSvF30.sh in any text editor and set correct value to the system environment variable SVFLIBPATH (a path to **SvF/Lib30** folder at your system)
+2. Open some of subfolders in Examples folder, e.g. to  
+ **SvF/Examples/3-ThermalConductivity/MSD(Dreg11x11)Curv(T)M0**,  
+  in your system console and run  
+`$ bash ../../../runSvF30.sh
