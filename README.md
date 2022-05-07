@@ -56,7 +56,9 @@ These options are: **Runmode** or **RunSolver**. Not going in deep details for b
 or  
 **S&S** - to solve all problems by remote solvers.
 
-E.g. in task-file **MSD(Dreg11x11)+Curv(T):M=0.odt** in example model **SvF/Examples/3-ThermalConductivity/MSD(Dreg11x11)Curv(T)M0** the *Runmode* option is in the first line. You can chage its value and run example by the command (from this folder)  
+E.g. in task-file **MSD(Dreg11x11)+Curv(T):M=0.odt** in example model  
+ **SvF/Examples/3-ThermalConductivity/MSD(Dreg11x11)Curv(T)M0**  
+  the *Runmode* option is in the first line. You can chage its value and run example by the command (from this folder)  
    `$ bash ../../../runSvF30.sh`
 
 ## Try remote solver
