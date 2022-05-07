@@ -33,7 +33,7 @@ If you know Russian read the Section 1 (software requirements) of [User Manual](
    	* matplotlib 1.5.+
    	* [Pyomo](http://www.pyomo.org/) 6.+, [Installation](https://pyomo.readthedocs.io/en/stable/installation.html) 
 4. For solving NLP problems (Nonlinear Mathematical Programming Problems with continuous variables and differentiable functions) you need [Ipopt](https://github.com/coin-or/Ipopt) solver. 
-	* For regular installation see native Ipopt documentation For regular installation see native [Ipopt documentation](https://coin-or.github.io/Ipopt/INSTALL.html).
+	* For regular installation see native [Ipopt documentation](https://coin-or.github.io/Ipopt/INSTALL.html).
 	* Full functional build with additional Linear Algebra libraries may be found here [https://gitlab.com/ssmir/solver-build-scripts](https://gitlab.com/ssmir/solver-build-scripts) (contact with this installation pack developers for disclosure of unclear details)
 	* For demonstrative or testing purposes "light" Ipopt build may be istalled as Python package:  
 $ conda install -c conda-forge ipopt  
