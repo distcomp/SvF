@@ -1525,11 +1525,11 @@ class Fun (Object) :
                     ret += 0.5*(dgr[n]-dgr[n-1])*(( (X-n+1)**2+0.001 )**0.5-n+1)
                 return ret
 
-                ret = 0
-                for i in self.A[0].NodSm:
-                    dX = X - i
-                    ret += (gr[i] * (1 - dX) + gr[i + 1] * dX) * ind_0_1(dX)  # tetta(1 - dX) * tetta(dX)
-                return ret
+#                ret = 0
+ #               for i in self.A[0].NodSm:
+  #                  dX = X - i
+   #                 ret += (gr[i] * (1 - dX) + gr[i + 1] * dX) * ind_0_1(dX)  # tetta(1 - dX) * tetta(dX)
+    #            return ret
 
             Xi = int(floor ( X ))
             if Xi < 0            : Xi = 0 

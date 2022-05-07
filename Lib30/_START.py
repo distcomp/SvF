@@ -7,7 +7,8 @@ prog_name = sys.argv[0]
 path_SvF_Lib            = prog_name[: prog_name.rfind('/')]
 path_SvF                = path_SvF_Lib.split('Lib')[0]
 path_pyomo_everest_ssop  = path_SvF + "pyomo-everest/ssop"
-path_Everest_python_api = path_SvF + "Everest/python-api"
+#path_Everest_python_api = path_SvF + "Everest/python-api"
+path_Everest_python_api = path_SvF + "pyomo-everest/python-api"
 
 sys.path.append( path_SvF_Lib )
 sys.path.append( path_SvF )

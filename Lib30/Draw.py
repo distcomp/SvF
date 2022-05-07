@@ -174,8 +174,8 @@ def DrawComb( param ):
             if not DrawErr:
                 if not ((A.dat is None) or (V.dat is None)):                # DRAW  data    #  точки  данные
  #                   print (A.dat); print (V.dat)
-#                    if name != '' : label_name = V.draw_name + SvF.Draw_data_str  #'data'
-                    if name != '' : label_name = V.oname + SvF.Draw_data_str  #'data'
+                    if name != '' : label_name = V.draw_name + SvF.Draw_data_str  #'data'
+#                    if name != '' : label_name = V.oname + SvF.Draw_data_str  #'data'
                     else          : label_name = ''
                     if not SvF.Legend: label_name = ''
                     if str(type(A.dat)) == '<class \'list\'>' :
@@ -194,7 +194,7 @@ def DrawComb( param ):
                 else                              : label_name = V.oname
 #                else                              : label_name = V.draw_name
                 if not SvF.Legend: label_name = ''
-                ax.plot(tb_x, tb_y, LineColor, label=label_name, linestyle=LineStyle, linewidth=LineWidth,
+                ax.plot(tb_x, tb_y, LineColor, label=label_name, linestyle=LineStyle, linewidth=LineWidth,   # function
                         markersize=MarkerSize, marker='o', markerfacecolor='#FFFFFF')
             if DrawErr:
               tb_err = deepcopy(V.dat)
