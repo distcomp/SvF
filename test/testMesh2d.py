@@ -32,12 +32,23 @@ plt.show()
 (N1, N2) = (4, 4) # Number of points in 2d meshgrid
 # print(N1, ' ', N2)
 (d1, d2) = (1, 1)
-y1 = [d1*i for i in range(0,N1+1)]
-y2 = [d1*j for j in range(0,N2+1)]
+y1grd = [d1*i for i in range(0,N1+1)]
+y2grd = [d1*j for j in range(0,N2+1)]
 
 A = np.ndarray(shape=(N1+1, N2+1))
 for j in range(N2+1):
     for i in range(N1+1):
-        A[i,j] = ( (FF(y1[i], y2[j]) - FF(y1[i-1], y2[j]))/d1 if i > 0 else 0)
-
+        A[i,j] = ( (FF(y1grd[i], y2grd[j]) - FF(y1grd[i-1], y2grd[j]))/d1 if i > 0 else 0)
 print(A.transpose())
+
+# Phi definitions
+def Phi(y1, j):
+    return FF(y1grd[0],y2grd[j])+sum( (A[i,j] - A[i-1,j])*max(0,y1-y1grd[i-1]) for i in range(1, N1+1) )
+
+print('============== Phi Checking ==========')
+for j in range(N2+1):
+    PhiVal = Phi(y1grd[2],j)
+    FFval = FF(y1grd[2],y2grd[j])
+    print(j, PhiVal, FFval, abs(PhiVal - FFval) )
+
+# B
