@@ -336,15 +336,12 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
         else :
             if d.PolyPow >= 0:   # Poly
 #                  wr ( '    ' + f_name + '__i = Var ( range (PolySize(' + str(d.dim)+','+str(d.PolyPow)+') ), initialize = 0 )' )
-                  wr ( '\n    ' + f_name + '.var = Var ( range (' + str(d.sizeP) + '), initialize = 0 )' )
+                  wr ( '\n    ' + f_name + '.var = py.Var ( range (' + str(d.sizeP) + '), initialize = 0 )' )
                   wr('    Gr.' + f_name + ' =  ' + f_name + '.var')
-        #        wr('    ' + f_name + '__i = Var ( range (' + str(d.sizeP) + '), initialize = 0 )')
-         #       wr('    ' + f_name + '.var = ' + f_name + '__i ; Gr.' + f_name + ' =  ' + f_name + '__i')
-            #                  wr('    ' + f_name + '.grd = ' + f_name + '__i ; Gr.' + f_name + ' =  ' + f_name + '__i')
             else :            # Grid
                   if not d.param :                                                 # Var
 #                      wr ( '    ' + f_name + '__i = Var ( ' )          # 30g+
-                      wr ( '\n    ' + f_name + '.var = Var ( ' )
+                      wr ( '\n    ' + f_name + '.var = py.Var ( ' )
                       for di in range (d.dim) :
 #                          wrs ( f_str+'.A['+str(di)+'].NodS,' )        # 30g+
                           wrs ( f_name+'.A['+str(di)+'].NodS,' )
@@ -624,11 +621,11 @@ def WriteModelEQ26 ( buf ):
             wrs ( ','+g.ind )
         wrs ( ') :' )
 #        if b_if != '' :  wr('        if not ('+b_if+') : return Constraint.Skip')         #  Constraint.Skip
-        if b_if != '' :  wr('        ' + b_if + 'return Constraint.Skip')         #  Constraint.Skip
+        if b_if != '' :  wr('        ' + b_if + 'return py.Constraint.Skip')         #  Constraint.Skip
         wr('        return (')
         wr('          '+equation)
         wr('        )')
-        wr('    Gr.con'+eqName+' = Constraint(')                                  
+        wr('    Gr.con'+eqName+' = py.Constraint(')
         for ng, g in enumerate(constraint_grids) : 
             if SvF.printL:  g.Gprint()
             my_range = 'FlNodS'
@@ -770,7 +767,7 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
         wr(' \t\t\t\t\t\t\t\t\t\t\t# ' + obj)
         wr('    def obj_expression(Gr):  \n        return (')
         wr('             ' + obj )                             #   Gr.F[1].Complexity ( [Penal[0]] ) + Gr.F[0].MSD()
-        wr('        )  \n    Gr.OBJ = Objective(rule=obj_expression)  \n')
+        wr('        )  \n    Gr.OBJ = py.Objective(rule=obj_expression)  \n')
         f.write('\n    return Gr\n')        # end of    createGr ( Task, Penal ) :
 
  #                       Swr('Task.Delta     = Delta')

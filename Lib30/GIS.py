@@ -1,7 +1,7 @@
 # -*- coding: cp1251 -*-
 from __future__ import division
 #from  numpy import *
-from pyomo.environ import *
+#from pyomo.environ import *
 from Object import *
 
 from Lego import *

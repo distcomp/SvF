@@ -2,8 +2,9 @@
 
 from __future__ import division
 #from   numpy import *
-from   pyomo.environ import *
-import matplotlib.pyplot as plt
+#from   pyomo.environ import *
+import pyomo.environ as py
+#import matplotlib.pyplot as plt
 from   os.path  import *
 #import sys
 
@@ -32,14 +33,14 @@ def str_val (val) :
 
 #  GRID 2  *************************************************************
 def cnstrFun2 (args, V_name, NDT) :   #
-    fu = Func()
+    fu = Func()     #   Устарело! Надо заменить!
     fu.dim = 2
     fu.param = True
     fu.NDT = NDT
     fu.V = Vari (V_name)
     fu.A.append(args[0]);  fu.A[0].setUb();   fu.A[0].makeSets()
     fu.A.append(args[1]);  fu.A[1].setUb();   fu.A[1].makeSets()
-    ret =  gFun2 (fu)    #Fun ()
+    ret =  gFun2 (fu)    #Fun ()  #   Устарело!
     ret.A[0].Aprint()
     ret.A[1].Aprint()
     ret.grd = zeros((ret.A[0].Ub + 1, ret.A[1].Ub + 1), float64)
@@ -48,85 +49,85 @@ def cnstrFun2 (args, V_name, NDT) :   #
 
 
 
-def Read_gFun1 ( ReadFrom ) :      #  outofdate  27
-      try:
-            fi = open ( ReadFrom, "r")
-      except IOError as e:
-            print ("*********************не удалось открыть файл  !"+ReadFrom+'!')
-            return  None;
-      else:
-        fnames = fi.readline().split()
-        print ("Read_gFun1 from", ReadFrom,  fnames,)
-        tb = loadtxt (fi,'double')
-        fi.close()
-#        print "shape", tb.shape
+#def Read_gFun1 ( ReadFrom ) :      #  outofdate  27
+ #     try:
+  #          fi = open ( ReadFrom, "r")
+   #   except IOError as e:
+    #        print ("*********************не удалось открыть файл  !"+ReadFrom+'!')
+     #       return  None;
+      #else:
+       # fnames = fi.readline().split()
+        #print ("Read_gFun1 from", ReadFrom,  fnames,)
+#        tb = loadtxt (fi,'double')
+ #       fi.close()
+# #       print "shape", tb.shape
 
-        V = Vari ( fnames[1] )
-#        A1 = Arg ( fnames[0] )
-        A1 = Grid ( fnames[0] )
-        A1.Ub = tb.shape[0] - 1
-        A1.min = tb[ 0][0]
-        A1.max = tb[-1][0]
-        A1.step = (A1.max-A1.min)/(A1.Ub)
-        A1.Aprint()
+   #     V = Vari ( fnames[1] )
+#   #     A1 = Arg ( fnames[0] )
+     #   A1 = Grid ( fnames[0] )
+      #  A1.Ub = tb.shape[0] - 1
+       # A1.min = tb[ 0][0]
+        #A1.max = tb[-1][0]
+#        A1.step = (A1.max-A1.min)/(A1.Ub)
+ #       A1.Aprint()
 
-        A1.Normalization_UbSets(0)
+  #      A1.Normalization_UbSets(0)
 
-        tb1 = zeros( A1.Ub+1, float64 )
-        for x in range(A1.Ub+1) : tb1[x] = tb[x][1]
+   #     tb1 = zeros( A1.Ub+1, float64 )
+    #    for x in range(A1.Ub+1) : tb1[x] = tb[x][1]
 
-        fun1     = Func()
-        fun1.grd = tb1
-        fun1.V   = V
-        fun1.A   = [A1]
-        fun1.dim = 1
-        return gFun1( fun1 ) 
+     #   fun1     = Func()
+      #  fun1.grd = tb1
+       # fun1.V   = V
+        #fun1.A   = [A1]
+#        fun1.dim = 1
+ #       return gFun1( fun1 )
 
 
-def Read_gFun2 ( ReadFrom ) :      #  outofdate  27
-      try:
-            fi = open ( ReadFrom, "r")
-      except IOError as e:
-            print ("не удалось открыть файл  !"+ReadFrom+'!')
-            return None;
-      else:
-        fnames = fi.readline().split()
-        print ("Read_gFun2 from", ReadFrom,  fnames,)
-        x_gr = fi.readline().split()
-        tb = loadtxt (fi,'double')
-        fi.close()
-#        print "shape", tb.shape
+#def Read_gFun2 ( ReadFrom ) :      #  outofdate  27
+ #     try:
+  #          fi = open ( ReadFrom, "r")
+   #   except IOError as e:
+    #        print ("не удалось открыть файл  !"+ReadFrom+'!')
+     #       return None;
+      #else:
+#        fnames = fi.readline().split()
+ #       print ("Read_gFun2 from", ReadFrom,  fnames,)
+  #      x_gr = fi.readline().split()
+   #     tb = loadtxt (fi,'double')
+    #    fi.close()
+#    #    print "shape", tb.shape
 
-        V = Vari ( fnames[2] )
+      #  V = Vari ( fnames[2] )
 
-        A1 = Grid ( fnames[0] )
-#        A1 = Arg ( fnames[0] )
-        A1.Ub = len (x_gr) - 1
-        A1.min = float(x_gr[0])
-        A1.max = float(x_gr[-1])
-        A1.step = (A1.max-A1.min)/(A1.Ub)
-        A1.Aprint()
+       # A1 = Grid ( fnames[0] )
+#       # A1 = Arg ( fnames[0] )
+#        A1.Ub = len (x_gr) - 1
+ #       A1.min = float(x_gr[0])
+  #      A1.max = float(x_gr[-1])
+   #     A1.step = (A1.max-A1.min)/(A1.Ub)
+    #    A1.Aprint()
 
-        A2 = Grid ( fnames[1] )
-#        A2 = Arg ( fnames[1] )
-        A2.Ub = tb.shape[0] - 1
-        A2.min = tb[ 0][0]
-        A2.max = tb[-1][0]
-        A2.step = (A2.max-A2.min)/(A2.Ub)
-        A2.Aprint()
+     #   A2 = Grid ( fnames[1] )
+#     #   A2 = Arg ( fnames[1] )
+       # A2.Ub = tb.shape[0] - 1
+        #A2.min = tb[ 0][0]
+#        A2.max = tb[-1][0]
+ #       A2.step = (A2.max-A2.min)/(A2.Ub)
+  #      A2.Aprint()
 
-        A1.Normalization_UbSets()
-        A2.Normalization_UbSets()
+   #     A1.Normalization_UbSets()
+    #    A2.Normalization_UbSets()
 
-#        tb = tb[:][5:-1]
-#        print "shape", tb.shape
-        tb = delete (tb, range(0,1), 1 ).transpose()
-        fun1 = Func()
-        fun1.grd = tb
-        fun1.V = V
-        fun1.A = [A1, A2]
-        fun1.dim = 2
-        return gFun2( fun1 ) 
+#    #    tb = tb[:][5:-1]
+#     #   print "shape", tb.shape
+       # tb = delete (tb, range(0,1), 1 ).transpose()
+        #fun1 = Func()
+#        fun1.grd = tb
+ #       fun1.V = V
+  #      fun1.A = [A1, A2]
+   #     fun1.dim = 2
+    #    return gFun2( fun1 )
   
 
 
@@ -295,7 +296,7 @@ class Fun (Object) :
         self.sCrVa = 0        #  sqrt (..)                              27
         self.DataReadFrom = DataReadFrom
         self.param    = param #False
-        self.domain_ = Reals
+        self.domain_ = py.Reals
         self.Finitialize = Finitialize
 
         self.sizeP = PolySize ( self.dim, self.PolyPow )
@@ -419,10 +420,6 @@ class Fun (Object) :
             self.grd = deepcopy(DataFrom.grd)       # 29
             return self                                   # 29
         if self.type == 'p' :      return self     # grd  handling
-   #     if DataFrom.grd is None  : return self
-     #   if not self.param        : return self               # grd  handling
-      #  if DataFrom.param :  self.grd = deepcopy(DataFrom.grd);  return self
-
 #       'p' -> 'g'
         if self.dim   == 1:  self.grd = zeros(self.A[0].Ub + 1, float64)
         elif self.dim == 2:  self.grd = zeros((self.A[0].Ub + 1, self.A[1].Ub + 1), float64)
@@ -474,8 +471,6 @@ class Fun (Object) :
                 if abs(val - self.A[1-axenum].dat[i]) < 1e-7:
                     ret.V.dat.append (self.V.dat[i])
                     ret.A[0].dat.append(self.A[axenum].dat[i])
-#            print( 'DDD', name, ret.A[0].dat, ret.V.dat )
-## 30        SvF.Task.AddFun (ret)
         return ret
 
     def Initialize ( self, InitFloat = None ) :
@@ -543,7 +538,7 @@ class Fun (Object) :
 #      self.dim   = len(self.A)
 #       print tbl.min(0)[self.num] 
  #     print len(self.A)
-        self.V.name
+# ?        self.V.name
         for arg in self.A :   arg.Normalization_UbSets ( )
         self.V.Normalization (VarNormalization)
 ##      self.V.Normalization (self, VarNormalization) 
@@ -1003,7 +998,7 @@ class Fun (Object) :
         return  v
 
     def grdNDT (self, i,j=None) :
-        v = grdNaN (self, i,j)
+        v = self.grdNaN (i,j)
         if isnan(v): return self.NDT
         return  v
 
@@ -1074,7 +1069,7 @@ class Fun (Object) :
  #                     print >> fi,  self.prep_val ( self.grd[i,j,k], 1 ),  #self.neNDT[i,j] )
                       fi.write( self.prep_val(self.grd[i, j, k], 1) )  # self.neNDT[i,j] )
                   fi.write ( '\n' )
-          if SvF.printL > 0 : print ("End of gFun2.SaveSol to", fName)
+          if SvF.printL > 0 : print ("End of SaveSolNew to", fName)
 
       else :                                                                  # poly
         print >> f, "%d" % self.dim + " %d" % self.PolyPow + " %d" % self.sizeP
@@ -1092,7 +1087,7 @@ class Fun (Object) :
 
         fung = self.gClone(True)
         fung.SaveSol(fName)
-        if SvF.printL > 0 : print ("END of pFun.SaveSol to ", fpName)
+        if SvF.printL > 0 : print ("END of pFun.SaveSol to ", fName)
       fi.close()
       return
 
@@ -1111,7 +1106,7 @@ class Fun (Object) :
             fi = open ( fName, "w")
       except IOError as e:
             print ("Can''t open file: ", fName)
-            return;
+            return
 
       if self.type == 'g' or self.type == 'G' :
           for a in self.A : fi.write ( a.name + '\t' )
@@ -1192,7 +1187,7 @@ class Fun (Object) :
             fi = open ( fName, "r")
       except IOError as e:
             print ("Can''t open file: ", fName)
-            return;
+            return
       head = fi.readline().split()
 #      if printL : print "ReadSol from", fName,  head,
 ######################################################
@@ -1242,12 +1237,12 @@ class Fun (Object) :
                                                          ,int(i*(tb.shape[1]-1)/self.A[0].Ub)   
                                                          ] -self.V.avr)  #  значения в новых узлах
                         fi.close()
-                        if SvF.printL > 0 : print ("End of gFun2.ReadSol from"), fName
+                        if SvF.printL > 0 : print ("End of Fun.ReadSol from"), fName
 
 
 #                       print self.grd[0,0].value, self.grd[self.A[0].Ub,self.A[1].Ub].value
             fi.close()
-            if SvF.printL > 0 : print ("End of gFun2.ReadSol from", fName)
+            if SvF.printL > 0 : print ("End of Fun.ReadSol from", fName)
             return
 ##############################################################################
       if (self.type == 'g' or self.type == 'G') :
@@ -1279,7 +1274,8 @@ class Fun (Object) :
                    else :
                        gr[i,j] = fun.F2_extra_const ( self.A[0].min + i * self.A[0].step,
                                           self.A[1].min + j * self.A[1].step) -self.V.avr  #  значения в новых узлах
-                       if isnan(gr[i,j]) :  self.grd[i,j] = 1
+                       if isnan(gr[i,j]) :  gr[i,j] = 1
+#                       if isnan(gr[i,j]) :  self.grd[i,j] = 1
                        Ksigma += gr[i,j]
 
 #                       self.grd[i,j].value = fun.F2_extra_const ( self.A[0].min + i * self.A[0].step,
@@ -1316,7 +1312,7 @@ class Fun (Object) :
             if SvF.printL : print ("file_dim=", file_dim," dim=", self.dim)
             if file_dim > self.dim :
                 print ("*************************** ReadSol Poly  file_dim > dim", file_dim,">", self.dim)
-                return;
+                return
             fi.readline()
             tb = loadtxt (fi,'double')
 ###            fi.close()
@@ -1324,7 +1320,7 @@ class Fun (Object) :
 
             if self.param and (file_sizeP!=self.sizeP):
                 print ("******************* ReadSol Poly for param file_sizeP!=self.sizeP", file_sizeP, self.sizeP)
-                return;
+                return
             for i in self.PolyR :  self.grd[i] = 0   # обнуляем
             if file_dim == self.dim :
 #                  if tb.ndim == 1 :   #  одна строка  (только свободный член)
@@ -1907,7 +1903,7 @@ class Fun (Object) :
         return None
 
     def makeMtrParamVnameSetG ( self, Vname, gr_value = 0 ) :
-        ret = gFun2(self)
+        ret = gFun2(self)   #  Устарело
         ret.grd = zeros((ret.A[0].Ub + 1, ret.A[1].Ub + 1), float64)
         if gr_value != 0:
             for i in ret.A[0].NodS:
@@ -2026,15 +2022,8 @@ class Fun (Object) :
                 fi.write ( "\n" + str(Ay.min + Ay.step*j) )     #  точки по y
                 fi.write ( "\t" + str(Ax.min + Ax.step*i) )     #  точки по х
 #                print >> fi, "\t" + "%20.16g" % (grdNaNreal(i,j)),  # значения    19.12.19
-                fi.write( "\t" + "%20.16g" % (grdNaNreal(i,j)) )  # значения    19.12.19
-
-#                if not self.neNDT[i,j] :
- #                   print >> fi, "\t" + str (self.NDT),
-  #              else :
-   #                 if self.param :
-    #                    print >> fi, "\t" + "%20.16g" % ((V.avr + self.grd[i,j])),   #  значения
-     #               else :
-      #                  print >> fi, "\t" + "%20.16g" % ((V.avr + self.grd[i,j]())),
+#                fi.write( "\t" + "%20.16g" % (grdNaNreal(i,j)) )  # значения    19.12.19
+                fi.write( "\t" + "%20.16g" % (self.grdNaNreal(i,j)) )  # значения    9.05.22
         fi.close()
         print ("End of SaveTbl")
 
@@ -2064,27 +2053,8 @@ class Fun (Object) :
             if TranspGrid == 'N':
                 if self.type == 'g' :
                     f.write(" " + str(self.grdNDTreal(x, Ay.Ub-y)))
-#                    if self.param :
- #                       f.write ( " " + str( self.grd[x, Ay.Ub-y] + self.V.avr ) + " " )
-  #                  else :
-   #                     if (not self.neNDT[ x,Ay.Ub-y]) or isnan(self.grd[ x,Ay.Ub-y]) :
-    #                        f.write ( " " + str (self.NDT) )
-     #                   else :
-      #                      f.write ( " " + str( self.grd[x, Ay.Ub-y]() + self.V.avr ) + " " )
-       #         else :
-        #          f.write ( " " + str( self.F([x, Ay.Ub-y])() + self.V.avr ) + " " )
             else :
               f.write(" " + str(self.grdNDTreal(Ay.Ub-y,x)))
-#              if (not self.neNDT[ Ay.Ub-y,x] ) or isnan(self.grd[Ay.Ub-y,x]) :
- #                f.write ( " " + str (self.NDT) )
-  #            else :
-   #             if self.type == 'g' :
-    #                if self.param:
-     #                   f.write ( " " + str( self.grd[Ay.Ub-y,x] + self.V.avr ) + " " )
-      #              else:
-       #                 f.write ( " " + str( self.grd[Ay.Ub-y,x]() + self.V.avr ) + " " )
-        #        else :
-         #         f.write ( " " + str( self.F([Ay.Ub-y,x])() + self.V.avr ) + " " )
         f.close()
         print ("END of SaveGrid")
 

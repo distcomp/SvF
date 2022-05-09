@@ -16,6 +16,7 @@ from GIS     import *
 import matplotlib.ticker
 
 def DrawComb( param ):
+    print ('           Draw', param)
     Transp = SvF.DrawTransp
     FONT_SIZE = 16 #24  # 16 # 7
     NUM_FONT_SIZE = 14
@@ -75,10 +76,10 @@ def DrawComb( param ):
         polyline = None
         fun = None
         to_draw = ''
-        print ('part', part)
+#        print ('part', part)
         for ipar, par in enumerate(part.split(';')) :                  #  Параметры отделяются ;
 #        draw_par = part.split(',')
-            print ('par', par, ipar)
+#            print ('par', par, ipar)
             if ipar == 0 :                          # FUN OR PPolyline NAME  or File
                 ob = getObjectNotGrid(par)   #  Для  drawSvF
 #                print ("OOOOOOOOOOOOOOOO")
@@ -163,7 +164,7 @@ def DrawComb( param ):
   #          ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=Xstep))  # 0.5))
             name = fun.V.name                   # 25/04
             file_name += name
-            print (file_name)
+#            print (file_name)
             A = fun.A[0]
             tb_x = A.Val #zeros(A.Ub + 1, float64)
             tb_y = zeros(A.Ub + 1, float64)

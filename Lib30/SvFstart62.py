@@ -27,7 +27,7 @@ import Model as Mo
 
 from SolverTools import *
 
-from pyomo.environ import *
+#from pyomo.environ import *
 from pyomo.opt import SolverFactory
 
 

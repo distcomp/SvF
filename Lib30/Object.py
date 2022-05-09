@@ -33,8 +33,7 @@ def getObject(name):
 def getObjectNotGrid(name):
     for o in SvF.Task.Objects :
         if o.Otype == 'Grid' : continue
-#        print ('getObjectNotGrid', o.name, name)
-        o.Oprint()
+#        o.Oprint()
         if o.name == name: return o
     return None
 ##################################################################            Grid

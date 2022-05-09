@@ -2,7 +2,8 @@
 from __future__ import division
 from  numpy import *
 from copy   import *
-from pyomo.environ import *
+#from pyomo.environ import *
+import pyomo.environ as py
 from pyomo.opt import SolverFactory
 
 from SolverTools import *
@@ -142,11 +143,11 @@ def CulcCoef ( opt, points, curvPenal, farWieght ) :
                 partWeight = lastWeight / normDist
 #                print 'normDist', normDist, lastWeight, partWeight
 
-                CM = ConcreteModel()
+                CM = py.ConcreteModel()
 
                 polPow = CrePolyPow2 ( dim, 2 )
                 polLen = len(polPow)
-                CM.Cpoly  = Var (range(polLen), domain=Reals, initialize = 1 )
+                CM.Cpoly  = py.Var (range(polLen), domain=py.Reals, initialize = 1 )
                 pol = Poly (CM.Cpoly, polPow)
                 
                 CM.Cpoly[0].value = 0;    CM.Cpoly[0].fixed = True
@@ -158,7 +159,7 @@ def CulcCoef ( opt, points, curvPenal, farWieght ) :
                            + curvPenal
                               * sum ( CM.Cpoly[c]**2 for c in range (dim+1, polLen) )
                            )
-                CM.OBJ = Objective(rule=obj_expression)
+                CM.OBJ = py.Objective(rule=obj_expression)
                 
                 results = opt.solve(CM)                        
                 CM.solutions.load_from(results)
@@ -178,23 +179,23 @@ def CulcCoef ( opt, points, curvPenal, farWieght ) :
 
 def Prognose ( opt, pol, point, step ) :
                 dim = len(point.Arg)
-                CMP = ConcreteModel()
+                CMP = py.ConcreteModel()
 
                 norm = sqrt ( sum ( pol.coef**2 ) ) 
                 def ini_circ (CMP, c): return - pol.coef[c+1] / norm * step * 0.999999
-                CMP.nInc  = Var ( range(dim), domain=Reals, initialize = ini_circ )
+                CMP.nInc  = py.Var ( range(dim), domain=py.Reals, initialize = ini_circ )
 
                 def nInc_ge(CMP,a) :
-                    if  step < 0.7*point.Arg[a] : return Constraint.Skip                            #  что бы избежать потери точности
+                    if  step < 0.7*point.Arg[a] : return py.Constraint.Skip                            #  что бы избежать потери точности
                     else                        : return ( CMP.nInc[a] >= - 0.7*point.Arg[a] )      #  for Arg >= 0
-                CMP.cnInc_ge = Constraint( range (dim), rule=nInc_ge )
+                CMP.cnInc_ge = py.Constraint( range (dim), rule=nInc_ge )
 
                 def circArg(CMP) :  return ( sum ((CMP.nInc[a])**2 for a in range(dim)) / step**2 <= 1 )
 #                def circArg(CMP) :  return ( sum ((CMP.nInc[a])**2 for a in range(dim)) <= step**2 )
-                CMP.cnInc = Constraint( rule=circArg )
+                CMP.cnInc = py.Constraint( rule=circArg )
 
                 def obj_expression(CMP):  return ( pol.Culc(CMP.nInc) )
-                CMP.OBJ = Objective(rule=obj_expression)
+                CMP.OBJ = py.Objective(rule=obj_expression)
 
                 try:
                     results = opt.solve(CMP)                        
@@ -293,12 +294,12 @@ def arrange_farWieght_curvPenal (opt, points, curvPenal, farWieght, Val, nArg) :
 
 def condition ( points, farWieght, opt ) :
     dim = len(points[0].Arg)
-    M = ConcreteModel()
-    M.plane  = Var ( range(dim+1), domain=Reals, initialize = 1 )              # Нормальное уравнение плоскости :
+    M = py.ConcreteModel()
+    M.plane  = py.Var ( range(dim+1), domain=Reals, initialize = 1 )              # Нормальное уравнение плоскости :
     def Eq1 (M) : return ( sum ( M.plane[i]**2 for i in range(dim) ) == 1 )    #     сумма квадратов равна единице
-    M.cEq1 = Constraint( rule=Eq1 )
+    M.cEq1 = py.Constraint( rule=Eq1 )
     def Eq2 (M) : return ( M.plane[dim] <= 0 )                                 #     свободный .. <=0
-    M.cEq2 = Constraint( rule=Eq2 )
+    M.cEq2 = py.Constraint( rule=Eq2 )
 
     normDist = sum ( p.wieght for p in points )
     
@@ -307,7 +308,7 @@ def condition ( points, farWieght, opt ) :
                 
     def obj_expression(M):
         return  sum ( point_plane2( p ) * p.wieght for p in points ) / normDist
-    M.OBJ = Objective(rule=obj_expression)
+    M.OBJ = py.Objective(rule=obj_expression)
 
     results = opt.solve(M)                        
     M.solutions.load_from(results)

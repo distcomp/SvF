@@ -10,7 +10,8 @@ from Task    import Grd_to_Var
 
 import platform
 
-from pyomo.environ import *
+#from pyomo.environ import *
+#import pyomo.environ as py
 from pyomo.opt import SolverFactory
 from pyomo.opt import ProblemFormat
 from pyomo.opt import TerminationCondition
