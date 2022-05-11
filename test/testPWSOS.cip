@@ -1,0 +1,20 @@
+STATISTICS
+  Problem name     : testPWSOS.nl
+  Variables        : 6 (0 binary, 0 integer, 0 implicit integer, 6 continuous)
+  Constraints      : 0 initial, 5 maximal
+OBJECTIVE
+  Sense            : maximize
+VARIABLES
+  [continuous] <X>: obj=0, original bounds=[1,10]
+  [continuous] <Y>: obj=1, original bounds=[0,100]
+  [continuous] <con.SOS2_y[0]>: obj=0, original bounds=[0,+inf]
+  [continuous] <con.SOS2_y[1]>: obj=0, original bounds=[0,+inf]
+  [continuous] <con.SOS2_y[2]>: obj=0, original bounds=[0,+inf]
+  [continuous] <con.SOS2_y[3]>: obj=0, original bounds=[0,+inf]
+CONSTRAINTS
+  [linear] <con2>: <X>[C] == 5;
+  [linear] <con.SOS2_constraint[1]>: <X>[C] -<con.SOS2_y[0]>[C] -3<con.SOS2_y[1]>[C] -6<con.SOS2_y[2]>[C] -10<con.SOS2_y[3]>[C] == 0;
+  [linear] <con.SOS2_constraint[2]>: <Y>[C] -6<con.SOS2_y[0]>[C] -2<con.SOS2_y[1]>[C] -8<con.SOS2_y[2]>[C] -7<con.SOS2_y[3]>[C] == 0;
+  [linear] <con.SOS2_constraint[3]>: <con.SOS2_y[0]>[C] +<con.SOS2_y[1]>[C] +<con.SOS2_y[2]>[C] +<con.SOS2_y[3]>[C] == 1;
+  [SOS2] <sos0>: <con.SOS2_y[0]> (1.00), <con.SOS2_y[1]> (2.00), <con.SOS2_y[2]> (3.00), <con.SOS2_y[3]> (4.00);
+END

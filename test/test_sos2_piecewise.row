@@ -1,0 +1,9 @@
+constraint1[1]
+constraint1[2]
+constraint2[1]
+constraint2[2]
+constraint3[1]
+constraint3[2]
+set_answer_constraint1
+set_answer_constraint2
+obj
