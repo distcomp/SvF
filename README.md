@@ -24,10 +24,10 @@ or, if you have public key attached to your GITHUB account, then you can use ano
 
 `$ git clone --recurse-submodules git@github.com:distcomp/SvF.git`
 
-**!!! ======================== Important ================================!!!**   
-After that you need to update [Everest Python API](https://gitlab.com/everest/python-api) submodule in *pyomo-everest* submodule.   
-Open **SvF/pyomo-everest/python-api** folder in your system console and run  
-`$ git pull origin master`  
+**!!!===================== Recommendation ==============================!!!**   
+We recommend to update all submodules ... Just in case...   
+Open **SvF** folder in your system console and run  
+`$ git submodule update --recursive --remote --merge`  
 **=====================================================================**
 
 
