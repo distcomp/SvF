@@ -90,9 +90,11 @@ def WriteGridString30(g):
 def WriteGrid27 ( buf ):
             if buf == '': return
             g = getGRID26(buf, SvF.Task.Grids)
+            if g is None : return None
 #            print ('WWWWWWWWWWW', buf, g.className )
             str = g.name + '=' + WriteGridString30(g)
             Swr(str)
+            return g
 
 #            Task = SvF.Task
  #           g = getGRID26(buf, Task.Grids)
@@ -379,20 +381,15 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
 # EQ:
         if d.PolyPow >= 0:   # Poly
             if not Lbound is None :
-                WriteModelEQ26 ( parts[0] + '>=' + str(Lbound)  )
+                WriteModelEQ31 ( parts[0] + '>=' + str(Lbound)  )
             if not Ubound is None :
-                WriteModelEQ26 ( parts[0] + '<=' + str(Ubound)  )
+                WriteModelEQ31 ( parts[0] + '<=' + str(Ubound)  )
                 
         for part in parts :
-#            print 'P:', part
-            if part.find('EQ:') == 0:    WriteModelEQ26 ( part[3:] )
+            if part.find('EQ:') == 0:    WriteModelEQ31 ( part[3:] )
 
 
-def fromTEX(equation) :
-#    equation = UTF8replace(equation, '\\cdot', '*')
- #   equation = UTF8replace(equation, '\\limits', '')
-  #  equation = UTF8replace(equation, '\\left',   '')
-   # equation = UTF8replace(equation, '\\right',  '')
+def fromTEXplus(equation) :
     print ('TEXsubst', equation)
 
     sel = parser(equation)
@@ -474,11 +471,30 @@ def fromTEX(equation) :
                 if repars :
                     equation = sel.join()
                     sel = parser(equation)
-                    print ('Tex', it.part, equation );  sel.myprint()
+#                    print ('Tex', it.part, equation );  sel.myprint()
                     break
-#    print ("********************************", SvF.UseHomeforPower)
-#    1/0
-    if SvF.UseHomeforPower :     equation = UTF8replace(equation, '^', '**')
+                                                   #    d/dt(Vac(t))  ->  \d(t,Vac(t))
+    if equation.find ('d/d') >= 0 :
+      for ip in range(len(sel.items) - 3):
+        if sel.items[ip].part == 'd' and sel.items[ip + 1].part == '/' and sel.items[ip + 2].part[0] == 'd':
+            sel.items[ip].part = '\d'
+            sel.items[ip + 1].part = '('
+            sel.items[ip + 2].part = sel.items[ip + 2].part[1:]
+            sel.items[ip + 3].part = ','
+      equation = sel.join()
+      sel = parser(equation)
+
+    if equation.find ('d2/d') >= 0 :            #  \d2t2(x(t))  ->  \d2(t,x(t))
+      for ip in range(len(sel.items) - 3):
+        if sel.items[ip].part == 'd2' and sel.items[ip + 1].part == '/' and sel.items[ip + 2].part[0] == 'd':
+            sel.items[ip].part = '\d2'          #  'd2' -> '\d2'
+            sel.items[ip + 1].part = '('
+            sel.items[ip + 2].part = sel.items[ip + 2].part[1:-1]       # dt2 ->  t
+            sel.items[ip + 3].part = ','
+      equation = sel.join()
+      sel = parser(equation)
+
+    if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
     else :                      equation = UTF8replace(equation, '^', '')
     return equation
 
@@ -486,11 +502,10 @@ def ParseEQUATION ( equation, all_grids ) :
         Task = SvF.Task
         Funs = Task.Funs
 
-#        print 'Beg:', equation
         dif_minus = []                               # DERIV     (H2O((t+1.0))-H2O(t))/1.0==-E(t)*2.0736+WF*WD(t)
         dif_plus = []                               # DERIV 2
 
-        equation = fromTEX(equation)
+#        equation = fromTEXplus(equation)
 
         eqPars   = parser ( equation )
                                            #  Добавляем опущенные Аргументы
@@ -514,42 +529,22 @@ def ParseEQUATION ( equation, all_grids ) :
                         reparse = True
           if reparse :  eqPars   = parser ( eqPars.join() )
         if SvF.printL:  eqPars.myprint()
-        
-
-                        
-        for it in eqPars.items :
-            if it.lev == 0 and  ( it.part[0] in [ '=', '<', '>' ] )  :     # '='  ->  '=='  '=-/ -> ==-
-                if SvF.printL : it.myprint()
-                if   len (it.part) == 1 :                        it.part += '=' 
-                elif len (it.part) == 2 and it.part[1] != '=' :  it.part  = it.part[0] + '=' + it.part[1:] #  '=-'  -> '==-'
-                
-                if SvF.printL : print ('AFTER') ;  it.myprint()
 
         print ('ALL_Grids B', len(all_grids))
         for g in all_grids : print (g.name)
 
         for g in Task.Grids:                                       # пополняем  all_grids  из общих Гридов
             if findGridByName ( all_grids, g.name) == None :       # если еще нет 
-#                if eqPars.find_part_type ( g.name, 'name' ) >= 0 : # пока ищем in name
-                if eqPars.find_part_type_but_point( g.name, 'name' ) >= 0 :  # чтобы исключить   x.min   x.step
+                if eqPars.find_part_type_but_point( g.name, 'name' ) >= 0 :  # чтобы исключить   x.min   x.step  tab.t
                     all_grids.append(g)
 
-#        print ('ALL_Grids A', len(all_grids))
- #       for g in all_grids : print (g.name)
-
-#####??        eqPars = parser ( equation )
         eqPars.funs( all_grids )                                        #  ... name -> grid
         dif_minus, dif_plus  = eqPars.dif1 ( dif_minus, dif_plus, all_grids )
         dif_minus, dif_plus  = eqPars.dif2 ( dif_minus, dif_plus, all_grids )
         eqPars.summa(all_grids)
         integral_grids = eqPars.integral( all_grids )                       # лучше оставить последним - там всякие for и sum
- #       for itn, it in enumerate( eqPars.items ) :
-  #          if it.part == '.' and eqPars.items[itn-1].type == 'var'  :  it.part = '__p.'
         equation = eqPars.join()
         if SvF.printL : print ('END PARSE', equation)
-       # print('END PARSE                                                            ', equation)
-#        print 'INTids', len(integral_grids)
- #       for g in integral_grids : print g.name 
 
         constraint_grids=[]                         #  фигурируют в EQ  но не как  d(t)
         for g in all_grids :
@@ -557,19 +552,181 @@ def ParseEQUATION ( equation, all_grids ) :
             if findGridByName ( integral_grids, g.name) == None :            #  
                 constraint_grids.append(g)
 
-  #      print 'con Grids', len(constraint_grids)
-   #     for g in constraint_grids: print g.name
-   
         return  equation, eqPars, constraint_grids, dif_minus, dif_plus
+
+
+
+def ParseEQplus31 ( buf ):
+    if buf == '': return
+    Task = SvF.Task
+    print('BB2:', buf)
+    buf = fromTEXplus(buf)
+
+    parts = buf.split(';')  # ; отделяет Гриды and conditions
+    parts = list(filter(('').__ne__, parts))  # удаляет пустые элементы ''
+    if SvF.printL:  print(parts)
+
+    equation = parts[0]  # первая часть !
+#    equation = equation.replace(' ', '')
+
+    all_grids = []  # local (заданные в EQ  после ; and global grids
+    for part_blanc in parts[1:]:  # Omi(t)  = nC3(t) / nC(t) * 100.   ; t \in tu3
+        part = part_blanc.replace(' ', '')
+        p = part.find('\\inn')
+        if p >= 0:
+            grid_n = part[p + 4:]
+        else: break                         #
+        ind_n = part[:p]
+        gr = findGridByName(Task.Grids, grid_n)
+        #            print (':', part, p, ind_n, grid_n)
+        if gr is None:
+            grid_n = '_g' + str(SvF._Num);  SvF._Num += 1  # новое имя грида   _g0
+            part = grid_n + part[p:]
+            gr = WriteGrid27(part)
+            if gr is None:                                      #  t ∈ [0, tMax,  st, tt]
+                print('Can\'t treat  |' + part + '|  in  ' + buf)
+                exit(-1)
+        all_grids.append(gr)
+        eqPars = parser(equation)
+        eqPars.substAllNames_but_dot(ind_n, grid_n)
+        equation = eqPars.join()
+    print("EE", equation)
+
+    equation, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION(equation, all_grids)
+    print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation, len(all_grids) )
+    for g in constraint_grids:
+        eqPars.substAllNames_but_dot(g.name, g.ind)  ## 30g+
+        eqPars.substAllNames(g.name + '__p', g.name)
+        print(eqPars.join())
+    for fu in Task.Funs:
+        eqPars.substAllNames_but_dot(fu.V.name, SvF.funPrefix + fu.V.name)
+    ##            eqPars.substAllNames(fu.V.name, SvF.funPrefix+fu.V.name)
+
+    equation = eqPars.join()
+#    print('2EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation)
+    if SvF.printL: print('EQAFTER', equation)
+    return equation, constraint_grids, dif_plus, dif_minus
 
 eqNUM = 0
 
-def WriteModelEQ26 ( buf ):
-#        if not SvF.MakeModel : return
-        if buf == '' : return
+def WriteModelEQ31 ( buf ):
+        if buf == '': return
+
+        equation, constraint_grids, dif_plus, dif_minus = ParseEQplus31(buf)
+        b_if = ''                                                           # Constraint.Skip
+        if equation[:3] == 'if ':
+ #           print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation)
+            colon = equation.split(':')
+            if len(colon) > 1:
+                 b_if = 'if not (' + colon[0][2:] + ') : '
+                 equation = ''.join(colon[1:])
+  #          print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation)
+#            1/0
+
+
+        for i, e in enumerate( equation ):      #    ,<   ->   <=
+            if e in ['!', '=', '<', '>']:
+                if equation[i+1] == '=' : break
+                print (equation)
+                equation = equation[:i+1]+ '=' + equation[i+1:]
+                print (equation)
+
         global eqNUM
         eqName = 'EQ'+str(eqNUM)
+        eqNUM += 1
+
         if SvF.printL:  print (eqName)
+
+        wr(' \t\t\t\t\t\t\t\t# '+buf )
+        wr ( '    def '+eqName+' (Gr' )                   # def EQ*(Gr,t) :
+        for g in constraint_grids :
+            wrs ( ','+g.ind )
+        wrs ( ') :' )
+#        if b_if != '' :  wr('        if not ('+b_if+') : return Constraint.Skip')         #  Constraint.Skip
+        if b_if != '' :  wr('        ' + b_if + 'return py.Constraint.Skip')         #  Constraint.Skip
+        wr('        return (')
+        wr('          '+equation)
+        wr('        )')
+        wr('    Gr.con'+eqName+' = py.Constraint(')
+        for ng, g in enumerate(constraint_grids) :
+            if SvF.printL:  g.Gprint()
+            my_range = 'FlNodS'
+            if g.name in dif_plus:  my_range  = 'm' + my_range
+            if g.name in dif_minus: my_range  = my_range + 'm'
+#            wrs ( g.name + '__p.' + my_range + ',')
+            wrs(g.name + '.' + my_range + ',')
+        wrs('rule='+eqName+' )')                                                    # rule=DifEQ )
+
+        return
+
+
+def WriteString31(buf):
+    if buf == '': return
+
+    equation, constraint_grids, dif_plus, dif_minus = ParseEQplus31(buf)
+#    if equation.find('dayVac')>=0:     1/0
+    equation = Treat_FieldNames(equation)
+    eqPars = parser(equation)
+    p_eq = eqPars.find_part_type('=', 'oper')
+    if p_eq > 0:                                    # A_Immun(t9) = ∫_{m
+        bracket_clo = p_eq - 1
+        if eqPars.items[bracket_clo].part == ')':
+            bracket_ope = eqPars.find_part_lev_back ( '(', eqPars.items[bracket_clo].lev, bracket_clo )
+            p_fname = bracket_ope-1
+            ffname = eqPars.items[p_fname].part
+            pref_p = ffname.find(SvF.funPrefix)
+            print (pref_p, ffname)
+            fname = ffname [len(SvF.funPrefix):]
+            print (fname)
+            fun = getFun (fname)
+            if not (fun is None) :
+                part_plus = fname + '.grd'
+                if fun.dim == 0:                  #  не понятно
+                    pass
+                elif (fun.type == 'g' or fun.type == 'G') and fun.dim == 1:
+                    eqPars.items[p_fname].part = part_plus + '[' + fun.name + '.A[0].indByVal ('
+                    eqPars.items[bracket_ope].part = ''
+                    eqPars.items[bracket_clo].part = ')]'
+#                    eqPars.items[p_fname].part = part_plus + '[iround ( ('
+ #                   eqPars.items[bracket_ope].part = ''
+  #                  eqPars.items[bracket_clo].part = '-' + fun.name + '.A[0].min) / '+ fun.name + '.A[0].step )]'
+
+
+
+#            elif self.type == 'g' and self.dim == 2:
+ #               x = (ArS_real[0] - self.A[0].min) / self.A[0].step
+  #              y = (ArS_real[1] - self.A[1].min) / self.A[1].step
+   #             return self.interpol(2, x, y)
+    #        elif self.type == 'g' and self.dim == 3:
+     #           x = (ArS_real[0] - self.A[0].min) / self.A[0].step
+      #          y = (ArS_real[1] - self.A[1].min) / self.A[1].step
+       #         z = (ArS_real[2] - self.A[2].min) / self.A[2].step
+                else :
+                    print ( "dim >= 2 bot ready yet" );  exit(-1)
+                equation = eqPars.join()
+            eqPars.myprint()
+            print (eqPars.join())       #   в езультатк   A_Immun.grd[A_Immun.A[0].indByVal (tt)]=sum (
+ #           1/0
+
+    level = 0                                   # уровень (сдвиг) в тексте
+    for ng, g in enumerate(constraint_grids):
+        if SvF.printL:  g.Gprint()
+        my_range = 'FlNodS'
+        if g.name in dif_plus:  my_range = 'm' + my_range
+        if g.name in dif_minus: my_range = my_range + 'm'
+        Swr(level*' '+ 'for ' + g.ind + ' in ' + g.name + '.' + my_range + ':')
+        level += 4
+
+    Swr(level*' '+ equation)
+    if len (constraint_grids) > 0:
+        print (equation)
+        eqPars.myprint()
+        p_eq = eqPars.find_part_type ('=', 'oper')
+ #       1/0
+    return
+
+def WriteModelEQ26old ( buf ):
+        if buf == '' : return
         Task = SvF.Task
 
         b_if = ''                                   #  Constraint.Skip
@@ -580,40 +737,70 @@ def WriteModelEQ26 ( buf ):
                 b_if = 'if not (' + if_p[0][2:] + ') : '
                 buf = ''.join(if_p[1:])
 
-
         parts = buf.split(';')                      #  ; отделяет Гриды and conditions
         parts = list(filter(('').__ne__, parts))    # удаляет пустые элементы ''
-        if SvF.printL:  print (eqName, parts)
+        if SvF.printL:  print ( parts)
         
         equation = parts[0]                       #  первая часть !
         equation = equation.replace(' ','')
         
         all_grids = []                              #  local (заданные в EQ  после ; and global grids
-#        b_if = ''                                   #  Constraint.Skip
-        for part in parts[1: ] :
-            print (parts[1: ])
-   ###         1/0
-###            if not SvF.Preproc : part = Task.substitudeDef ( part )
-            part = Task.substitudeDef(part)
-            gr = getGRID26 (part, Task.Grids)
+        for part_blanc in parts[1: ] :                    #  Omi(t)  = nC3(t) / nC(t) * 100.   ; t \in tu3
+            part = part_blanc.replace(' ','')
+            ind_n = ''                              #  index name     t
+            grid_n = ''                             #  grid name    tu3
+#            print (parts[0],parts[1: ])
+            p = part.find('\\inn')
+            if p >= 0 : grid_n = part[p+4:]
+            else :
+                p = part.find('=')
+                if p >= 0 : grid_n = part[p+1:]
+                else :
+                    print('Can\'t treat  |' + part + '|  in  ' + buf)
+                    exit(-1)
+            ind_n = part[:p]
+            gr = findGridByName(Task.Grids, grid_n)
+#            print (':', part, p, ind_n, grid_n)
             if gr is None :
-                print ('Can\'t treat  |' +part+ '|  in  '+buf)
-                exit(-1)
+  #              print (':::::', part, ind_n, grid_n)
+                grid_n = '_g'  + str (SvF._Num)          # новое имя грида   _g0
+                part = grid_n + part[p:]
+                gr = WriteGrid27(part)
+                if gr is None:
+                        print ('Can\'t treat  |' +part+ '|  in  '+buf)
+                        exit(-1)
             all_grids.append ( gr )
-            WriteGrid27 (part)                   ############# 25/11/2021   перенести в Model ?
+            eqPars = parser(equation)
+            eqPars.substAllNames_but_dot(ind_n, grid_n)
+            equation = eqPars.join()
+            print ("EE", equation)
 
         equation, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION ( equation, all_grids )
 
         for g in constraint_grids:
-#            eqPars.substAllNames (g.name, g.ind)
             eqPars.substAllNames_but_dot (g.name, g.ind)                ## 30g+
             eqPars.substAllNames (g.name+'__p', g.name)
+            print (eqPars.join())
         for fu in Task.Funs:
             eqPars.substAllNames_but_dot(fu.V.name, SvF.funPrefix+fu.V.name)
 ##            eqPars.substAllNames(fu.V.name, SvF.funPrefix+fu.V.name)
 
+        for it in eqPars.items :
+            if it.lev == 0 and  ( it.part[0] in [ '=', '<', '>' ] )  :     # '='  ->  '=='  '=-/ -> ==-
+                if SvF.printL : it.myprint()
+                if   len (it.part) == 1 :                        it.part += '='
+                elif len (it.part) == 2 and it.part[1] != '=' :  it.part  = it.part[0] + '=' + it.part[1:] #  '=-'  -> '==-'
+
         equation = eqPars.join()
         if SvF.printL : print ('EQAFTER', equation)
+
+        print ('##############################################77', equation )
+
+        global eqNUM
+        eqName = 'EQ'+str(eqNUM)
+        eqNUM += 1
+
+        if SvF.printL:  print (eqName)
 
         wr(' \t\t\t\t\t\t\t\t# '+buf )
         wr ( '    def '+eqName+' (Gr' )                   # def EQ*(Gr,t) :
@@ -640,7 +827,6 @@ def WriteModelEQ26 ( buf ):
     #        else :                   f.write (','+str(g.step)+'),')                     # myrange(0,179),
         wrs('rule='+eqName+' )')                                                    # rule=DifEQ )
 
-        eqNUM += 1
         return
 
 def WriteModelDef26 ( code ):                       #   DEF:
@@ -824,26 +1010,6 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
         print ('Model was built')
         if  Q.upper() == 'OBJ:' :
             endObjStartModel()
-   #         WrStart27()
-
-
-
-
-#def WrStart27 () :
- #   for l in SvF.ModelBuf :
-  #      Swrs(l)
-   # SvF.ModelBuf = 1  # >> Null
-
-#    Swr('\nSvF.Task.createGr  = createGr')
- #   Swr('\nSvF.Task.Delta = None')  # Mo.Delta
-  #  Swr('\nSvF.Task.DeltaVal = None')  # Mo.DeltaVal
-   # Swr('\nSvF.Task.defMSD = None')  # Mo.defMSD
-    #Swr('\nSvF.Task.defMSDVal = None')  # Mo.defMSDVal
-#    Swr('\nSvF.Task.print_res = print_res')
- #   Swr('\nSvF.lenPenalty = ' + str(SvF.lenPenalty))
-  #  Swr('\nfrom SvFstart62 import SvFstart19')
-   # Swr('\nSvFstart19 ( Task )')  # 27   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
 def WriteModelOBJ_U (buf) :
         wr ('\ndef OBJ_U (Task):\n')
@@ -852,7 +1018,5 @@ def WriteModelOBJ_U (buf) :
         wr ('    return '+buf)
         wr ('SvF.Task.OBJ_U = OBJ_U')
         endObjStartModel()
-#        WrStart27()
-
 
 

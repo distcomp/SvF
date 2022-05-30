@@ -57,7 +57,7 @@ def ReadMng ( ) :
      global raw_line
      ret =''
      while (1):
-         if len ( SvF.comment_buf ) > 0 :
+         if (len ( SvF.comment_buf ) > 0) and SvF.Comment :
              if SvF.StartModel_pos > 60:        #   чтобы выравниватть комментарии
                  Swrs( '\t#  ' + SvF.comment_buf )
              else :
@@ -334,8 +334,8 @@ def ReadMng ( ) :
         else :
             if   coMembers[n] == "TaskName" and buf[0] != '\'' and buf[0] != '\"' : buf = '\'' + buf + '\''
             elif coMembers[n] == 'useNaN' and buf == '' :  buf = 'True'
-## 30g+            elif Is(Q, "SchemeD1"):  SvF.SchemeD1 = readEqStr();  buf = '\"'+SvF.SchemeD1+'\"'    # 30
-            elif Is(Q, "SchemeD1"):  SvF.SchemeD1.append(readEqStr());  buf = '\"'+SvF.SchemeD1[-1]+'\"'    # 30
+            elif Is(Q, "SchemeD1"):
+                SvF.SchemeD1.append(readEqStr());  buf = '\"'+SvF.SchemeD1[-1]+'\"'    # 30
             Swr('SvF.' + coMembers[n] + ' = ' + buf)
 #            print ('QQQQQQQQQQQQMEM', Q, buf)
         buf = ''
@@ -395,13 +395,11 @@ def ReadMng ( ) :
 
     elif(Is(Q, "GRID:") or
          Is(Q, "SET:")  ) :
-                    print('12', buf)
                     buf = Treat_FieldNames(buf)
-                    print('12', buf)
                     WriteGrid27 ( buf )
     elif Is(Q, "VAR:"   ) :  WriteVarParam26 ( buf, False )
     elif Is(Q, "PARAM:" ) :  WriteVarParam26 ( buf, True )
-    elif Is(Q, "EQ:")     :  WriteModelEQ26 ( buf )
+    elif Is(Q, "EQ:")     :  WriteModelEQ31 ( buf )
     elif Is(Q, "OBJL:" )  :  WriteModelOBJ19 ( Q,buf )
     elif Is(Q, "OBJU:" )  :
                             WriteModelOBJ_U (buf)
@@ -485,53 +483,34 @@ def ReadMng ( ) :
 
     else :
 #        print ('SvF.Preproc=', SvF.Preproc)
-        raw_line = Treat_FieldNames(raw_line)
-        if True : # SvF.Preproc :
+#        raw_line = Treat_FieldNames(raw_line)
+#        if True : # SvF.Preproc :
+     #       raw_line = Treat_FieldNames(raw_line)
             raw_upp = raw_line.upper()
             if raw_upp.find('SELECT ') >= 0:
-                WriteSelect30(raw_line)
+                WriteSelect30(Treat_FieldNames(raw_line))
             elif raw_upp.find('TABLEWHERE') >= 0:
-                WriteTable30(raw_line)
+                WriteTable30(Treat_FieldNames(raw_line))
             else :
-                Swr(raw_line)
-## 30                if raw_line[0] != ' ' :             # 20.01.19
-  ##                raw_part = raw_line.split('=')  #  если = и в левой части нет ( [  добавляем в Def
-    ##              if len(raw_part)==2:
-      ##              if raw_part[0].find('(') < 0 and raw_part[0].find('[') < 0 and   \
-        ##               raw_part[1].find('(') < 0 and raw_part[1].find('[') < 0:
-          ##                  Swr('Task.AddDef(\''+raw_part[0].strip()+'\',['+raw_part[1].strip()+'])')
-## 30            if SvF.Preproc :
-            buf = ''
-        if 0: ##  30 not SvF.Preproc :
-#          string = glfCase + buf
-          string = raw_line
-          string = string.replace(' ','')
-          if string.upper().find("AZIMUTINIT") >= 0:         #  AzimutInit ( 67.92, 32.83 )
-            b, arg, e = getFromBrackets (string, '(')
-            args = arg.split(',')
-            AzimutInit ( float(args[0]), float(args[1]) )
-            continue
-          parts = string.split('=')
-          if len(parts) == 2:
-            beg, args, end = getArgsFromBrackets (parts[0], '(')  # MU(50,50) = 10
-            if not beg is None :
-#                print beg, args, end
-                f = getFun ( beg )
-                if not f is None :
-                    f.SetPointValue ( args, parts[1] )
-                    buf = ''
-                continue
+#                Swr(raw_line)
+                print ('\nraw_line       =', raw_line)
 
-            buf = parts[1]  # чтоб потом достать из buf
-#        defName = glfCase
- #       if readStr() == '=':
-            defList = readListFloat()
-            print ('=', defList)
-    #        Task.AddDef(defName, defList)
- ## 30           Task.AddDef(parts[0], defList)
+
+                WriteString31(raw_line)
+#                equation, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION ( raw_line, [] )#all_grids )
+                #sel = parser(raw_line)
+                #sel.myprint()
+ #               print ('TTTTTTTTTTTTT equation =', equation)
+  #              eqPars.myprint()
+   #             equation = eqPars.join()
+    #            for fu in Task.Funs:
+     #               eqPars.substAllNames_but_dot(fu.V.name, SvF.funPrefix + fu.V.name)
+      #          eqPars.myprint()
+       #         equation = eqPars.join()
+        #        print ('UUUUUUUUUUUUU equation =', equation)
+         #       Swr(equation)
+
             buf = ''
-          else:
-            print ("********* Can't Understand: ", Q);  exit (-1)
     if EmptyBuf : buf = ''
 
 

@@ -2,10 +2,14 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
+_Num = 0       #   номер увеличивается на 1
 
 #setPref = 's_'
-funPrefix = 'f_'
+funPrefix = 'f'             #  в ReadMng добавить обработку
+#funPrefix = 'f_'
 Prefix   = ''
+Comment = False              #  в ReadMng
+
 
 comment_buf = ''
 StartModel_pos = 0   #  кол-во записанных символов в последней строке
@@ -51,7 +55,8 @@ graphic_file_type = 'png'
 optEstim = float_info.max
 
 SchemeD1  = ['Forward'] # 'Backward'  #'Central'  #
-#DIF1 = 'Forward' # 'Backward'  #'Central'  #  # Central  Backward
+#SchemeD1  = ['Backward']  #'Central'
+# #DIF1 = 'Forward' # 'Backward'  #'Central'  #  # Central  Backward
 UseHomeforPower = False #True   # 29
 #ReadFrom = ''
 

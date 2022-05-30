@@ -691,6 +691,9 @@ class Fun (Object) :
             #            print 'nameFun', name, len(self.A), '|'
             return name
 
+    def Extrapolate (self, grd_start_from, incr = 0) :
+        for i in range (iround(grd_start_from), self.A[0].Ub+1):
+            self.grd[i] = self.grd[i-1] + incr
 
     def Mult(self, val):
         if self.type == 'p':

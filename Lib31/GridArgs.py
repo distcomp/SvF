@@ -91,38 +91,9 @@ class Grid (Object):
 
     def Oprint(self) :
         print(self.Otype, self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
-#    def myprint(self) :
- #       print ("Grid", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
-  #  def Gprint(self) :
-   #     print ("Grid", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
-    #def printM(self):
-     #   printS (self.name+"{" + str(self.min), self.max, self.step, str(self.Ub) + '} |')
-#    def Aprint(self) :
- #     print ("Arg", self.name, "mm", self.min, self.max, "st", self.step, 'Up', self.Ub)
-
-
-
 
     def GridInit(self):
 
-#            if isnan(self.min) and (not SvF.curentTabl is None) :     30
- #                   data = SvF.curentTabl.getField_tb(self.oname)
-  #                  mina = FLOMAX    # 29
-   #                 for d in data :
-    #                    if d < mina : mina = d
-     #               self.min = float (mina)
-      #              if SvF.printL: print ('self.min', self.min)
-       #     if isnan(self.max) and (not SvF.curentTabl is None) :
-        #            data = SvF.curentTabl.getField_tb(self.oname)
-         #           maxa = -FLOMAX    # 29
-          #          for d in data :
-           #             if d > maxa : maxa = d
-            #        self.max = float (maxa)
-             #       if SvF.printL: print ('self.max', self.max)
-
-#            if isnan(self.min) or isnan(self.max) :  return
-
- #           if isnan(self.step): self.step = -50
             if self.step < 0: self.step = - (self.max - self.min) / self.step;
             self.ma_mi = self.max - self.min
             self.Normalization_UbSets()
@@ -130,18 +101,18 @@ class Grid (Object):
 
 
     def indNormVal ( self, norm_val ):
-        ret = int ( floor ( norm_val/self.step + 0.499999999 ) )
+#        ret = int ( floor ( norm_val/self.step + 0.499999999 ) )
+        ret = int ( round ( norm_val/self.step ) )
         ##  check ?????
         return ret
 
     def indByVal ( self, val ):
-#        print (val, self.min)
         if isnan( val ) :       # 29
             return val
         else :
-            return int ( floor ( (val-self.min)/self.step + 0.499999999 ) )
-        ##  check ?????
-      ##  return ret
+            return int ( round( (val-self.min)/self.step ) )
+#            return int(floor((val - self.min) / self.step + 0.499999999))
+##  check ?????
 
     def makeVal (self) :
         if co.printL == 1: print ('makeVal', self.Ub, self.step)
@@ -161,9 +132,6 @@ class Grid (Object):
         self.mFlNodS  = myrange(self.min+self.step, self.max,           self.step)
 
     def setUb (self) :
-#        if self.max==FLOMAX or self.min==-FLOMAX or self.step==FLOMAX : return
- #       if isnan( self.max ) or isnan( self.min ) or isnan( self.step ) : return
-  #      if self.step < 0 : self.step = - (self.max-self.min) / self.step;       ####  Не убирать - для функций без измерений
         if self.step == 0 : self.step = 1
         floatUb = (self.max - self.min) / self.step
 #        self.Oprint()
