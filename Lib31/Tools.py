@@ -12,7 +12,8 @@ GRADpRAD = 180/pi
 CLASS_TXT = type('a')
 CLASS_INT = type(1)
 
-#border =
+def iround (flo):
+    return int(round(flo))
 
 def Border (arr, vals):
     ret = deepcopy (arr)

@@ -104,7 +104,7 @@ def getfloat (st) :
         if co.Compile : return st
 
   #      print 'gf0', st
-        st = com.Task.substitudeDef ( st)
+#######        st = com.Task.substitudeDef ( st)
         for itb, tb in enumerate ( co.Task.Tbls ) :  #  from Tbls
 #            print 'tb.name', tb.name
             st = SubstitudeName ( st, tb.name+'.NoR', str(com.Task.Tbls[itb].NoR) ) 

@@ -10,7 +10,7 @@ import COMMON as com
 
 NUM_SymbolStart = '1234567890.'
 NUM_Symbol      = '1234567890.e'
-OPER_Symbol     = '+-*/=<>%'
+OPER_Symbol     = '+-*/=<>%!'
 #OPER_Symbol     = '+-*/=^%'
 NAME_Aditional  = '1234567890_'
 
@@ -58,6 +58,12 @@ class  parser:
             for itn in range(beg, len(self.items) ) :
                     if self.items[itn].part == txt : return itn
             return -1
+    def find_part_lev_back ( self, txt, lev, start ) :
+            for itn in range(start, 0, -1 ) :
+  #              print ( itn, self.items[itn].part, txt, self.items[itn].lev, lev)
+                if self.items[itn].part == txt and self.items[itn].lev == lev  : return itn
+            return -1
+
     def find_type ( self, type, beg=0 ) :
             for itn in range(beg, len(self.items) ) :
                     if self.items[itn].type == type : return itn
@@ -70,8 +76,10 @@ class  parser:
     def find_part_type_but_point ( self, part, type, beg=0 ) :      # чтобы исключить   x.min   x.step
             for itn in range(beg, len(self.items) ) :
                     if self.items[itn].type == type and self.items[itn].part == part:
-                        if itn == len(self.items)-1 :   return itn
-                        if self.items[itn+1].part != '.' :   return itn
+                        if itn == len(self.items)-1 :         pass            #   variant  dot after
+                        elif self.items[itn+1].part == '.' :  return -1
+                        if itn == 0:                          return itn      # variant dot before
+                        elif self.items[itn-1].part != '.':   return itn
             return -1
 
     def substAllNames (self, fin, sub) :
@@ -158,7 +166,7 @@ class  parser:
                 num += s
             elif OPER_Symbol.find(s) >= 0 :            #  start operation
                 oper += s
-            elif s.isalpha() or s == '\\' :            #  start name
+            elif s.isalpha() or s == '\\' or s == '_' :            #  start name
                 name += s
                                                         
             elif '(' == s or '[' == s or '{' == s :                 #   ()[] {}
@@ -316,27 +324,20 @@ class  parser:
 
     def dif1  ( self, dif_minus, dif_plus, grids ) :       #  DIF 1
                                                  #    d/dt(H2O(t))  ->   \d(t,H2O(t))
-        find_d = False                                   
-        for ip in range( len(self.items)-3 ) :       
-            if self.items[ip].part == 'd' and self.items[ip+1].part== '/' and self.items[ip+2].part[0] == 'd' :
-                self.items[ip  ].part = '\d'
-                self.items[ip+1].part = '('
-                self.items[ip+2].part = self.items[ip+2].part[1:]
-                self.items[ip+3].part = ','
-                find_d = True
-        if not find_d :                                          #   d(H2O(t))//d(t)  ->   \d(t,H2O(t))      
-          for ip in range( len(self.items)-3 ) :       #               012345678901234
-            if self.items[ip].part == '//' :
-                num_br = self.items[ip-1].lev         #  уровень закрывающей )
-                ipr = ip-1
-                while  self.items[ipr].type!='(' or self.items[ipr].lev!=num_br : ipr -= 1  # ищем открывающую
-                self.items[ipr-1].part = '\d'
-                self.items[ipr  ].part = '('+ self.items[ip+3].part + ','
-                for i in range (ip, ip+5 ) :  self.items[i].part = ''
-                find_d = True
-        if not find_d : return  dif_minus, dif_plus
+#        find_d = False
+ #       if not find_d :                                          #   d(H2O(t))//d(t)  ->   \d(t,H2O(t))
+  #        for ip in range( len(self.items)-3 ) :       #               012345678901234
+   #         if self.items[ip].part == '//' :
+    #            num_br = self.items[ip-1].lev         #  уровень закрывающей )
+     #           ipr = ip-1
+      #          while  self.items[ipr].type!='(' or self.items[ipr].lev!=num_br : ipr -= 1  # ищем открывающую
+       #         self.items[ipr-1].part = '\d'
+        #        self.items[ipr  ].part = '('+ self.items[ip+3].part + ','
+         #       for i in range (ip, ip+5 ) :  self.items[i].part = ''
+          #      find_d = True
+        if self.text.find ('\\d') == -1: return  dif_minus, dif_plus
         self.reparse_funs ( grids ) 
-            
+        print (self.join())
 #        if self.find_type ( '\\d' ) == -1 :     return  dif_minus
         if com.printL : print ('DIF '+ com.SchemeD1[-1])
         for itn, it in enumerate(self.items) :
@@ -353,10 +354,10 @@ class  parser:
 #                    1/0
                 else :                                                      # grid func
                     gr_name = args[0]
- #                   print args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)'
+                    print (args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')
                     plus_st  = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')  # t -> t+1
-  #                  print 'plus_st', plus_st
                     minus_st = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + gr_name + '__p.step)')  # t -> t+1
+                    print ('plus_st', plus_st, 'minus_st', minus_st)
 
                     for Sch in reversed(com.SchemeD1) :
 #                        print ('                                                             ', gr_name, Sch)
@@ -489,7 +490,9 @@ def  getGRID26 ( txt, grids = []) :   #  if not list    # находим по и
                         if p >= 0 : 
 #                            print 'pp33', p, pars.items [ p ].part
                             g = findGridByName ( grids, pars.items [ p ].part)       # находим по имени и заменяем
-                            if not g is None :
+                            if g is None :
+                                co.LastGrid = None
+                            else:
                                 co.LastGrid = g
                                 if com.printL: print ('g.name', g.name)
                                 if g.className == 'Grid' :
