@@ -8,6 +8,8 @@ from write import write_nl_only
 from write import get_smap_var
 from read import read_sol_smap_var
 
+import subprocess
+
 """
 Add ODE of the 1st and 2nd order to the SvF model when all unknown functions are discretized by a mesh-grid
 dx(t)/dt = F(x(t))
@@ -127,7 +129,7 @@ def addSvfSummands(model: pyo.ConcreteModel, XtDataFunction, regCoeff):
     Ny = len(model.Fy) - 1
     def svfObj_rule(m):
         return (sum((m.Xt[k] - XtDataFunction(m.meshT[k]))**2 for k in pyo.RangeSet(0, Nx)) + \
-                regCoeff*dy*sum((m.Fy[j+1] - 2*m.Fy[j] + m.Fy[j-1]) for j in pyo.RangeSet(1, Ny - 1)))
+                regCoeff*(1/dy**3)*sum((m.Fy[j+1] - 2*m.Fy[j] + m.Fy[j-1])**2 for j in pyo.RangeSet(1, Ny - 1)))
     model.svfOobj = pyo.Objective(rule=svfObj_rule, sense=pyo.minimize)
 
 def initUniformMesh4XtFy(model: pyo.ConcreteModel):
@@ -205,7 +207,7 @@ import argparse
 def makeParser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-pr', '--problem', default="test Ode Pw eta", type=str, help='problem name')
-    parser.add_argument('-wd', '--workdir', default='./tmp', help='working directory')
+    parser.add_argument('-wd', '--workdir', default='tmp', help='working directory')
     parser.add_argument('-s', '--solver', default='ipopt', choices=['ipopt', 'scip'], help='solver to use')
     parser.add_argument('-xMesh', '--xLoUpN', nargs='+', default=[1., 3., 2], type=float, help='x: Lo Up N')
     parser.add_argument('-yMesh', '--yLoUpN', nargs='+', default=[5., 7., 4], type=float, help='y: Lo Up N')
@@ -257,8 +259,10 @@ if __name__ == "__main__":
     printData(theModel)
     theModel.pprint()
 
-    makeNLfile(theModel, args)
-
+    stub_file = makeNLfile(theModel, args)
+    print(stub_file)
+    subprocess.check_call('ipopt' + ' ' + stub_file + " -AMPL")# +
+                          # " \"option_file_name=" + tmpFileDir + "peipopt.opt\"", shell=True)
     quit()
     #
     # print("\n||||||||||||||||||||||||||||| Ode1_Sqrt |||||||||||||||||||||||||||||")
