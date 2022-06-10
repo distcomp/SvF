@@ -4,10 +4,10 @@ import random
 
 import pyomo.environ as pyo
 # The following imports are from /asl_io/write module
-from write import write_nl_only
+from write import write_nl_only, write_nl_smap
 from write import get_smap_var
-from read import read_sol_smap_var
-
+from read import read_sol_smap_var, read_sol_smap
+from testPlotPW import plotModelPW
 import subprocess
 
 """
@@ -130,7 +130,7 @@ def addSvfSummands(model: pyo.ConcreteModel, XtDataFunction, regCoeff):
     def svfObj_rule(m):
         return (sum((m.Xt[k] - XtDataFunction(m.meshT[k]))**2 for k in pyo.RangeSet(0, Nx)) + \
                 regCoeff*(1/dy**3)*sum((m.Fy[j+1] - 2*m.Fy[j] + m.Fy[j-1])**2 for j in pyo.RangeSet(1, Ny - 1)))
-    model.svfOobj = pyo.Objective(rule=svfObj_rule, sense=pyo.minimize)
+    model.svfObj = pyo.Objective(rule=svfObj_rule, sense=pyo.minimize)
 
 def initUniformMesh4XtFy(model: pyo.ConcreteModel):
     """
@@ -184,15 +184,21 @@ def getNLname(model, args):
     return ('%s_Nx_%d_Ny_%d_err_%.2f_reg_%.1f')%(fName, Nx, Ny, err, reg)
 
 def makeNLfile(model, args):
-    probName = model.getname().replace(" ",'')
+    # probName = model.getname().replace(" ",'')
     # workdir = params["workdir"]
     workdir = args.workdir
     try:
         os.mkdir(workdir)
     except OSError:
         pass
-    nlName = write_nl_only(model, workdir + '/' + getNLname(model, args),  symbolic_solver_labels=True)
-    return nlName
+    nlFile = write_nl_only(model, workdir + '/' + getNLname(model, args),  symbolic_solver_labels=True)
+    return nlFile
+
+def readSol(model, nl_file):
+    model_smap = get_smap_var(model)
+    results = read_sol_smap_var(model, nl_file[:-len('.nl')], model_smap)
+    model.solutions.load_from(results)
+    return
 
 def printData(model):
     Nx = len(model.Xt) - 1
@@ -254,15 +260,25 @@ if __name__ == "__main__":
         addOde_2_XtFy(theModel, eps=args.epsilon, useEta=args.useEta)
 
     def XtAsOscill(t: float):
-        return math.sin(t)*(1. + random.uniform(-args.errdata/2., args.errdata/2.))
+        return math.sin(3*t)*(1. + random.uniform(-args.errdata/2., args.errdata/2.))
     addSvfSummands(theModel, XtAsOscill, 5.)
     printData(theModel)
-    theModel.pprint()
+    # theModel.pprint()
 
-    stub_file = makeNLfile(theModel, args)
-    print(stub_file)
-    subprocess.check_call('ipopt' + ' ' + stub_file + " -AMPL")# +
-                          # " \"option_file_name=" + tmpFileDir + "peipopt.opt\"", shell=True)
+    nl_file = makeNLfile(theModel, args)
+    print(nl_file)
+    subprocess.check_call("pwd")
+    # quit()
+    subprocess.check_call('ipopt' + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
+
+    readSol(theModel, nl_file)
+
+    print('SvF obj.: ', pyo.value(theModel.svfObj))
+    print('F(y): ', [pyo.value(theModel.Fy[j]) for j in theModel.setYidx])
+    print('X(t): ', [pyo.value(theModel.Xt[t]) for t in theModel.setTidx])
+    print('t: ', [pyo.value(theModel.meshT[i])  for i in theModel.setTidx])
+    print('y: ', [pyo.value(theModel.meshY[j])  for j in theModel.setYidx])
+    plotModelPW(theModel)
     quit()
     #
     # print("\n||||||||||||||||||||||||||||| Ode1_Sqrt |||||||||||||||||||||||||||||")
