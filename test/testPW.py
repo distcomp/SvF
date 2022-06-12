@@ -177,8 +177,8 @@ def initXtFy(model: pyo.ConcreteModel, xLo: float, xUp: float, Nx: int, yLo: flo
     model.setYidx = pyo.RangeSet(0, Ny)
     model.yLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(yLo, yUp), within=pyo.Reals)
 
-    model.Fy = pyo.Var(model.setYidx, within=pyo.Reals)
-    model.Xt = pyo.Var(model.setTidx, within=pyo.Reals)
+    model.Xt = pyo.Var(model.setTidx, within=pyo.Reals, bounds=(xLo, xUp))
+    model.Fy = pyo.Var(model.setYidx, within=pyo.Reals, bounds=(yLo, yUp))
 
 def getModelName(prefix, args):
     Nx = args.xLoUpN[2]
@@ -233,7 +233,7 @@ def makeParser():
     parser.add_argument('-yMesh', '--yLoUpN', nargs='+', default=[5., 7., 4], type=float, help='y: Lo Up N')
     parser.add_argument('-o', '--order', default=1, choices=[1,2], type=int, help='ODE order 1 or 2 (reduced form)')
     parser.add_argument('-eps', '--epsilon', default=0.01, type=float, help='Epsilon to smooth pos()')
-    parser.add_argument('-reg', '--regcoeff', default=5., type=float, help='Regularization coefficient')
+    parser.add_argument('-reg', '--regcoeff', default=.005, type=float, help='Regularization coefficient')
     parser.add_argument('-err', '--errdata', default=.1, type=float, help='Error of data')
     parser.add_argument('-eta', '--useEta', action='store_true', help='use Eta in discretization')
     return parser
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Nx+1)]
     def XtAsOscill(t: float, k: int):
         return math.sin(3*t)*(1. + randomError[k])
-    addSvfSummands(theModel, XtAsOscill, 5.)
+    addSvfSummands(theModel, XtAsOscill, args.regcoeff)
     printData(theModel)
     theModel.pprint()
     # quit()
@@ -286,7 +286,10 @@ if __name__ == "__main__":
     print(nl_file)
     subprocess.check_call("pwd")
     # quit()
-    subprocess.check_call('ipopt' + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
+    if args.solver == 'ipopt':
+        subprocess.check_call('ipopt' + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
+    else:
+        subprocess.check_call('scipampl' + ' ' + nl_file + " -AMPL scip4pw.set", shell=True)
 
     readSol(theModel, nl_file)
 
