@@ -127,8 +127,13 @@ def addSvfSummands(model: pyo.ConcreteModel, XtDataFunction, regCoeff):
     dy = model.dy.value
     Nx = len(model.Xt) - 1
     Ny = len(model.Fy) - 1
+
+    def XtData_init(m, k):
+        return XtDataFunction(m.meshT[k], k)
+    model.XtData = pyo.Param(model.setTidx, initialize=XtData_init)
+
     def svfObj_rule(m):
-        return (sum((m.Xt[k] - XtDataFunction(m.meshT[k]))**2 for k in pyo.RangeSet(0, Nx)) + \
+        return (sum((m.Xt[k] - XtDataFunction(m.meshT[k],k))**2 for k in pyo.RangeSet(0, Nx)) + \
                 regCoeff*(1/dy**3)*sum((m.Fy[j+1] - 2*m.Fy[j] + m.Fy[j-1])**2 for j in pyo.RangeSet(1, Ny - 1)))
     model.svfObj = pyo.Objective(rule=svfObj_rule, sense=pyo.minimize)
 
@@ -175,13 +180,22 @@ def initXtFy(model: pyo.ConcreteModel, xLo: float, xUp: float, Nx: int, yLo: flo
     model.Fy = pyo.Var(model.setYidx, within=pyo.Reals)
     model.Xt = pyo.Var(model.setTidx, within=pyo.Reals)
 
-def getNLname(model, args):
+def getModelName(prefix, args):
     Nx = args.xLoUpN[2]
     Ny = args.yLoUpN[2]
     reg = args.regcoeff
     err = args.errdata
-    fName = model.getname().replace(" ",'')
-    return ('%s_Nx_%d_Ny_%d_err_%.2f_reg_%.1f')%(fName, Nx, Ny, err, reg)
+    prefixOffSpaces = prefix.replace(" ",'')
+    return ('%s_Nx_%d_Ny_%d_err_%.2f_reg_%.1f')%(prefixOffSpaces, Nx, Ny, err, reg)
+
+def getNLname(model, args):
+    return model.getname()
+    # Nx = args.xLoUpN[2]
+    # Ny = args.yLoUpN[2]
+    # reg = args.regcoeff
+    # err = args.errdata
+    # fName = model.getname().replace(" ",'')
+    # return ('%s_Nx_%d_Ny_%d_err_%.2f_reg_%.1f')%(fName, Nx, Ny, err, reg)
 
 def makeNLfile(model, args):
     # probName = model.getname().replace(" ",'')
@@ -212,7 +226,7 @@ def printData(model):
 import argparse
 def makeParser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-pr', '--problem', default="test Ode Pw eta", type=str, help='problem name')
+    parser.add_argument('-pr', '--prefix', default="test Ode Pw eta", type=str, help='Prefix of problem name')
     parser.add_argument('-wd', '--workdir', default='tmp', help='working directory')
     parser.add_argument('-s', '--solver', default='ipopt', choices=['ipopt', 'scip'], help='solver to use')
     parser.add_argument('-xMesh', '--xLoUpN', nargs='+', default=[1., 3., 2], type=float, help='x: Lo Up N')
@@ -240,16 +254,17 @@ if __name__ == "__main__":
     for arg in vars(args):
         print(arg + ":", getattr(args, arg))
     print('======================')
-    Nx = args.xLoUpN[2]
+    Nx = int(args.xLoUpN[2])
     xLo = args.xLoUpN[0]
     xUp = args.xLoUpN[1]
-    Ny = args.yLoUpN[2]
+    Ny = int(args.yLoUpN[2])
     yLo = args.yLoUpN[0]
     yUp = args.yLoUpN[1]
 
     # quit()
 
-    theModel = pyo.ConcreteModel(args.problem)
+    theModel = pyo.ConcreteModel(getModelName(args.prefix, args))
+    # theModel.name = getNLname(theModel, args)
     print("Model name: ", theModel.getname())
 
     initXtFy(theModel, xLo, xUp, Nx, yLo, yUp, Ny)
@@ -259,11 +274,13 @@ if __name__ == "__main__":
     if args.order == 2:
         addOde_2_XtFy(theModel, eps=args.epsilon, useEta=args.useEta)
 
-    def XtAsOscill(t: float):
-        return math.sin(3*t)*(1. + random.uniform(-args.errdata/2., args.errdata/2.))
+    randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Nx+1)]
+    def XtAsOscill(t: float, k: int):
+        return math.sin(3*t)*(1. + randomError[k])
     addSvfSummands(theModel, XtAsOscill, 5.)
     printData(theModel)
-    # theModel.pprint()
+    theModel.pprint()
+    # quit()
 
     nl_file = makeNLfile(theModel, args)
     print(nl_file)
