@@ -3,6 +3,10 @@ import math
 import random
 
 import pyomo.environ as pyo
+
+from testOdePW import addOde_1_XtFy, addOde_2_XtFy
+# from testSplinePW import addSpline_XtFy
+
 # The following imports are from /asl_io/write module
 from write import write_nl_only, write_nl_smap
 from write import get_smap_var
@@ -10,119 +14,9 @@ from read import read_sol_smap_var, read_sol_smap
 from testPlotPW import plotModelPW
 import subprocess
 
-"""
-Add ODE of the 1st and 2nd order to the SvF model when all unknown functions are discretized by a mesh-grid
-dx(t)/dt = F(x(t))
-d2x(t)/d2t = F(x(t),x'(t))
-"""
+IPOPT_EXE = '/opt/solvers/bin/ipopt'
 
-def addOde_1_XtFy(model: pyo.ConcreteModel, eps: float = 0.01, useEta = True):
-    """
-    Add ODE of the form
-    dx(t)/dt = F(x(t))
-    It is assumed that model has:
-    parameters:
-     Nx, Ny, xLimits = {xLo, xUp}, yLmits = {yLo, yUp}
-     dx = (xUp - xLo)/Nx, dy=(yUp - yLo)/Ny
-    variables Xt[0:Nx], Fy[0:Ny]
-    uniform meshgrids meshT[0:Nx], meshY[0:Ny]
-    """
-    dx = model.dx.value
-    dy = model.dy.value
-    Nx = len(model.Xt) - 1
-    Ny = len(model.Fy) - 1
-    yLo = model.yLimits[0]
-
-    def A(m, j: int):
-        return (model.Fy[j] - model.Fy[j-1])/dy
-
-    def D2F(m, j: int):
-        # (A(j)-A(j-1))/dy
-        return (model.Fy[j] - 2*model.Fy[j-1] + model.Fy[j-2])/dy
-
-    def cntrX(m, k: int):
-        return (model.Xt[k] + model.Xt[k-1])/2.
-
-    model.setOdeK = pyo.RangeSet(1, Nx)
-    if useEta:
-        # model.setEtaK = pyo.RangeSet(1, Nt - 1)
-        model.setEtaJ = pyo.RangeSet(1, Ny - 1)
-        model.Eta = pyo.Var(model.setOdeK, model.setEtaJ, within=pyo.PositiveReals)
-
-    def Eta_rule(m, k, j):
-        return (m.Eta[k, j]**2 == (cntrX(m, k) - m.meshY[j])**2 + eps**2)
-    if useEta:
-        model.Eta_constr = pyo.Constraint(model.setOdeK, model.setEtaJ, rule=Eta_rule)
-
-    def ODE1_Eta_rule(m, k):
-        return ((m.Xt[k] - m.Xt[k-1])/(dx) ==
-                 m.Fy[0] - A(m, 1)*yLo + (1./2.)*(A(m, 1) + A(m, Ny))*cntrX(m, k) +
-                (1. / 2.)*sum(D2F(m, j)*(m.Eta[k, j-1] - m.meshY[j-1]) for j in range(2, Ny))
-                )
-    def ODE1_Sqrt_rule(m, k):
-        return ((m.Xt[k] - m.Xt[k-1])/(dx) ==
-                 m.Fy[0] - A(m, 1)*yLo + (1./2.)*(A(m, 1) + A(m, Ny))*cntrX(m, k) +
-                (1. / 2.)*sum(D2F(m, j)*(pyo.sqrt((cntrX(m, k) - m.meshY[j])**2 + eps**2) - m.meshY[j-1]) for j in range(2, Ny))
-                )
-    if useEta:
-        model.ODE1_Eta = pyo.Constraint(model.setOdeK, rule=ODE1_Eta_rule)
-    else:
-        model.ODE1_Sqrt = pyo.Constraint(model.setOdeK, rule=ODE1_Sqrt_rule)
-
-def addOde_2_XtFy(model: pyo.ConcreteModel, eps: float = 0.01, useEta = True):
-    """
-    Add ODE of the form
-    d2x(t)/dt^2 = F(x(t))
-    It is assumed that model has:
-    parameters:
-     Nx, Ny, xLimits = {xLo, xUp}, yLmits = {yLo, yUp}
-     dx = (xUp - xLo)/Nx, dy=(yUp - yLo)/Ny
-    variables Xt[0:Nx], Fy[0:Ny]
-    uniform meshgrids meshT[0:Nx], meshY[0:Ny]
-    """
-    dx = model.dx.value
-    dy = model.dy.value
-    Nx = len(model.Xt) - 1
-    Ny = len(model.Fy) - 1
-    yLo = model.yLimits[0]
-
-    def A(m, j: int):
-        return (model.Fy[j] - model.Fy[j-1])/dy
-
-    def D2F(m, j: int):
-        # (A(j)-A(j-1))/dy
-        return (model.Fy[j] - 2*model.Fy[j-1] + model.Fy[j-2])/dy
-
-    # def cntrX(m, k: int):
-    #     return (model.Xt[k] + model.Xt[k-1])/2.
-
-    model.setOde2K = pyo.RangeSet(1, Nx-1)
-    if useEta:
-        # model.setEtaK = pyo.RangeSet(1, Nt - 1)
-        model.setEtaJ = pyo.RangeSet(1, Ny - 1)
-        model.Eta = pyo.Var(model.setOde2K, model.setEtaJ, within=pyo.PositiveReals)
-
-    def Eta_rule(m, k, j):
-        return (m.Eta[k, j]**2 == (m.Xt[k] - m.meshY[j])**2 + eps**2)
-    if useEta:
-        model.Eta_constr = pyo.Constraint(model.setOde2K, model.setEtaJ, rule=Eta_rule)
-
-    def ODE2_Eta_rule(m, k):
-        return ((m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1])/(dx*dx) ==
-                 m.Fy[0] - A(m, 1)*yLo + (1./2.)*(A(m, 1) + A(m, Ny))*m.Xt[k] +
-                (1. / 2.)*sum(D2F(m, j)*(m.Eta[k, j-1] - m.meshY[j-1]) for j in range(2, Ny))
-                )
-    def ODE2_Sqrt_rule(m, k):
-        return ((m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1])/(dx*dx) ==
-                 m.Fy[0] - A(m, 1)*yLo + (1./2.)*(A(m, 1) + A(m, Ny))*m.Xt[k] +
-                (1. / 2.)*sum(D2F(m, j)*(pyo.sqrt((m.Xt[k] - m.meshY[j])**2 + eps**2) - m.meshY[j-1]) for j in range(2, Ny))
-                )
-    if useEta:
-        model.ODE2_Eta = pyo.Constraint(model.setOde2K, rule=ODE2_Eta_rule)
-    else:
-        model.ODE2_Sqrt = pyo.Constraint(model.setOde2K, rule=ODE2_Sqrt_rule)
-
-def addSvfSummands(model: pyo.ConcreteModel, XtDataFunction, regCoeff):
+def addSvfObject(model: pyo.ConcreteModel, XtDataFunction):
     dx = model.dx.value
     dy = model.dy.value
     Nx = len(model.Xt) - 1
@@ -133,28 +27,35 @@ def addSvfSummands(model: pyo.ConcreteModel, XtDataFunction, regCoeff):
     model.XtData = pyo.Param(model.setTidx, initialize=XtData_init)
 
     def svfObj_rule(m):
-        return (sum((m.Xt[k] - XtDataFunction(m.meshT[k],k))**2 for k in pyo.RangeSet(0, Nx)) + \
-                regCoeff*(1/dy**3)*sum((m.Fy[j+1] - 2*m.Fy[j] + m.Fy[j-1])**2 for j in pyo.RangeSet(1, Ny - 1)))
+        return ((1./Nx)*sum( (m.Xt[k] - m.XtData[k])**2 for k in pyo.RangeSet(0, Nx)) +
+                m.regCoeff*(1/dy**3)*(1./Ny)*sum((m.Fy[j+1] - 2*m.Fy[j] + m.Fy[j-1])**2 for j in pyo.RangeSet(1, Ny - 1)))
     model.svfObj = pyo.Objective(rule=svfObj_rule, sense=pyo.minimize)
+
+def getMSD_REG(model: pyo.ConcreteModel):
+    Nx = len(model.Xt) - 1
+    Ny = len(model.Fy) - 1
+    MSD = sum( (pyo.value(model.Xt[k]) - pyo.value(model.XtData[k]))**2 for k in pyo.RangeSet(0, Nx))/Nx
+    REG = pyo.value(model.regCoeff)*(1/model.dy**3)*(1./Ny)*sum((pyo.value(model.Fy[j+1]) - 2*pyo.value(model.Fy[j]) + pyo.value(model.Fy[j-1]))**2 for j in pyo.RangeSet(1, Ny - 1))
+    return (MSD, REG)
 
 def initUniformMesh4XtFy(model: pyo.ConcreteModel):
     """
     It is assumed that model has:
     parameters:
-     Nx, Ny, xLimits = {xLo, xUp}, yLmits = {yLo, yUp}
-    variables Xt[0:Nx], Fy[0:Ny]
+     Nx, Ny, tLimits = {tLo, tUp}, yLmits = {yLo, yUp}
+    variables Xt[0:Nt], Fy[0:Ny]
     """
-    xLo = model.xLimits[0]
-    xUp = model.xLimits[1]
+    tLo = model.tLimits[0]
+    tUp = model.tLimits[1]
     yLo = model.yLimits[0]
     yUp = model.yLimits[1]
-    Nx = len(model.Xt) - 1
+    Nt = len(model.Xt) - 1
     Ny = len(model.Fy) - 1
 
-    dx = (xUp - xLo)/Nx
-    model.dx = pyo.Param(initialize=dx)
+    dt = (tUp - tLo)/Nt
+    model.dx = pyo.Param(initialize=dt)
     def meshT_init(m, k):
-        return xLo + k*dx
+        return tLo + k*dt
     model.meshT = pyo.Param(model.setTidx, initialize=meshT_init)
 
     dy = (yUp - yLo) / Ny
@@ -163,30 +64,37 @@ def initUniformMesh4XtFy(model: pyo.ConcreteModel):
         return yLo + i * dy
     model.meshY = pyo.Param(model.setYidx, initialize=meshY_init)
 
-def initXtFy(model: pyo.ConcreteModel, xLo: float, xUp: float, Nx: int, yLo: float, yUp: float, Ny: int):
+def initXtFy(model: pyo.ConcreteModel, tLo: float, tUp: float, Nt: int, funcDataXt, yLo: float, yUp: float, Ny: int, regCoeff):
     # Nx = len(setT) - 1
-    if xLo > xUp:
-        raise Exception(("xLo=%f > xUp=%f")%(xLo, xUp))
+    if tLo > tUp:
+        raise Exception(("tLo=%f > tUp=%f")%(tLo, tUp))
     if yLo > yUp:
         raise Exception(("yLo=%f > yUp=%f")%(yLo, yUp))
 
-    model.setTidx = pyo.RangeSet(0, Nx)
-    model.xLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(xLo, xUp), within=pyo.Reals)
+    model.regCoeff = pyo.Param(initialize=regCoeff)
+
+    model.setTidx = pyo.RangeSet(0, Nt)
+    model.tLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(tLo, tUp), within=pyo.Reals)
+    LO_Xt = min(funcDataXt(tLo + (tUp - tLo)*k/Nt, k) for  k in model.setTidx)
+    LO_Xt = LO_Xt - abs(LO_Xt)*.1
+    UP_Xt = max(funcDataXt(tLo + (tUp - tLo)*k/Nt, k) for  k in model.setTidx)
+    UP_Xt = UP_Xt + abs(UP_Xt)*.1
+    model.xLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(LO_Xt, UP_Xt), within=pyo.Reals)
 
     # Create y-meshgrid
     model.setYidx = pyo.RangeSet(0, Ny)
     model.yLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(yLo, yUp), within=pyo.Reals)
 
-    model.Xt = pyo.Var(model.setTidx, within=pyo.Reals, bounds=(xLo, xUp))
+    model.Xt = pyo.Var(model.setTidx, within=pyo.Reals, bounds=(LO_Xt, UP_Xt))
     model.Fy = pyo.Var(model.setYidx, within=pyo.Reals, bounds=(yLo, yUp))
 
 def getModelName(prefix, args):
-    Nx = args.xLoUpN[2]
+    Nt = args.tLoUpN[2]
     Ny = args.yLoUpN[2]
     reg = args.regcoeff
     err = args.errdata
     prefixOffSpaces = prefix.replace(" ",'')
-    return ('%s_Nx_%d_Ny_%d_err_%.2f_reg_%.1f')%(prefixOffSpaces, Nx, Ny, err, reg)
+    return ('%s_Nt_%d_Ny_%d_err_%.2f_reg_%.1f')%(prefixOffSpaces, Nt, Ny, err, reg)
 
 def getNLname(model, args):
     return model.getname()
@@ -218,20 +126,20 @@ def printData(model):
     Nx = len(model.Xt) - 1
     Ny = len(model.Fy) - 1
     print("||||||||||| DATA |||||||||||||||")
-    print("Nx = ", Nx, " Ny = ", Ny)
-    print("meshT: ", [t for t in model.meshT])
-    print("meshY: ", [y for y in model.meshY])
+    print("Nt = ", Nt, " Ny = ", Ny)
+    print("meshT[t]: ", [pyo.value(model.meshT[t]) for t in model.setTidx])
+    print("meshY[y]: ", [pyo.value(model.meshY[y]) for y in model.setYidx])
     print("||||||||||||||||||||||||||||||||")
 
 import argparse
 def makeParser():
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)#@!!ctlbr517
     parser.add_argument('-pr', '--prefix', default="test Ode Pw eta", type=str, help='Prefix of problem name')
     parser.add_argument('-wd', '--workdir', default='tmp', help='working directory')
     parser.add_argument('-s', '--solver', default='ipopt', choices=['ipopt', 'scip'], help='solver to use')
-    parser.add_argument('-xMesh', '--xLoUpN', nargs='+', default=[1., 3., 2], type=float, help='x: Lo Up N')
+    parser.add_argument('-tMesh', '--tLoUpN', nargs='+', default=[1., 3., 2], type=float, help='t: Lo Up N')
     parser.add_argument('-yMesh', '--yLoUpN', nargs='+', default=[5., 7., 4], type=float, help='y: Lo Up N')
-    parser.add_argument('-o', '--order', default=1, choices=[1,2], type=int, help='ODE order 1 or 2 (reduced form)')
+    parser.add_argument('-o', '--order', default=1, choices=[1,2,0], type=int, help='ODE order 1 or 2 (reduced form), 0 - SPLINE')
     parser.add_argument('-eps', '--epsilon', default=0.01, type=float, help='Epsilon to smooth pos()')
     parser.add_argument('-reg', '--regcoeff', default=.005, type=float, help='Regularization coefficient')
     parser.add_argument('-err', '--errdata', default=.1, type=float, help='Error of data')
@@ -239,13 +147,6 @@ def makeParser():
     return parser
 
 if __name__ == "__main__":
-    # Nx = 2
-    # xLo = 1
-    # xUp = 3
-    #
-    # Ny = 4
-    # yLo = 55.
-    # yUp = 67.
     parser = makeParser()
     args = parser.parse_args()
     # vargs = vars(args)
@@ -254,30 +155,42 @@ if __name__ == "__main__":
     for arg in vars(args):
         print(arg + ":", getattr(args, arg))
     print('======================')
-    Nx = int(args.xLoUpN[2])
-    xLo = args.xLoUpN[0]
-    xUp = args.xLoUpN[1]
+    Nt = int(args.tLoUpN[2])
+    tLo = args.tLoUpN[0]
+    tUp = args.tLoUpN[1]
     Ny = int(args.yLoUpN[2])
     yLo = args.yLoUpN[0]
     yUp = args.yLoUpN[1]
 
-    # quit()
+    # Experimental data with error
+    randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Nt+1)]
+    def dataXtAsOscill(t: float, k: int):
+        return math.sin(3*t)*(1. + randomError[k])
+    # ============================
 
     theModel = pyo.ConcreteModel(getModelName(args.prefix, args))
     # theModel.name = getNLname(theModel, args)
     print("Model name: ", theModel.getname())
 
-    initXtFy(theModel, xLo, xUp, Nx, yLo, yUp, Ny)
+    initXtFy(theModel, tLo, tUp, Nt, dataXtAsOscill, yLo, yUp, Ny, args.regcoeff)
     initUniformMesh4XtFy(theModel)
+    print("CHECK: %f <= t <= %f"%(tLo, tUp))
+    print("CHECK: %f <= t <= %f"%(tLo, tUp))
+    print("CHECK: %f <= Xt <= %f"%(theModel.Xt[0].bounds[0], theModel.Xt[0].bounds[1]))
+    print("CHECK: %f <= Fy <= %f"%(theModel.Fy[0].bounds[0], theModel.Fy[0].bounds[1]))
+
+
+    # quit()
+    # if args.order == 0:
+    #     addSpline_XtFy(theModel, eps=args.epsilon, useEta=args.useEta)
     if args.order == 1:
         addOde_1_XtFy(theModel, eps=args.epsilon, useEta=args.useEta)
-    if args.order == 2:
+    elif args.order == 2:
         addOde_2_XtFy(theModel, eps=args.epsilon, useEta=args.useEta)
+    else:
+        raise Exception("UNKNOWN Type of equation")
 
-    randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Nx+1)]
-    def XtAsOscill(t: float, k: int):
-        return math.sin(3*t)*(1. + randomError[k])
-    addSvfSummands(theModel, XtAsOscill, args.regcoeff)
+    addSvfObject(theModel, dataXtAsOscill)
     printData(theModel)
     theModel.pprint()
     # quit()
@@ -287,17 +200,20 @@ if __name__ == "__main__":
     subprocess.check_call("pwd")
     # quit()
     if args.solver == 'ipopt':
-        subprocess.check_call('ipopt' + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
+        subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
     else:
         subprocess.check_call('scipampl' + ' ' + nl_file + " -AMPL scip4pw.set", shell=True)
 
     readSol(theModel, nl_file)
+    (msdSol, regSol) = getMSD_REG(theModel)
 
     print('SvF obj.: ', pyo.value(theModel.svfObj))
+    print('MSD = %f, REG = %f' % (msdSol, regSol))
     print('F(y): ', [pyo.value(theModel.Fy[j]) for j in theModel.setYidx])
     print('X(t): ', [pyo.value(theModel.Xt[t]) for t in theModel.setTidx])
     print('t: ', [pyo.value(theModel.meshT[i])  for i in theModel.setTidx])
     print('y: ', [pyo.value(theModel.meshY[j])  for j in theModel.setYidx])
+
     plotModelPW(theModel)
     quit()
     #
