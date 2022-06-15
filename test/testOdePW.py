@@ -88,8 +88,8 @@ def addOde_2_XtFy(model: pyo.ConcreteModel, eps: float = 0.01, useEta = True):
         # (A(j)-A(j-1))/dy
         return (model.Fy[j] - 2*model.Fy[j-1] + model.Fy[j-2])/dy
 
-    def cntrX(m, k: int):
-        return (m.Xt[k] + m.Xt[k-1])/2.
+    def cntrX2(m, k: int):
+        return (m.Xt[k])
 
     model.setOde2K = pyo.RangeSet(1, Nx-1)
     if useEta:
@@ -97,7 +97,7 @@ def addOde_2_XtFy(model: pyo.ConcreteModel, eps: float = 0.01, useEta = True):
         model.Eta = pyo.Var(model.setOde2K, model.setEtaJ, within=pyo.PositiveReals)
 
     def Eta_rule(m, k, j):
-        return (m.Eta[k, j]**2 == (cntrX(m, k) - m.meshY[j])**2 + eps**2)
+        return (m.Eta[k, j]**2 == (cntrX2(m, k) - m.meshY[j])**2 + eps**2)
     if useEta:
         model.Eta_constr = pyo.Constraint(model.setOde2K, model.setEtaJ, rule=Eta_rule)
 
@@ -109,7 +109,7 @@ def addOde_2_XtFy(model: pyo.ConcreteModel, eps: float = 0.01, useEta = True):
     def ODE2_Sqrt_rule(m, k):
         return ((m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1])/(dx*dx) ==
                  m.Fy[0] - A(m, 1)*yLo + (1./2.)*(A(m, 1) + A(m, Ny))*m.Xt[k] +
-                (1. / 2.)*sum(D2F(m, j)*(pyo.sqrt((cntrX(m, k) - m.meshY[j])**2 + eps**2) - m.meshY[j-1]) for j in range(2, Ny))
+                (1. / 2.)*sum(D2F(m, j)*(pyo.sqrt((cntrX2(m, k) - m.meshY[j])**2 + eps**2) - m.meshY[j-1]) for j in range(2, Ny))
                 )
     if useEta:
         model.ODE2_Eta = pyo.Constraint(model.setOde2K, rule=ODE2_Eta_rule)
