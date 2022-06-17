@@ -62,12 +62,12 @@ def addSpline_SFy(model: pyo.ConcreteModel, eps: float = 0.01, useEta = True):
     def Spline_Eta_rule(m, k):
         return (m.Sy[k] ==
                  m.Fy[0] - A(m, 1)*yLo + (1./2.)*(A(m, 1) + A(m, Ny))*m.meshYs[k] +
-                (1. / 2.)*sum(D2F(m, j)*(m.Eta[k, j-1] - m.meshY[j-1]) for j in range(2, Ny))
+                (1. / 2.)*sum(D2F(m, j)*(m.Eta[k, j-1] - m.meshY[j-1]) for j in pyo.RangeSet(2, Ny))
                 )
     def Spline_Sqrt_rule(m, k):
         return (m.Sy[k] ==
                  m.Fy[0] - A(m, 1)*yLo + (1./2.)*(A(m, 1) + A(m, Ny))*m.meshYs[k] +
-                (1. / 2.)*sum(D2F(m, j)*(pyo.sqrt((m.meshYs[k] - m.meshY[j])**2 + eps**2) - m.meshY[j-1]) for j in range(2, Ny))
+                (1. / 2.)*sum(D2F(m, j)*(pyo.sqrt((m.meshYs[k] - m.meshY[j-1])**2 + eps**2) - m.meshY[j-1]) for j in pyo.RangeSet(2, Ny))
                 )
     if useEta:
         model.Spline_Eta = pyo.Constraint(model.setSidx, rule=Spline_Eta_rule)
@@ -147,7 +147,7 @@ def getModelName(prefix, args):
     reg = args.regcoeff
     err = args.errdata
     prefixOffSpaces = prefix.replace(" ",'')
-    return ('%s_Nt_%d_Ny_%d_err_%.2f_reg_%.1f')%(prefixOffSpaces, Ns, Ny, err, reg)
+    return ('%s_Ns_%d_Ny_%d_err_%.2f_reg_%.1f')%(prefixOffSpaces, Ns, Ny, err, reg)
 
 def getNLname(model, args):
     return model.getname()
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     # Experimental data with error
     randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Ns+1)]
     def dataYsAsOscill(sy: float, k: int):
-        return math.sin(3*sy)*(1. + randomError[k])
+        return math.sin(3*sy) #*(1. + randomError[k])
     # ============================
 
     theModel = pyo.ConcreteModel(getModelName(args.prefix, args))
