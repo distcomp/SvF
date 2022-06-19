@@ -29,7 +29,7 @@ def plotSplineModelPW(model: pyo.ConcreteModel, savefigFileName):
     plt.savefig(savefigFileName + '.png')
     plt.show()
 
-def plotModelPW(model: pyo.ConcreteModel):
+def plotModelPW(model: pyo.ConcreteModel, savefigFileName):
     t = np.array([pyo.value(model.meshT[i])  for i in model.setTidx], dtype=float)
     # pyo.value(theModel.Xt[t]) for t in theModel.setTidx
     Xt = np.array([pyo.value(model.Xt[t]) for t in model.setTidx], dtype=float)
@@ -39,16 +39,19 @@ def plotModelPW(model: pyo.ConcreteModel):
     Fy = np.array([pyo.value(model.Fy[j]) for j in model.setYidx], dtype=float)
 
     fig, ax = plt.subplots()
-    ax.plot(y, Fy)
-    ax.set(xlabel='y', ylabel='F(y)',
-           title=model.getname() + ', F(y)')
+    ax.plot(y, Fy, label='F(y)')
+    ax.set(xlabel='y', ylabel='F(y)', title=model.getname() + ', F(y)')
     ax.grid()
+    plt.legend()
+    plt.savefig(savefigFileName + '_Fy' + '.png')
     plt.show()
 
     fig, ax = plt.subplots()
     ax.plot(t, Xt, label='Xt')
     ax.plot(t, XtData, 'ro', label='XtData')
-    ax.set(xlabel='t', ylabel='x(t)',
-           title=model.getname() + ', x(t)')
+    ax.set(xlabel='t', ylabel='x(t)', title=model.getname() + ', x(t)')
+    ax.grid()
+    plt.legend()
+    plt.savefig(savefigFileName + '_Xt' + '.png')
     plt.show()
 

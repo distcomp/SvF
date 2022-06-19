@@ -227,7 +227,7 @@ if __name__ == "__main__":
     # Experimental data with error
     randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Ns+1)]
     def dataYsAsOscill(sy: float, k: int):
-        return math.sin(3*sy) #*(1. + randomError[k])
+        return math.sin(3*sy)*(1. + randomError[k])
     # ============================
 
     theModel = pyo.ConcreteModel(getModelName(args.prefix, args))

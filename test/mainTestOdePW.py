@@ -64,12 +64,15 @@ def initUniformMesh4XtFy(model: pyo.ConcreteModel):
         return yLo + i * dy
     model.meshY = pyo.Param(model.setYidx, initialize=meshY_init)
 
-def initXtFy(model: pyo.ConcreteModel, tLo: float, tUp: float, Nt: int, funcDataXt, yLo: float, yUp: float, Ny: int, regCoeff):
+def initXtFy(model: pyo.ConcreteModel, tLo: float, tUp: float, Nt: int, funcDataXt, yLo: float, yUp: float, Ny: int,
+             FyLo: float, FyUp: float, regCoeff):
     # Nx = len(setT) - 1
     if tLo > tUp:
         raise Exception(("tLo=%f > tUp=%f")%(tLo, tUp))
     if yLo > yUp:
         raise Exception(("yLo=%f > yUp=%f")%(yLo, yUp))
+    if FyLo > FyUp:
+        raise Exception(("FyLo=%f > FyUp=%f")%(yLo, yUp))
 
     model.regCoeff = pyo.Param(initialize=regCoeff)
 
@@ -84,9 +87,10 @@ def initXtFy(model: pyo.ConcreteModel, tLo: float, tUp: float, Nt: int, funcData
     # Create y-meshgrid
     model.setYidx = pyo.RangeSet(0, Ny)
     model.yLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(yLo, yUp), within=pyo.Reals)
+    model.FyLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(FyLo, FyUp), within=pyo.Reals)
 
     model.Xt = pyo.Var(model.setTidx, within=pyo.Reals, bounds=(LO_Xt, UP_Xt))
-    model.Fy = pyo.Var(model.setYidx, within=pyo.Reals, bounds=(yLo, yUp))
+    model.Fy = pyo.Var(model.setYidx, within=pyo.Reals, bounds=(FyLo, FyUp))
 
 def getModelName(prefix, args):
     Nt = args.tLoUpN[2]
@@ -94,7 +98,7 @@ def getModelName(prefix, args):
     reg = args.regcoeff
     err = args.errdata
     prefixOffSpaces = prefix.replace(" ",'')
-    return ('%s_Nt_%d_Ny_%d_err_%.2f_reg_%.1f')%(prefixOffSpaces, Nt, Ny, err, reg)
+    return ('%s_Nt_%d_Ny_%d_err_%.2f_reg_%.3f')%(prefixOffSpaces, Nt, Ny, err, reg)
 
 def getNLname(model, args):
     return model.getname()
@@ -139,6 +143,7 @@ def makeParser():
     parser.add_argument('-s', '--solver', default='ipopt', choices=['ipopt', 'scip'], help='solver to use')
     parser.add_argument('-tMesh', '--tLoUpN', nargs='+', default=[1., 3., 2], type=float, help='t: Lo Up N')
     parser.add_argument('-yMesh', '--yLoUpN', nargs='+', default=[5., 7., 4], type=float, help='y: Lo Up N')
+    parser.add_argument('-FyLoUp', '--FyLoUp', nargs='+', default=[0., 1.], type=float, help='Lo Up limits for Fy')
     parser.add_argument('-o', '--order', default=1, choices=[1,2,0], type=int, help='ODE order 1 or 2 (reduced form), 0 - SPLINE')
     parser.add_argument('-eps', '--epsilon', default=0.01, type=float, help='Epsilon to smooth pos()')
     parser.add_argument('-reg', '--regcoeff', default=.005, type=float, help='Regularization coefficient')
@@ -161,22 +166,30 @@ if __name__ == "__main__":
     Ny = int(args.yLoUpN[2])
     yLo = args.yLoUpN[0]
     yUp = args.yLoUpN[1]
+    FyLo = args.FyLoUp[0]
+    FyUp = args.FyLoUp[1]
+
 
     # Experimental data with error
     randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Nt+1)]
-    def dataXtAsOscill(t: float, k: int):
-        return math.sin(3*t)*(1. + randomError[k])
+    def generatorXtData(t: float, k: int):
+        if args.order == 2:
+            return math.sin(2*t) + math.cos(2*t) #*(1. + randomError[k])
+        elif args.order == 1:
+            return (-1./(1.+t))*(1. + randomError[k]) # 2*math.exp(t)
+        else:
+            raise Exception("UNKNOWN Generator XtData")
     # ============================
 
     theModel = pyo.ConcreteModel(getModelName(args.prefix, args))
     # theModel.name = getNLname(theModel, args)
     print("Model name: ", theModel.getname())
 
-    initXtFy(theModel, tLo, tUp, Nt, dataXtAsOscill, yLo, yUp, Ny, args.regcoeff)
+    initXtFy(theModel, tLo, tUp, Nt, generatorXtData, yLo, yUp, Ny, FyLo, FyUp, args.regcoeff)
     initUniformMesh4XtFy(theModel)
     print("CHECK: %f <= t <= %f"%(tLo, tUp))
-    print("CHECK: %f <= t <= %f"%(tLo, tUp))
     print("CHECK: %f <= Xt <= %f"%(theModel.Xt[0].bounds[0], theModel.Xt[0].bounds[1]))
+    print("CHECK: %f <= y <= %f"%(yLo, yUp))
     print("CHECK: %f <= Fy <= %f"%(theModel.Fy[0].bounds[0], theModel.Fy[0].bounds[1]))
 
 
@@ -190,9 +203,14 @@ if __name__ == "__main__":
     else:
         raise Exception("UNKNOWN Type of equation")
 
-    addSvfObject(theModel, dataXtAsOscill)
+    addSvfObject(theModel, generatorXtData)
     printData(theModel)
+
     theModel.pprint()
+
+    with open(args.workdir + '/' + theModel.getname() + '.model.txt', 'w') as out_file:
+        theModel.pprint(ostream = out_file)
+        out_file.close()
     # quit()
 
     nl_file = makeNLfile(theModel, args)
@@ -214,7 +232,7 @@ if __name__ == "__main__":
     print('t: ', [pyo.value(theModel.meshT[i])  for i in theModel.setTidx])
     print('y: ', [pyo.value(theModel.meshY[j])  for j in theModel.setYidx])
 
-    plotModelPW(theModel)
+    plotModelPW(theModel, nl_file[:-len('.nl')])
     quit()
     #
     # print("\n||||||||||||||||||||||||||||| Ode1_Sqrt |||||||||||||||||||||||||||||")
