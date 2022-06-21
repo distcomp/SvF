@@ -10,69 +10,70 @@ from testOdePW import addOde_1_XtFy, addOde_2_XtFy
 # The following imports are from /asl_io/write module
 from write import write_nl_only, write_nl_smap
 from write import get_smap_var
-from read import read_sol_smap_var, read_sol_smap
+from read import read_sol_smap_var #, read_sol_smap
 from testPlotPW import plotModelPW
 import subprocess
 
 IPOPT_EXE = '/opt/solvers/bin/ipopt'
+# IPOPT_EXE = 'ipopt'
 
 def addSvfObject(model: pyo.ConcreteModel, XtDataFunction):
-    dx = model.dx.value
+    dt = model.dt.value
     dy = model.dy.value
-    Nx = len(model.Xt) - 1
-    Ny = len(model.Fy) - 1
+    Nt = len(model.Xt) - 1
+    Nx = len(model.Fx) - 1
 
     def XtData_init(m, k):
         return XtDataFunction(m.meshT[k], k)
     model.XtData = pyo.Param(model.setTidx, initialize=XtData_init)
 
     def svfObj_rule(m):
-        return ((1./Nx)*sum( (m.Xt[k] - m.XtData[k])**2 for k in pyo.RangeSet(0, Nx)) +
-                m.regCoeff*(1/dy**3)*(1./Ny)*sum((m.Fy[j+1] - 2*m.Fy[j] + m.Fy[j-1])**2 for j in pyo.RangeSet(1, Ny - 1)))
+        return ((1./Nt)*sum( (m.Xt[k] - m.XtData[k])**2 for k in pyo.RangeSet(0, Nt)) +
+                m.regCoeff*(1/dy**3)*(1./Nx)*sum((m.Fx[j+1] - 2*m.Fx[j] + m.Fx[j-1])**2 for j in pyo.RangeSet(1, Nx - 1)))
     model.svfObj = pyo.Objective(rule=svfObj_rule, sense=pyo.minimize)
 
 def getMSD_REG(model: pyo.ConcreteModel):
-    Nx = len(model.Xt) - 1
-    Ny = len(model.Fy) - 1
-    MSD = sum( (pyo.value(model.Xt[k]) - pyo.value(model.XtData[k]))**2 for k in pyo.RangeSet(0, Nx))/Nx
-    REG = pyo.value(model.regCoeff)*(1/model.dy**3)*(1./Ny)*sum((pyo.value(model.Fy[j+1]) - 2*pyo.value(model.Fy[j]) + pyo.value(model.Fy[j-1]))**2 for j in pyo.RangeSet(1, Ny - 1))
+    Nt = len(model.Xt) - 1
+    Nx = len(model.Fx) - 1
+    MSD = sum( (pyo.value(model.Xt[k]) - pyo.value(model.XtData[k]))**2 for k in pyo.RangeSet(0, Nt))/Nt
+    REG = pyo.value(model.regCoeff)*(1/model.dy**3)*(1./Nx)*sum((pyo.value(model.Fx[j+1]) - 2*pyo.value(model.Fx[j]) + pyo.value(model.Fx[j-1]))**2 for j in pyo.RangeSet(1, Nx - 1))
     return (MSD, REG)
 
 def initUniformMesh4XtFy(model: pyo.ConcreteModel):
     """
     It is assumed that model has:
     parameters:
-     Nx, Ny, tLimits = {tLo, tUp}, yLmits = {yLo, yUp}
-    variables Xt[0:Nt], Fy[0:Ny]
+     Nt, Nx, tLimits = {tLo, tUp}, yLmits = {xLo, xUp}
+    variables Xt[0:Nt], Fx[0:Nx]
     """
     tLo = model.tLimits[0]
     tUp = model.tLimits[1]
-    yLo = model.yLimits[0]
-    yUp = model.yLimits[1]
+    xLo = model.xLimits[0]
+    xUp = model.xLimits[1]
     Nt = len(model.Xt) - 1
-    Ny = len(model.Fy) - 1
+    Nx = len(model.Fx) - 1
 
     dt = (tUp - tLo)/Nt
-    model.dx = pyo.Param(initialize=dt)
+    model.dt = pyo.Param(initialize=dt)
     def meshT_init(m, k):
         return tLo + k*dt
     model.meshT = pyo.Param(model.setTidx, initialize=meshT_init)
 
-    dy = (yUp - yLo) / Ny
+    dy = (xUp - xLo) / Nx
     model.dy = pyo.Param(initialize=dy)
     def meshY_init(m, i):
-        return yLo + i * dy
-    model.meshY = pyo.Param(model.setYidx, initialize=meshY_init)
+        return xLo + i * dy
+    model.meshX = pyo.Param(model.setXidx, initialize=meshY_init)
 
-def initXtFy(model: pyo.ConcreteModel, tLo: float, tUp: float, Nt: int, funcDataXt, yLo: float, yUp: float, Ny: int,
-             FyLo: float, FyUp: float, regCoeff):
-    # Nx = len(setT) - 1
+def initXtFy(model: pyo.ConcreteModel, tLo: float, tUp: float, Nt: int, funcDataXt, xLo: float, xUp: float, Nx: int,
+             FxLo: float, FxUp: float, regCoeff):
+    # Nt = len(setT) - 1
     if tLo > tUp:
         raise Exception(("tLo=%f > tUp=%f")%(tLo, tUp))
-    if yLo > yUp:
-        raise Exception(("yLo=%f > yUp=%f")%(yLo, yUp))
-    if FyLo > FyUp:
-        raise Exception(("FyLo=%f > FyUp=%f")%(yLo, yUp))
+    if xLo > xUp:
+        raise Exception(("xLo=%f > xUp=%f")%(xLo, xUp))
+    if FxLo > FxUp:
+        raise Exception(("FxLo=%f > FxUp=%f")%(xLo, xUp))
 
     model.regCoeff = pyo.Param(initialize=regCoeff)
 
@@ -82,32 +83,30 @@ def initXtFy(model: pyo.ConcreteModel, tLo: float, tUp: float, Nt: int, funcData
     LO_Xt = LO_Xt - abs(LO_Xt)*.1
     UP_Xt = max(funcDataXt(tLo + (tUp - tLo)*k/Nt, k) for  k in model.setTidx)
     UP_Xt = UP_Xt + abs(UP_Xt)*.1
-    model.xLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(LO_Xt, UP_Xt), within=pyo.Reals)
+    # model.xLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(LO_Xt, UP_Xt), within=pyo.Reals)
 
-    # Create y-meshgrid
-    model.setYidx = pyo.RangeSet(0, Ny)
-    model.yLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(yLo, yUp), within=pyo.Reals)
-    model.FyLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(FyLo, FyUp), within=pyo.Reals)
+    # Create x-meshgrid
+    model.setXidx = pyo.RangeSet(0, Nx)
+    model.xLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(min(xLo, LO_Xt), max(xUp, UP_Xt)), within=pyo.Reals)
+    model.FxLimits = pyo.Param(pyo.RangeSet(0,1), initialize=(FxLo, FxUp), within=pyo.Reals)
 
     model.Xt = pyo.Var(model.setTidx, within=pyo.Reals, bounds=(LO_Xt, UP_Xt))
-    model.Fy = pyo.Var(model.setYidx, within=pyo.Reals, bounds=(FyLo, FyUp))
+    model.Fx = pyo.Var(model.setXidx, within=pyo.Reals, bounds=(FxLo, FxUp))
 
 def getModelName(prefix, args):
     Nt = args.tLoUpN[2]
-    Ny = args.yLoUpN[2]
+    Nx = args.xLoUpN[2]
     reg = args.regcoeff
     err = args.errdata
     prefixOffSpaces = prefix.replace(" ",'')
-    return ('%s_Nt_%d_Ny_%d_err_%.2f_reg_%.3f')%(prefixOffSpaces, Nt, Ny, err, reg)
+    if args.useEta:
+        prefixOffSpaces = prefixOffSpaces + '_ETA'
+    else:
+        prefixOffSpaces = prefixOffSpaces + '_SQRT'
+    return ('%s_ODE%d_Nt_%d_Nx_%d_err_%.3f_reg_%.3f')%(prefixOffSpaces, args.order, Nt, Nx, err, reg)
 
 def getNLname(model, args):
     return model.getname()
-    # Nx = args.xLoUpN[2]
-    # Ny = args.yLoUpN[2]
-    # reg = args.regcoeff
-    # err = args.errdata
-    # fName = model.getname().replace(" ",'')
-    # return ('%s_Nx_%d_Ny_%d_err_%.2f_reg_%.1f')%(fName, Nx, Ny, err, reg)
 
 def makeNLfile(model, args):
     # probName = model.getname().replace(" ",'')
@@ -127,12 +126,12 @@ def readSol(model, nl_file):
     return
 
 def printData(model):
-    Nx = len(model.Xt) - 1
-    Ny = len(model.Fy) - 1
+    Nt = len(model.Xt) - 1
+    Nx = len(model.Fx) - 1
     print("||||||||||| DATA |||||||||||||||")
-    print("Nt = ", Nt, " Ny = ", Ny)
+    print("Nt = ", Nt, " Nx = ", Nx)
     print("meshT[t]: ", [pyo.value(model.meshT[t]) for t in model.setTidx])
-    print("meshY[y]: ", [pyo.value(model.meshY[y]) for y in model.setYidx])
+    print("meshX[y]: ", [pyo.value(model.meshX[y]) for y in model.setXidx])
     print("||||||||||||||||||||||||||||||||")
 
 import argparse
@@ -142,8 +141,8 @@ def makeParser():
     parser.add_argument('-wd', '--workdir', default='tmp', help='working directory')
     parser.add_argument('-s', '--solver', default='ipopt', choices=['ipopt', 'scip'], help='solver to use')
     parser.add_argument('-tMesh', '--tLoUpN', nargs='+', default=[1., 3., 2], type=float, help='t: Lo Up N')
-    parser.add_argument('-yMesh', '--yLoUpN', nargs='+', default=[5., 7., 4], type=float, help='y: Lo Up N')
-    parser.add_argument('-FyLoUp', '--FyLoUp', nargs='+', default=[0., 1.], type=float, help='Lo Up limits for Fy')
+    parser.add_argument('-xMesh', '--xLoUpN', nargs='+', default=[5., 7., 4], type=float, help='x: Lo Up N')
+    parser.add_argument('-FxLoUp', '--FxLoUp', nargs='+', default=[0., 1.], type=float, help='Lo Up limits for Fx')
     parser.add_argument('-o', '--order', default=1, choices=[1,2,0], type=int, help='ODE order 1 or 2 (reduced form), 0 - SPLINE')
     parser.add_argument('-eps', '--epsilon', default=0.01, type=float, help='Epsilon to smooth pos()')
     parser.add_argument('-reg', '--regcoeff', default=.005, type=float, help='Regularization coefficient')
@@ -163,11 +162,11 @@ if __name__ == "__main__":
     Nt = int(args.tLoUpN[2])
     tLo = args.tLoUpN[0]
     tUp = args.tLoUpN[1]
-    Ny = int(args.yLoUpN[2])
-    yLo = args.yLoUpN[0]
-    yUp = args.yLoUpN[1]
-    FyLo = args.FyLoUp[0]
-    FyUp = args.FyLoUp[1]
+    Nx = int(args.xLoUpN[2])
+    xLo = args.xLoUpN[0]
+    xUp = args.xLoUpN[1]
+    FxLo = args.FxLoUp[0]
+    FxUp = args.FxLoUp[1]
 
 
     # Experimental data with error
@@ -185,12 +184,12 @@ if __name__ == "__main__":
     # theModel.name = getNLname(theModel, args)
     print("Model name: ", theModel.getname())
 
-    initXtFy(theModel, tLo, tUp, Nt, generatorXtData, yLo, yUp, Ny, FyLo, FyUp, args.regcoeff)
+    initXtFy(theModel, tLo, tUp, Nt, generatorXtData, xLo, xUp, Nx, FxLo, FxUp, args.regcoeff)
     initUniformMesh4XtFy(theModel)
     print("CHECK: %f <= t <= %f"%(tLo, tUp))
     print("CHECK: %f <= Xt <= %f"%(theModel.Xt[0].bounds[0], theModel.Xt[0].bounds[1]))
-    print("CHECK: %f <= y <= %f"%(yLo, yUp))
-    print("CHECK: %f <= Fy <= %f"%(theModel.Fy[0].bounds[0], theModel.Fy[0].bounds[1]))
+    print("CHECK: %f <= y <= %f"%(xLo, xUp))
+    print("CHECK: %f <= Fx <= %f"%(theModel.Fx[0].bounds[0], theModel.Fx[0].bounds[1]))
 
 
     # quit()
@@ -227,10 +226,10 @@ if __name__ == "__main__":
 
     print('SvF obj.: ', pyo.value(theModel.svfObj))
     print('MSD = %f, REG = %f' % (msdSol, regSol))
-    print('F(y): ', [pyo.value(theModel.Fy[j]) for j in theModel.setYidx])
+    print('F(x): ', [pyo.value(theModel.Fx[j]) for j in theModel.setXidx])
     print('X(t): ', [pyo.value(theModel.Xt[t]) for t in theModel.setTidx])
     print('t: ', [pyo.value(theModel.meshT[i])  for i in theModel.setTidx])
-    print('y: ', [pyo.value(theModel.meshY[j])  for j in theModel.setYidx])
+    print('x: ', [pyo.value(theModel.meshX[j])  for j in theModel.setXidx])
 
     plotModelPW(theModel, nl_file[:-len('.nl')])
     quit()
@@ -239,7 +238,7 @@ if __name__ == "__main__":
     # theModel = pyo.ConcreteModel("test Ode1_Sqrt")
     # print("Model name: ", theModel.getname())
     #
-    # initXtFy(theModel, xLo, xUp, Nx, yLo, yUp, Ny)
+    # initXtFy(theModel, tLo, tUp, Nt, xLo, xUp, Nx)
     # initUniformMesh4XtFy(theModel)
     # addDiff1_XtFy(theModel, eps=0.01, useEta=False)
     # printData(theModel)
