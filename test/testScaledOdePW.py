@@ -10,8 +10,37 @@ dx(t)/dt = F(x(t))
 d2x(t)/d2t = F(x(t),x'(t))
 """
 
-def init_scaled_XtFx(model: pyo.ConcreteModel, Nt: int, Nx, int):
-    return None
+def init_scaled_XtFx(model: pyo.ConcreteModel, Nt: int, Nx, intб,  FxLo: float, FxUp: float):
+    if FxLo > FxUp:
+        raise Exception(("FxLo=%f > FxUp=%f")%(FxLo, FxUp))
+    # Values of sx(st) for SCALED x, t  !!!
+    model.Xt = pyo.Var(pyo.RangeSet(0,Nt), within=pyo.Reals, bounds=(0, Nx))
+    # Values of Fx(sx) for SCALED argument !!!
+    model.Fx = pyo.Var(pyo.RangeSet(0,Nx), within=pyo.Reals, bounds=(FxLo, FxUp))
+
+
+def addSvFObject(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, txValuesData: list, regCoeff: float):
+    """
+    Add MSD(X-xData) + reg*REG(Fx) object function
+    :param model: the model
+    :param txValuesData: list of (tVal, xVal) tuples of experimental data
+    :param regCoeff:
+    :return:
+    """
+    if regCoeff < 0:
+        raise Exception(("regCoeff = %f < 0")%(regCoeff))
+
+    def svfObject_rule(m):
+        REG = regCoeff*( (Nx/(xUp - xLo))**3 )*sum( (m.Fx[j+1] - 2*m.Fx[j] + m.Fx[j-1])**2 for j in range(1, Nx))
+        MSD_summands = []
+        for tx in txValuesData:
+            t, x = tx[0], tx[1]
+            st = (t - tLo)*Nt/(tUp - tLo)
+            MSD_summands.append((x - pw_xt_val(m, st, Nt))**2)
+        return (sum(msd for msd in MSD_summands) + REG)
+
+    model.svfObj = pyo.Objective(rule=svfObject_rule, sense=pyo.minimize)
+
 
 
 def A(m: pyo.ConcreteModel, j): return (m.Fx[j] - m.Fx[j-1])
@@ -41,7 +70,7 @@ def pw_xt_val(m: pyo.ConcreteModel, scaled_t: float, Nt):
     if scaled_t < 0 or scaled_t > Nt:
         raise Exception("pw_xt_val: scaled_t (%f) IS NOT IN [0, %d]" %(scaled_t, Nt))
     k = int(scaled_t)
-    return (m.Xt[k]*(k + 1 - scaled_t) + m.Xt[k+1]*(scaled_t - k))
+    return (m.Xt[k]*(k + 1 - scaled_t) + m.Xt[min(k+1, Nt)]*(scaled_t - k))
 
 def pw_Fx_val(m: pyo.ConcreteModel, scaled_x: float, Nx):
     """
@@ -54,7 +83,7 @@ def pw_Fx_val(m: pyo.ConcreteModel, scaled_x: float, Nx):
     if scaled_x < 0 or scaled_x > Nx:
         raise Exception("pw_x_val: scaled_x (%f) IS NOT IN [0, %d]" %(scaled_x, Nx))
     j = int(scaled_x)
-    return (m.Fx[j]*(j + 1 - scaled_x) + m.Xt[j+1]*(scaled_x - j))
+    return (m.Fx[j]*(j + 1 - scaled_x) + m.Xt[min(j+1, Nx)]*(scaled_x - j))
 
 def add_scaled_ode1_XtFx(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, eps: float = 0.01, useEta = True):
     """
