@@ -10,7 +10,7 @@ dx(t)/dt = F(x(t))
 d2x(t)/d2t = F(x(t),x'(t))
 """
 
-def init_scaled_XtFx(model: pyo.ConcreteModel, Nt: int, Nx, intб,  FxLo: float, FxUp: float):
+def init_scaled_XtFx(model: pyo.ConcreteModel, Nt: int, Nx: int,  FxLo: float, FxUp: float):
     if FxLo > FxUp:
         raise Exception(("FxLo=%f > FxUp=%f")%(FxLo, FxUp))
     # Values of sx(st) for SCALED x, t  !!!
@@ -19,7 +19,7 @@ def init_scaled_XtFx(model: pyo.ConcreteModel, Nt: int, Nx, intб,  FxLo: float,
     model.Fx = pyo.Var(pyo.RangeSet(0,Nx), within=pyo.Reals, bounds=(FxLo, FxUp))
 
 
-def addSvFObject(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, txValuesData: list, regCoeff: float):
+def add_scaled_SvFObject(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, txValuesData: list, regCoeff: float):
     """
     Add MSD(X-xData) + reg*REG(Fx) object function
     :param model: the model
@@ -29,7 +29,6 @@ def addSvFObject(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, txValuesD
     """
     if regCoeff < 0:
         raise Exception(("regCoeff = %f < 0")%(regCoeff))
-
     def svfObject_rule(m):
         REG = regCoeff*( (Nx/(xUp - xLo))**3 )*sum( (m.Fx[j+1] - 2*m.Fx[j] + m.Fx[j-1])**2 for j in range(1, Nx))
         MSD_summands = []
@@ -38,10 +37,7 @@ def addSvFObject(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, txValuesD
             st = (t - tLo)*Nt/(tUp - tLo)
             MSD_summands.append((x - pw_xt_val(m, st, Nt))**2)
         return (sum(msd for msd in MSD_summands) + REG)
-
     model.svfObj = pyo.Objective(rule=svfObject_rule, sense=pyo.minimize)
-
-
 
 def A(m: pyo.ConcreteModel, j): return (m.Fx[j] - m.Fx[j-1])
 def eta_sqrt(x, j: int, eps): return pyo.sqrt((x - j)**2 + eps)
@@ -98,9 +94,9 @@ def add_scaled_ode1_XtFx(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, e
     s1_factor = ((xUp - xLo)/Nx)*(Nt/(tUp - tLo))
 
     def scaled_ode1_XtFx_eta_rule(m, k):
-        return (s1_factor * (m.Xt[k] - m.Xt[k-1]) == pwFx_eta(m, (m.Xt[k] + m.Xt[k-1])/2))
+        return (s1_factor * (m.Xt[k] - m.Xt[k-1]) == pwFx_eta(m, (m.Xt[k] + m.Xt[k-1])/2), Nx)
     def scaled_ode1_XtFx_sqrt_rule(m, k):
-        return (s1_factor * (m.Xt[k] - m.Xt[k-1]) == pwFx_sqrt(m, (m.Xt[k] + m.Xt[k-1])/2),eps )
+        return (s1_factor * (m.Xt[k] - m.Xt[k-1]) == pwFx_sqrt(m, (m.Xt[k] + m.Xt[k-1])/2, Nx, eps ))
 
     model.setOde1K = pyo.RangeSet(1, Nt)
     if useEta:
