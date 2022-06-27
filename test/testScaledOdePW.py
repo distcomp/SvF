@@ -10,6 +10,18 @@ dx(t)/dt = F(x(t))
 d2x(t)/d2t = F(x(t),x'(t))
 """
 
+class XTScaling:
+    def __init__(self, tLo, tUp, Nt, xLo, xUp, Nx):
+        self.tLo, self.tUp, self.Nt, self.xLo, self.xUp, self.Nx = tLo, tUp, Nt, xLo, xUp, Nx
+    def t2st(self, t):
+        return (t - self.tLo)*self.Nt/(self.tUp - self.tLo)
+    def x2sx(self, x):
+        return (x - self.xLo)*self.Nx/(self.xUp - self.xLo)
+    def st2t(self, st):
+        return self.tLo + st*(self.tUp - self.tLo)/self.Nt
+    def sx2x(self, sx):
+        return self.xLo + sx*(self.xUp - self.xLo)/self.Nx
+
 def init_scaled_XtFx(model: pyo.ConcreteModel, Nt: int, Nx: int,  FxLo: float, FxUp: float):
     if FxLo > FxUp:
         raise Exception(("FxLo=%f > FxUp=%f")%(FxLo, FxUp))
@@ -18,6 +30,17 @@ def init_scaled_XtFx(model: pyo.ConcreteModel, Nt: int, Nx: int,  FxLo: float, F
     # Values of Fx(sx) for SCALED argument !!!
     model.Fx = pyo.Var(pyo.RangeSet(0,Nx), within=pyo.Reals, bounds=(FxLo, FxUp))
 
+def scaled_MSD_expr(m: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, txValuesData: list):
+    MSD_summands = []
+    for tx in txValuesData:
+        t, x = tx[0], tx[1]
+        st = (t - tLo) * Nt / (tUp - tLo)
+        sx = (x - xLo) * Nx / (xUp - xLo)
+        MSD_summands.append((sx - pw_xt_val(m, st, Nt)) ** 2)
+    return (pyo.quicksum(msd for msd in MSD_summands))
+
+def scaled_REG_expr(m: pyo.ConcreteModel, xLo, xUp, Nx, regCoeff: float):
+    return (regCoeff*( (Nx/(xUp - xLo))**3 )*pyo.quicksum( (m.Fx[j+1] - 2*m.Fx[j] + m.Fx[j-1])**2 for j in range(1, Nx)) )
 
 def add_scaled_SvFObject(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, txValuesData: list, regCoeff: float):
     """
@@ -29,15 +52,8 @@ def add_scaled_SvFObject(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, t
     """
     if regCoeff < 0:
         raise Exception(("regCoeff = %f < 0")%(regCoeff))
-    def svfObject_rule(m):
-        REG = regCoeff*( (Nx/(xUp - xLo))**3 )*sum( (m.Fx[j+1] - 2*m.Fx[j] + m.Fx[j-1])**2 for j in range(1, Nx))
-        MSD_summands = []
-        for tx in txValuesData:
-            t, x = tx[0], tx[1]
-            st = (t - tLo)*Nt/(tUp - tLo)
-            MSD_summands.append((x - pw_xt_val(m, st, Nt))**2)
-        return (sum(msd for msd in MSD_summands) + REG)
-    model.svfObj = pyo.Objective(rule=svfObject_rule, sense=pyo.minimize)
+    model.svfObj = pyo.Objective(expr=scaled_MSD_expr(model, tLo, tUp, Nt, xLo, xUp, Nx, txValuesData) +
+                                      scaled_REG_expr(model, xLo, xUp, Nx, regCoeff), sense=pyo.minimize)
 
 def A(m: pyo.ConcreteModel, j): return (m.Fx[j] - m.Fx[j-1])
 def eta_sqrt(x, j: int, eps): return pyo.sqrt((x - j)**2 + eps)
