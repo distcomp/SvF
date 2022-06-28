@@ -11,8 +11,9 @@ d2x(t)/d2t = F(x(t),x'(t))
 """
 
 class XTScaling:
-    def __init__(self, tLo, tUp, Nt, xLo, xUp, Nx):
+    def __init__(self, tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp):
         self.tLo, self.tUp, self.Nt, self.xLo, self.xUp, self.Nx = tLo, tUp, Nt, xLo, xUp, Nx
+        self.FxLo, self.FxUp = FxLo, FxUp
     def t2st(self, t):
         return (t - self.tLo)*self.Nt/(self.tUp - self.tLo)
     def x2sx(self, x):
@@ -56,7 +57,7 @@ def add_scaled_SvFObject(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, t
                                       scaled_REG_expr(model, xLo, xUp, Nx, regCoeff), sense=pyo.minimize)
 
 def A(m: pyo.ConcreteModel, j): return (m.Fx[j] - m.Fx[j-1])
-def eta_sqrt(x, j: int, eps): return pyo.sqrt((x - j)**2 + eps)
+def eta_sqrt(x, j: int, eps): return  pyo.sqrt((x - j)**2 + eps)
 
 # 1/2*(FF(y(0))+FF(y(Ny))+A(1)*(y-y(0))+A(Ny)*(y-y(Ny))) + 1/2*(sum( A(j)*eta(j-1,y,e),j,2,Ny) - sum( A(j)*eta(j,y,e),j,1,Ny-1))
 def pwFx_sqrt(m: pyo.ConcreteModel, x, Nx, eps):
@@ -65,10 +66,17 @@ def pwFx_sqrt(m: pyo.ConcreteModel, x, Nx, eps):
             0.5*sum(A(m, j)*eta_sqrt(x, j, eps)   for j in range(1, Nx))
             )
 
-def pwFx_eta(m: pyo.ConcreteModel, x, Nx):
+def pwFx_eta(m: pyo.ConcreteModel, x, Nx, tk):
+    """
+    :param m: the model to add constraints
+    :param x: expression for Fx arguments
+    :param Nx: number of mesh INTERVALS = NUMBER OF POINTS -1
+    :param tk: the index of LEFT SIDE of ODE equation
+    :return: expression for RIGHT SIDE
+    """
     return (0.5*(m.Fx[0] + m.Fx[Nx]) + A(m,1)*(x - 0) + A(m,Nx)*(x - Nx) +
-            0.5*sum(A(m, j)*m.Eta[j-1] for j in range(2, Nx+1)) -
-            0.5*sum(A(m, j)*m.Eta[j]  for j in range(1, Nx))
+            0.5*sum(A(m, j)*m.Eta[tk, j-1] for j in range(2, Nx+1)) -
+            0.5*sum(A(m, j)*m.Eta[tk, j]  for j in range(1, Nx))
             )
 
 def pw_xt_val(m: pyo.ConcreteModel, scaled_t: float, Nt):
@@ -110,9 +118,15 @@ def add_scaled_ode1_XtFx(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, e
     s1_factor = ((xUp - xLo)/Nx)*(Nt/(tUp - tLo))
 
     def scaled_ode1_XtFx_eta_rule(m, k):
-        return (s1_factor * (m.Xt[k] - m.Xt[k-1]) == pwFx_eta(m, (m.Xt[k] + m.Xt[k-1])/2), Nx)
+        # x = (m.Xt[k] + m.Xt[k-1])/2
+        # pwFx_eta_val = (0.5*(m.Fx[0] + m.Fx[Nx]) + A(m,1)*(x - 0) + A(m,Nx)*(x - Nx) +
+        #     0.5*sum(A(m, j)*m.Eta[k,j-1] for j in range(2, Nx+1)) -
+        #     0.5*sum(A(m, j)*m.Eta[k,j]  for j in range(1, Nx))
+        #     )
+        return (s1_factor * (m.Xt[k] - m.Xt[k-1]) == pwFx_eta(m, (m.Xt[k] + m.Xt[k-1])/2, Nx, k) )
+
     def scaled_ode1_XtFx_sqrt_rule(m, k):
-        return (s1_factor * (m.Xt[k] - m.Xt[k-1]) == pwFx_sqrt(m, (m.Xt[k] + m.Xt[k-1])/2, Nx, eps ))
+        return (s1_factor * (m.Xt[k] - m.Xt[k-1]) == pwFx_sqrt(m,(m.Xt[k] + m.Xt[k-1])/2, Nx, eps ))
 
     model.setOde1K = pyo.RangeSet(1, Nt)
     if useEta:
@@ -144,9 +158,9 @@ def add_scaled_ode2_XtFx(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, e
     s2_factor = ((xUp - xLo)/Nx)*((Nt/(tUp - tLo))**2)
 
     def scaled_ode2_XtFx_eta_rule(m, k):
-        return (s2_factor * (m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1]) == pwFx_eta(m, m.Xt[k]) )
+        return (s2_factor * (m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1]) == pwFx_eta(m, m.Xt[k], Nx, k) )
     def scaled_ode2_XtFx_sqrt_rule(m, k):
-        return (s2_factor * (m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1]) == pwFx_sqrt(m, m.Xt[k]),eps )
+        return (s2_factor * (m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1]) == pwFx_sqrt(m, m.Xt[k], Nx, eps) )
 
     model.setOde2K = pyo.RangeSet(1, Nt-1)
     if useEta:
@@ -165,55 +179,3 @@ def add_scaled_ode2_XtFx(model: pyo.ConcreteModel, tLo, tUp, Nt, xLo, xUp, Nx, e
     else:
         model.Scaled_Ode2_Sqrt = pyo.Constraint(model.setOde2K, rule=scaled_ode2_XtFx_sqrt_rule)
 
-#
-# def addOde_2_XtFy(model: pyo.ConcreteModel, eps: float = 0.01, useEta = True):
-#     """
-#     Add ODE of the form
-#     d2x(t)/dt^2 = F(x(t))
-#     It is assumed that model has:
-#     parameters:
-#      Nt, Nx, tLimits = {tLo, tUp}, yLmits = {xLo, xUp}
-#      dt = (tUp - tLo)/Nt, dy=(xUp - xLo)/Nx
-#     variables Xt[0:Nt], Fx[0:Nx]
-#     uniform meshgrids meshT[0:Nt], meshX[0:Nx]
-#     """
-#     dt = model.dt.value
-#     dy = model.dy.value
-#     Nt = len(model.Xt) - 1
-#     Nx = len(model.Fx) - 1
-#     xLo = model.xLimits[0]
-#
-#     def A(m, j: int):
-#         return (model.Fx[j] - model.Fx[j-1])/dy
-#
-#     def D2F(m, j: int):
-#         # (A(j)-A(j-1))/dy
-#         return (model.Fx[j] - 2*model.Fx[j-1] + model.Fx[j-2])/dy
-#
-#     def cntrX2(m, k: int):
-#         return (m.Xt[k])
-#
-#     model.setOde2K = pyo.RangeSet(1, Nt-1)
-#     if useEta:
-#         model.setEtaJ = pyo.RangeSet(1, Nx - 1)
-#         model.Eta = pyo.Var(model.setOde2K, model.setEtaJ, within=pyo.PositiveReals)
-#
-#     def Eta_rule(m, k, j):
-#         return (m.Eta[k, j]**2 == (cntrX2(m, k) - m.meshX[j])**2 + eps)
-#     if useEta:
-#         model.Eta_constr = pyo.Constraint(model.setOde2K, model.setEtaJ, rule=Eta_rule)
-#
-#     def ODE2_Eta_rule(m, k):
-#         return ((m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1])/(dt*dt) ==
-#                  m.Fx[0] - A(m, 1)*xLo + (1./2.)*(A(m, 1) + A(m, Nx))*cntrX2(m, k) +
-#                 (1. / 2.)*sum(D2F(m, j)*(m.Eta[k, j - 1] - m.meshX[j-1]) for j in pyo.RangeSet(2, Nx))
-#                 )
-#     def ODE2_Sqrt_rule(m, k):
-#         return ((m.Xt[k+1] - 2*m.Xt[k] - m.Xt[k-1])/(dt*dt) ==
-#                  m.Fx[0] - A(m, 1)*xLo + (1./2.)*(A(m, 1) + A(m, Nx))*cntrX2(m, k) +
-#                 (1. / 2.)*sum(D2F(m, j)*(pyo.sqrt((cntrX2(m, k) - m.meshX[j-1])**2 + eps) - m.meshX[j-1]) for j in pyo.RangeSet(2, Nx))
-#                 )
-#     if useEta:
-#         model.ODE2_Eta = pyo.Constraint(model.setOde2K, rule=ODE2_Eta_rule)
-#     else:
-#         model.ODE2_Sqrt = pyo.Constraint(model.setOde2K, rule=ODE2_Sqrt_rule)

@@ -12,7 +12,7 @@ from testScaledOdePW import init_scaled_XtFx, add_scaled_ode1_XtFx, add_scaled_o
 from write import write_nl_only, write_nl_smap
 from write import get_smap_var
 from read import read_sol_smap_var #, read_sol_smap
-from testPlotPW import plotModelPW
+from testPlotPW import plotScaledModelPW
 import subprocess
 
 IPOPT_EXE = '/opt/solvers/bin/ipopt'
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         if args.order == 2:
             return math.sin(2*t) + math.cos(2*t) #*(1. + randomError[k])
         elif args.order == 1:
-            return (-1./(1.+t))*(1. + randomError[k]) # 2*math.exp(t)
+            return (1./(1.+t))*(1. + randomError[k]) # 2*math.exp(t)
         else:
             raise Exception("UNKNOWN Generator XtData")
     # Fill txValuesData list
@@ -131,8 +131,15 @@ if __name__ == "__main__":
         t, x = tx[0], tx[1]
         tLo, tUp = min(t, tLo), max(t, tUp)
         xLo, xUp = min(x, xLo), max(x, xUp)
-    # scaler = XTScaling(tLo, tUp, Nt, xLo, xUp, Nx)
-
+    # Bounds on t and x may be CHANGED !
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    XTscaler  = XTScaling(tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp)
+    # ===========================================
+    print('>>>>>>>>> DATA =========')
+    print(">>>> tLo=%f, tUp=%f, Nt=%d, xLo=%f, xUp=%f, Nx=%d, FxLo=%f, FxUp=%f" % (tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp) )
+    print("data, t: ", [tx[0] for tx in txDataValues])
+    print("data, x: ", [tx[1] for tx in txDataValues])
+    print('========================')
     # ============================
 
     theModel = pyo.ConcreteModel(getModelName(args.prefix, args))
@@ -181,9 +188,10 @@ if __name__ == "__main__":
     print('F(x): ', [pyo.value(theModel.Fx[j]) for j in pyo.RangeSet(0,Nx)])
     print('X(t): ', [pyo.value(theModel.Xt[t]) for t in pyo.RangeSet(0,Nt)])
 
-    quit()
+    # quit()
 
-    plotModelPW(theModel, nl_file[:-len('.nl')])
+    # plotModelPW(theModel, nl_file[:-len('.nl')])
+    plotScaledModelPW(theModel, XTscaler, txDataValues, nl_file[:-len('.nl')])
     quit()
     #
     # print("\n||||||||||||||||||||||||||||| Ode1_Sqrt |||||||||||||||||||||||||||||")
