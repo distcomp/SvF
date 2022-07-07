@@ -4,8 +4,8 @@ import random
 
 import pyomo.environ as pyo
 
-from testScaledOdePW import init_scaled_XtFx, add_scaled_ode1_XtFx, add_scaled_ode2_XtFx, add_scaled_SvFObject,\
-                            scaled_MSD_expr, scaled_REG_expr, XTScaling
+from testScaledOdePW import init_XtFx, add_ode1_XtFx, add_ode2_XtFx, add_SvFObject, \
+                            MSD_expr, REG_expr, XTScaling
 # from testSplinePW import addSpline_XtFy
 
 # The following imports are from /asl_io/write module
@@ -89,10 +89,10 @@ def makeParser():
     parser.add_argument('-pr', '--prefix', default="OdePw", type=str, help='Prefix of problem name')
     parser.add_argument('-wd', '--workdir', default='tmp', help='working directory')
     parser.add_argument('-s', '--solver', default='ipopt', choices=['ipopt', 'scip'], help='solver to use')
-    parser.add_argument('-t', '--tLoUpND', nargs='+', default=[1., 3., 4, 5], type=float, help='t: Lo Up N number of data')
-    parser.add_argument('-x', '--xLoUpN', nargs='+', default=[5., 7., 5], type=float, help='x: Lo Up N')
+    parser.add_argument('-t', '--tLoUpND', nargs='+', default=[0., 3., 10, 5], type=float, help='t: Lo Up N number of data')
+    parser.add_argument('-x', '--xLoUpN', nargs='+', default=[-1.5, 1.5, 5], type=float, help='x: Lo Up N')
     parser.add_argument('-Fx', '--FxLoUp', nargs='+', default=[-100., 100.], type=float, help='Lo Up limits for Fx')
-    parser.add_argument('-o', '--order', default=1, choices=[1,2,0], type=int, help='ODE order 1 or 2 (reduced form), 0 - SPLINE')
+    parser.add_argument('-o', '--order', default=2, choices=[1,2,0], type=int, help='ODE order 1 or 2 (reduced form), 0 - SPLINE')
     parser.add_argument('-eps', '--epsilon', default=0.01, type=float, help='Epsilon to smooth pos()')
     parser.add_argument('-reg', '--regcoeff', default=.005, type=float, help='Regularization coefficient')
     parser.add_argument('-err', '--errdata', default=.1, type=float, help='Error of data')
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         xLo, xUp = min(x, xLo), max(x, xUp)
     # Bounds on t and x may be CHANGED !
     # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    XTscaler  = XTScaling(tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp)
+    xtmesh  = XTScaling(tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp)
     # ===========================================
     print('>>>>>>>>> DATA =========')
     print(">>>> tLo=%f, tUp=%f, Nt=%d, xLo=%f, xUp=%f, Nx=%d, FxLo=%f, FxUp=%f" % (tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp) )
@@ -146,19 +146,19 @@ if __name__ == "__main__":
     # theModel.name = getNLname(theModel, args)
     print("Model name: ", theModel.getname())
 
-    init_scaled_XtFx(theModel, Nt, Nx, FxLo, FxUp)
+    init_XtFx(theModel, xtmesh)
 
     # quit()
     # if args.order == 0:
     #     addSpline_XtFy(theModel, eps=args.epsilon, useEta=args.useEta)
     if args.order == 1:
-        add_scaled_ode1_XtFx(theModel, tLo, tUp, Nt, xLo, xUp, Nx, eps=args.epsilon, useEta=args.useEta)
+        add_ode1_XtFx(theModel, xtmesh, eps=args.epsilon, useEta=args.useEta)
     elif args.order == 2:
-        add_scaled_ode2_XtFx(theModel, tLo, tUp, Nt, xLo, xUp, Nx, eps=args.epsilon, useEta=args.useEta)
+        add_ode2_XtFx(theModel, xtmesh, eps=args.epsilon, useEta=args.useEta)
     else:
         raise Exception("UNKNOWN Type of equation")
 
-    add_scaled_SvFObject(theModel, tLo, tUp, Nt, xLo, xUp, Nx, txDataValues, args.regcoeff)
+    add_SvFObject(theModel, xtmesh, txDataValues, args.regcoeff)
     # printData(theModel)
 
     theModel.pprint()
@@ -179,8 +179,8 @@ if __name__ == "__main__":
 
     readSol(theModel, nl_file)
 
-    msdSol = pyo.value(scaled_MSD_expr(theModel, tLo, tUp, Nt, xLo, xUp, Nx, txDataValues))
-    regSol = pyo.value(scaled_REG_expr(theModel, xLo, xUp, Nx, regCoeff))
+    msdSol = pyo.value(MSD_expr(theModel, xtmesh, txDataValues))
+    regSol = pyo.value(REG_expr(theModel, xtmesh, regCoeff))
     # (msdSol, regSol) = getMSD_REG(theModel)
 
     print('SvF obj.: ', pyo.value(theModel.svfObj))
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     # quit()
 
     # plotModelPW(theModel, nl_file[:-len('.nl')])
-    plotScaledModelPW(theModel, XTscaler, txDataValues, nl_file[:-len('.nl')])
+    plotScaledModelPW(theModel, xtmesh, txDataValues, nl_file[:-len('.nl')])
     quit()
     #
     # print("\n||||||||||||||||||||||||||||| Ode1_Sqrt |||||||||||||||||||||||||||||")
