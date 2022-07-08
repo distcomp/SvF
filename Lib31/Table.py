@@ -15,8 +15,8 @@ from Object    import *
 #def  Tbl     ( nTbl ) :   return getTbl     ( nTbl   )
 
 def ParseSelect30(buf):  ##  разбор  Select
-    buf = buf.strip()
-    #       print (buf)
+    buf = buf.strip().replace(', ',",")
+    print (buf)
     part = SplitIgnor(buf, 'Select ')
     #      print (part)
     leftName = part[0][:-1]
@@ -56,7 +56,7 @@ def  Treat_FieldNames (raw_line) :
                     fld = pars.items[itn+2].part
                     print ('fld', fld)
                     if ( fld !='dat' and fld !='AddField' and fld !='sR' and fld !='NoR'  and fld !='AppendRec' and
-                         fld != 'WriteSvFtbl' and fld != 'Flds' and fld != 'KillRowsByMask'
+                         fld != 'WriteSvFtbl' and fld != 'Flds' and fld != 'KillRowsByMask' and fld != 'KillField'
                        ):
                         pars.items[itn+2].part = 'dat(\''+fld+'\')'
  #                       raw_line = SubstitudeName(raw_line, fld, 'dat(\''+fld+'\')')
@@ -219,7 +219,7 @@ class Table (Object):
         self.NoR     = 0
         self.sR      = []
         self.useNaN  = SvF.useNaN
-        self.fields_str  = fields
+        self.fields_str  = fields #.strip()
         self.con_list = []                            # list of arguments for
         self.where_condition = where_condition        #   where_condition
 
@@ -228,7 +228,7 @@ class Table (Object):
         print('\n*Table*', fields, '\n  from', fromFile, 'name:'+self.name+'|')
         ff_nn = SplitIgnor ( fromFile, ' AS ' )     # Имя файла и таблицы
 
-        _fields = fields.split(',')                   # Fields
+        _fields = self.fields_str.split(',')                   # Fields
         if SvF.printL : print (_fields)
         for fld in _fields :
             part = SplitIgnor ( fld.strip(), ' AS ' )
@@ -242,7 +242,8 @@ class Table (Object):
         root, ext = splitext(self.fromFile.upper())
 #        if   getTblNum(self.fromFile) !=-1 :  self.Read30_TBL ( )
         if   not getTbl(self.fromFile) is None :  self.Read30_TBL ( )
-        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( where_condition )  # надо переписать
+#        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( where_condition )  # надо переписать
+        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( )  # надо переписать
         elif   '.XLSX' == ext :                   self.Read30_XLSX( )
         elif   '.KML'  == ext :                   self.Read21_KML ( where_condition )  # надо переписать
         elif   '.ASC'  == ext :                   self.Read27_ASC ( where_condition )  # надо переписать
@@ -255,6 +256,7 @@ class Table (Object):
 
         self.sR = range (self.NoR)
 
+
 ## 30        SvF.Task.KillTbl ( self.name )   # kill the same name
 ## 30        SvF.Task.AddTbl ( self )
         SvF.curentTabl = self
@@ -263,9 +265,14 @@ class Table (Object):
         if SvF.Compile :  print('Oprint Compile', self.Otype, self.name)
         else :            print('Oprint', self.Otype, self.name, "NoC", self.NoC, "NoR", self.NoR)
 
-    def AddField( self, name ) :
-        self.Flds.append ( Field ( name, '' ) )
-        self.Flds[-1].tb = zeros ( (self.NoR), float64 )
+    def AddField( self, name, pos = -1 ) :
+        if pos == -1:
+            self.Flds.append ( Field ( name, '' ) )
+            self.Flds[-1].tb = zeros ( (self.NoR), float64 )
+        else :
+            self.Flds.insert ( pos, Field ( name, '' ) )
+            self.Flds[pos].tb = zeros ( (self.NoR), float64 )
+
 
 
     def IndexCol( self, Name ) :
@@ -360,13 +367,15 @@ class Table (Object):
         if self.where_condition is None:  return
         con_list = []
         for a in self.fields_str.split(','):
+ #          print ('fields_str', a)
             if a.strip() == '*': continue
             part = SplitIgnor(a, ' As ')
             if len(part) == 1:   args = part[0]
             else:                args = part[1]
+            print (args)
             fn = self.getFieldNum( args)
             con_list.append (fn)
-#            print ('arrr', args, fn)
+            print ('arrr', args, fn)
         self.con_list = con_list
 
 
@@ -400,18 +409,21 @@ class Table (Object):
                 if name == None : name = ''
 #                print name
                 names.append(name.strip())           # remuve end  blancs
-            NoC = len (names)
+#            NoC = len (names)
             if SvF.printL :  print ("TablesNames", names)
+            print ("TablesNames", self.fromFile, ":", names)
 
-            print ("TablesNames", names)
-            for fld in self.Flds :
-                if isnan(fld.src_num) :              # not  ROWNUM
-                  try :
-                    fld.src_num = names.index ( fld.src_name )
-                  except :    
-                    print ("No Column for", fld.src_name, "*****************************")
-                    exit (-1)
-                fld.Mprint()
+            self.setField_src_num(names)
+            for fld in self.Flds : fld.Mprint()
+
+#            for fld in self.Flds :
+ #               if isnan(fld.src_num) :              # not  ROWNUM
+  #                try :
+   #                 fld.src_num = names.index ( fld.src_name )
+    #              except :
+     #               print ("No Column for", fld.src_name, "*****************************")
+      #              exit (-1)
+       #         fld.Mprint()
 
             self.where_con_list()       #   30
 
@@ -419,7 +431,7 @@ class Table (Object):
             maxNoR = ws.max_row  #50000
             for fld in self.Flds : fld.tb = zeros ( maxNoR, float64 ) 
 
-            NoR = 0;
+            NoR = 0
             ro = nameRow
             for t_raw in range (ws.max_row-nameRow)  :  #while (1) :
                 ro += 1
@@ -474,7 +486,7 @@ class Table (Object):
             self.KillField('*')
             self.NoC = len(self.Flds)
 
-    def Read28_FUN(self, where ) :
+    def Read28_FUN(self) :
             srcFun = getFun ( self.fromFile )
             names = []                                      # имена аргументов и функции
             for a in srcFun.A:   names.append ( a.name )
@@ -536,18 +548,11 @@ class Table (Object):
 
     def Read30_TBL( self ) :    #  tbl -> fld.tb
             source_tb = getTbl ( self.fromFile )
-            srcFlds = source_tb.Flds
-            for fld in self.Flds :
-                if fld.src_name == '*' :
-                    for s_fld in srcFlds : self.Flds.append ( Field ( s_fld.name, s_fld.name ) )
-                elif fld.src_name == 'ROWNUM' : fld.src_num = -1
-                else :    
-                    fld.src_num = source_tb.getFieldNum (fld.src_name)
-                    if fld.src_num == -1 :
-                        print ("No Column for", fld.src_name, "*****************************")
-                        exit (-1)    
-            self.KillField ('*')
-            for fld in self.Flds : fld.Mprint()
+            names = []                                      # имена аргументов и функции
+            for f in source_tb.Flds:   names.append ( f.name )
+#            print ('source_tb.Flds:', names)
+            self.setField_src_num ( names )
+#            for fld in self.Flds : fld.Mprint()
 
             self.NoC = len(self.Flds)
             for fld in self.Flds : fld.tb = zeros ( source_tb.NoR, float64 ) 
@@ -818,7 +823,8 @@ class Table (Object):
             self.NoR = NoR
             return
 
-    def WriteSvFtbl ( self, OutName, printL=0 ) :
+    def WriteSvFtbl ( self, OutName = '', printL=0 ) :
+        if OutName=='' :  OutName = self.name + '.txt'
         with open(OutName,'w') as f:  
             for fld in self.Flds :  f.write ( fld.name + '  ' )
             f.write ( '#SvFver_62_tbl' )

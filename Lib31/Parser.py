@@ -94,6 +94,21 @@ class  parser:
                             continue
                     it.part = sub
 
+    def substAllNames_but_dot_plus (self, fin, sub) :
+            for itn, it in enumerate(self.items) :
+                if it.part == fin :
+                    if itn + 1 < len(self.items):
+                        #                        if fin == 'Y': print ('UUUUUUUUUUUUUUUUUUU', self.items[itn + 1].part)
+                        if self.items[itn + 1].part == '.':
+                            continue
+                    if itn > 0:
+                        if self.items[itn - 1].part == '.':
+                            continue
+
+
+                    it.part = sub
+
+
 
     def reparse_funs ( self, grids = None ) :
             eq = self.join ()
@@ -322,19 +337,7 @@ class  parser:
 
 
 
-    def dif1  ( self, dif_minus, dif_plus, grids ) :       #  DIF 1
-                                                 #    d/dt(H2O(t))  ->   \d(t,H2O(t))
-#        find_d = False
- #       if not find_d :                                          #   d(H2O(t))//d(t)  ->   \d(t,H2O(t))
-  #        for ip in range( len(self.items)-3 ) :       #               012345678901234
-   #         if self.items[ip].part == '//' :
-    #            num_br = self.items[ip-1].lev         #  уровень закрывающей )
-     #           ipr = ip-1
-      #          while  self.items[ipr].type!='(' or self.items[ipr].lev!=num_br : ipr -= 1  # ищем открывающую
-       #         self.items[ipr-1].part = '\d'
-        #        self.items[ipr  ].part = '('+ self.items[ip+3].part + ','
-         #       for i in range (ip, ip+5 ) :  self.items[i].part = ''
-          #      find_d = True
+    def dif1  ( self, dif_minus, dif_plus, grids ) :       #  DIF 1      \d(t,H2O(t))
         if self.text.find ('\\d') == -1: return  dif_minus, dif_plus
         self.reparse_funs ( grids ) 
         print (self.join())
@@ -393,20 +396,17 @@ class  parser:
             
     def dif2 ( self, dif_minus, dif_plus, grids ) :       #  \d2(t,x(t))
 #        if self.find_type ( '\d2' ) == -1 :     return  dif_minus, dif_plus
-                                           #    d2/dt2(H2O(t))  ->   \d2(t,H2O(t))
-        find_d2 = False                                   
-        for ip in range( len(self.items)-3 ) :       
-            if self.items[ip].part == 'd2' and self.items[ip+1].part == '/' and self.items[ip+2].part[0] == 'd' : 
-#               self.items[ip+3].type == 'grid' and self.items[ip+4].part[0] == 'd'
-                self.items[ip  ].part = '\d2'	                #  'd2' -> 'd2'
-                self.items[ip+1].part = '('                    #    /  ->  ( 
-                self.items[ip+2].part = self.items[ip+2].part[1:-1]   #   dt2 ->  t
-                self.items[ip+3].part = ','                    #   (   ->  ,
-                find_d2 = True
-        if not find_d2 : return  dif_minus, dif_plus         
-        self.reparse_funs ( grids ) 
-#        if self.find_type ( '\d2' ) == -1 :     return  dif_minus, dif_plus
-        
+#        find_d2 = False
+#        for ip in range( len(self.items)-3 ) :
+ #           if self.items[ip].part == 'd2' and self.items[ip+1].part == '/' and self.items[ip+2].part[0] == 'd' :
+  #              self.items[ip  ].part = '\d2'	                #  'd2' -> 'd2'
+   #             self.items[ip+1].part = '('                    #    /  ->  (
+    #            self.items[ip+2].part = self.items[ip+2].part[1:-1]   #   dt2 ->  t
+     #           self.items[ip+3].part = ','                    #   (   ->  ,
+      #          find_d2 = True
+       # if not find_d2 : return  dif_minus, dif_plus
+        #self.reparse_funs ( grids )
+
         if com.printL : print ('DIF2', self.join())
         for itn, it in enumerate(self.items) :
             if it.type == '\\d2' :                        # par =  '\d2',  '\d2',  lev,        (  etc ->  '(', 't', ',', 'x(t)', ')' ]

@@ -444,7 +444,7 @@ class Fun (Object) :
                 return Fun(name).CopyFromFun(self)
 
     def gClone (self, copy_dat = False ):
-        if self.type == 'g' or self.type == 'G' :   # 29
+        if self.type == 'g' or self.type[0] == 'G' :   # 29
             ret = deepcopy (self)
             ret.type = 'g'
             if not copy_dat: self.V.dat = None
@@ -1104,7 +1104,8 @@ class Fun (Object) :
       
       if SvF.printL > 0 : print ('Before SaveSol to ', fName, self.type)
       if fName == '' :
-          if self.type == 'g' : fName = Prefix +self.nameFun() + ".sol"
+          if self.type == 'g' or self.type[0] == 'G':
+                                fName = Prefix +self.nameFun() + ".sol"
           else                : fName = Prefix +self.nameFun() + ".p.sol"
       if SvF.printL > 0 : print ('SaveSol to ', fName, self.type)
       try:
@@ -1113,7 +1114,7 @@ class Fun (Object) :
             print ("Can''t open file: ", fName)
             return
 
-      if self.type == 'g' or self.type == 'G' :
+      if self.type == 'g' or self.type[0] == 'G' :
           for a in self.A : fi.write ( a.name + '\t' )
           fi.write ( self.V.name )
           if   self.dim==0 :
@@ -1185,7 +1186,7 @@ class Fun (Object) :
 #      print 'self.Task.Mng.Prefix'+self.Task.Mng.Prefix+'|',fName
       Prefix = SvF.Prefix
       if fName == '' :
-          if self.type == 'g' or self.type == 'G':
+          if self.type == 'g' or self.type[0] == 'G':
               fName = Prefix +self.nameFun() + ".sol"
           else                : fName = Prefix +self.nameFun() + ".p.sol"
       try:
@@ -1250,7 +1251,7 @@ class Fun (Object) :
             if SvF.printL > 0 : print ("End of Fun.ReadSol from", fName)
             return
 ##############################################################################
-      if (self.type == 'g' or self.type == 'G') :
+      if (self.type == 'g' or self.type[0] == 'G') :
         gr = self.grd
         if self.dim==0 :
             self.grd = float(fi.readline())                  #   !  gr  !
@@ -1490,7 +1491,7 @@ class Fun (Object) :
  #   global dgr
   #  dgr = None
 
-    def interpol ( self, lev, X,Y=0,Z=0 ) :
+    def interpol ( self, lev, X,Y=0,Z=0 ) :   # X,Y,Z  в шагах
         if self.param or not SvF.Use_var: gr = self.grd
         else                           : gr = self.var            # 29
  #       print ("Use", SvF.Use_var)
@@ -1512,25 +1513,44 @@ class Fun (Object) :
             else                 :  return  self.interpol ( lev-1, X,Yi,Z ) * (1-dY) + self.interpol ( lev-1, X,Yi+1,Z ) * dY
         if lev == 1 :
             if self.type == 'G':
- #               global dgr
-  #              if dgr is None:
-#                    print('None')
-       #         dgr = zeros(self.A[0].Ub + 1, float64)
-        #        dgr[0] = 0
-         #       for n in self.A[0].mNodS:  dgr[n] = gr[n] - gr[n - 1]
-
+                def η(x) :
+                    return py.sqrt(x ** 2 + SvF.Epsilon)
                 dgr = [0.0]
                 for n in self.A[0].mNodS:  dgr.append ( gr[n] - gr[n - 1] )
                 ret = gr[0]+0.5*dgr[self.A[0].Ub]*X
-                for n in self.A[0].mNodS:
-                    ret += 0.5*(dgr[n]-dgr[n-1])*(( (X-n+1)**2+0.001 )**0.5-n+1)
+                for n in self.A[0].NodSm:
+                    ret += 0.5 * (dgr[n+1]-dgr[n]) * (η(X-n)-n)
+#                for n in self.A[0].mNodS:
+ #                   ret += 0.5 * (dgr[n]-dgr[n-1]) * (η(X-n+1)-n+1)
+#                for n in self.A[0].mNodS:
+#                    ret += 0.5 * (dgr[n]-dgr[n-1]) * (py.sqrt( (X-n+1) ** 2 + SvF.Epsilon )-n+1)
+                return ret
+            elif self.type == 'G7':
+                def η(x):
+                    return py.sqrt(x ** 2 + SvF.Epsilon)
+                dgr = [0.0]
+                for n in self.A[0].mNodS:  dgr.append(gr[n] - gr[n - 1])
+                ret = 0.5*(gr[0]+gr[self.A[0].Ub]) + 0.5*dgr[1]*(X) + 0.5*dgr[self.A[0].Ub]*(X-self.A[0].Ub+1)
+#                ret = 0.5*(gr[0]+gr[self.A[0].Ub]-1) + 0.5*dgr[1]*(X) + 0.5*dgr[self.A[0].Ub-1]*(X-self.A[0].Ub+1)
+                for j in self.A[0].mmNodS:
+                    ret += 0.5 * dgr[j] * η(X - j + 1)
+                for j in self.A[0].mNodSm:
+                    ret -= 0.5 * dgr[j] * η(X - j)
+##                for j in self.A[0].mmNodS:
+  ##                  ret += 0.5 * (dgr[j] - dgr[j-1]) * η(X - j + 1)
+#                ret = gr[0] + 0.5 * ( dgr[1] + dgr[self.A[0].Ub] ) * X
+ #               for j in self.A[0].mmNodS:
+  #                  ret += 0.5 * (dgr[j]-dgr[j-1]) * (η(X-j+1)-j+1)
                 return ret
 
-#                ret = 0
- #               for i in self.A[0].NodSm:
-  #                  dX = X - i
-   #                 ret += (gr[i] * (1 - dX) + gr[i + 1] * dX) * ind_0_1(dX)  # tetta(1 - dX) * tetta(dX)
-    #            return ret
+            elif self.type == 'G_ind':
+                def ind_0_1(x):
+                    return 0.5 * x / py.sqrt(SvF.Epsilon + x * x) - 0.5 * (x-1) / py.sqrt(SvF.Epsilon + (x-1) * (x-1))
+                ret = 0
+                for i in self.A[0].NodSm:
+                    dX = X - i
+                    ret += (gr[i] * (1 - dX) + gr[i + 1] * dX) * ind_0_1(dX)  # tetta(1 - dX) * tetta(dX)
+                return ret
 
             Xi = int(floor ( X ))
             if Xi < 0            : Xi = 0 
@@ -1560,8 +1580,7 @@ class Fun (Object) :
 
 
     def Ftbl ( self, n ) :
-#      if self.type == 'g' : #or self.type == 'G':
-      if self.type == 'g' or self.type == 'G':
+      if self.type == 'g' or self.type[0] == 'G':
         if   self.dim==1 :
             return self.interpol ( 1, self.A[0].dat[n]/self.A[0].step )
         elif self.dim==2 :
@@ -1571,13 +1590,6 @@ class Fun (Object) :
             return self.interpol ( 3, self.A[0].dat[n]/self.A[0].step,
                                       self.A[1].dat[n]/self.A[1].step,
                                       self.A[2].dat[n]/self.A[2].step )
-#      elif self.type == 'G':
- #         ret = 0
-  #        X = self.A[0].dat[n]/self.A[0].step
-   #       for i in self.A[0].NodSm :
-    #          dX = X - i
-     #         ret += (self.grd[i] * (1-dX) + self.grd[i+1] * dX) * tetta (1-dX)*tetta(dX)
-      #    return ret
 
 
     def F1 ( self, Ar_real ) :   return self.F ( [ Ar_real ] )
@@ -1596,21 +1608,24 @@ class Fun (Object) :
             return self.F ( [ Ar_real0, Ar_real1 ] )  
 
 
-    def F ( self, ArS_real ) :  # не проверенно
-      if ( self.type == 'g' or self.type == 'G' ) and self.dim==1 :
-        x = (ArS_real[0]-self.A[0].min)/self.A[0].step
-#        print ('F (ArS_real) ', ArS_real, x)
-        return self.interpol ( 1, x )
-      elif self.type == 'g' and self.dim==2 :
-        x = (ArS_real[0]-self.A[0].min)/self.A[0].step
-        y = (ArS_real[1]-self.A[1].min)/self.A[1].step
-        return self.interpol ( 2, x, y )
-      elif self.type == 'g' and self.dim==3 :
-          x = (ArS_real[0]-self.A[0].min)/self.A[0].step
-          y = (ArS_real[1]-self.A[1].min)/self.A[1].step
-          z = (ArS_real[2]-self.A[2].min)/self.A[2].step
-#          print x,y,z
-          return self.interpol ( 3, x, y, z )
+    def F ( self, ArS_real ) :
+          if self.dim == 0:                           #  31
+                if SvF.Use_var: return self.var
+                else          : return self.grd
+          elif ( self.type == 'g' or self.type[0] == 'G' ) and self.dim==1 :
+            x = (ArS_real[0]-self.A[0].min)/self.A[0].step
+    #        print ('F (ArS_real) ', ArS_real, x)
+            return self.interpol ( 1, x )
+          elif self.type == 'g' and self.dim==2 :
+            x = (ArS_real[0]-self.A[0].min)/self.A[0].step
+            y = (ArS_real[1]-self.A[1].min)/self.A[1].step
+            return self.interpol ( 2, x, y )
+          elif self.type == 'g' and self.dim==3 :
+              x = (ArS_real[0]-self.A[0].min)/self.A[0].step
+              y = (ArS_real[1]-self.A[1].min)/self.A[1].step
+              z = (ArS_real[2]-self.A[2].min)/self.A[2].step
+    #          print x,y,z
+              return self.interpol ( 3, x, y, z )
 
 
     def sumX ( self ) :                                                                    # self.fneNDT(x) ??
@@ -1669,7 +1684,7 @@ class Fun (Object) :
 
     def sumXX ( self ) :
 #      print ('gG sumXX', self.type)
-      if self.type == 'g' or self.type == 'G' :
+      if self.type == 'g' or self.type[0] == 'G' :
           if self.param or not SvF.Use_var:     gr = self.grd
           else:                                gr = self.var  # 29
 #          print ("Use", SvF.Use_var)

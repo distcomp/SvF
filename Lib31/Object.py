@@ -39,7 +39,7 @@ def getObjectNotGrid(name):
 ##################################################################            Grid
 def findGridByName(grids, name):   #  ищем в    grids  !!
         for g in grids:
-            #            print 'G', g.name, name, g.step
+            #            print 'Grid', g.name, name, g.step
             if g.name == name:
                 SvF.LastGrid = g
                 return g

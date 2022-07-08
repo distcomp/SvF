@@ -73,6 +73,7 @@ class Grid (Object):
         self.mNodSm = 0
         self.mNodS  = 0
         self.NodSm  = 0
+        self.mmNodS  = 0
         self.Val    = []
         self.FlNodS   = 0
         self.mFlNodSm = 0
@@ -126,6 +127,7 @@ class Grid (Object):
         self.mNodSm = range(1, self.Ub)
         self.mNodS  = range(1, self.Ub + 1)
         self.NodSm  = range(0, self.Ub)
+        self.mmNodS  = range(2, self.Ub + 1)
         self.FlNodS   = myrange(self.min,           self.max,           self.step)
         self.mFlNodSm = myrange(self.min+self.step, self.max-self.step, self.step)
         self.FlNodSm  = myrange(self.min,           self.max-self.step, self.step)

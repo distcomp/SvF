@@ -156,7 +156,7 @@ def  solveProblemsNl( Gr, teachSet, RunMo = 'L' ):   #  'L' - Local, 'N'- Nl loc
                 if k > 0: co.Task.ReadSols('.tmp')
  #               Grd_to_Var()
                 setMuToTeach(Gr, teachSet[k])
-                print ('co.optFactST', co.optFact)
+#                print ('co.optFactST', co.optFact)
        #         results = co.optFact.solve(Gr, tee=False, keepfiles=True)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
                 results = co.optFact.solve(Gr, tee=False)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
     #            results = co.optFact.solve(Gr)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss

@@ -61,13 +61,27 @@ def floatGradNaN ( txt ) :
         try:
             return float(txt)
         except:
-#            if txt is None: return NaN
- #           print ('TXT',txt)
             try :
                 gra = txt.index('°')
                 print ('GRAD:',txt)
                 if gra >= 0:
-                    return float(txt[:gra]) + float(txt[gra + 1:]) / 60.
+                    ret = float(txt[:gra])
+ #                   print (ret,txt[gra + 1:])
+                    minut = txt[gra + 1:]
+                    if len (minut) == 0: return ret
+                    pmin = minut.find (chr(8242))      #   chr(8242)    '?'    минуты
+#                    print (pmin, minut,minut[2])
+ #                   print (ord(minut[2]),ord(minut[5]))
+  #                  print ( ord('?'), '29°45?11?')
+                    if pmin == -1:  return ret + float(minut) / 60. * sign (ret)
+
+                    ret += float(minut[:pmin]) / 60. * sign(ret)
+                    sec = minut[pmin + 1:]
+                    if len (sec) == 0: return ret
+                    psec = sec.find (chr(8243))      #   chr(8243)    '?'    секунды
+   #                 print ('S', psec, sec)
+                    if psec != -1: sec = sec[:psec]
+                    return ret + float(sec) / 3600. * sign (ret)
             except:
                 if not txt is None : print ('TO FLOAT', txt)
                 return NaN
