@@ -11,8 +11,9 @@
 **.XXX
 pyomo-everest/examples/
 pyomo-everest/ssop/miscTest/
-test/
+test/tmp/*
 TMP/
+test/tmp
 
 SvF_UserGuide28v01.docx.bak
 Цитировать.odt
