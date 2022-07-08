@@ -124,7 +124,7 @@ if __name__ == "__main__":
             raise Exception("UNKNOWN Generator XtData")
     # Fill txValuesData list
     txDataValues = []
-    for k in range(Ndata):
+    for k in range(Ndata+1):
         tk = tLo + k*(tUp - tLo)/Ndata
         txDataValues.append( (tk, generatorXtData(tk, k)) )
     for tx in txDataValues:
@@ -137,8 +137,11 @@ if __name__ == "__main__":
     # ===========================================
     print('>>>>>>>>> DATA =========')
     print(">>>> tLo=%f, tUp=%f, Nt=%d, xLo=%f, xUp=%f, Nx=%d, FxLo=%f, FxUp=%f" % (tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp) )
-    print("data, t: ", [tx[0] for tx in txDataValues])
-    print("data, x: ", [tx[1] for tx in txDataValues])
+    print("data, t, x")
+    for tx in txDataValues:
+        print("%f  %f" % (tx[0], tx[1]))
+    # print("data, t: ", [tx[0] for tx in txDataValues])
+    # print("data, x: ", [tx[1] for tx in txDataValues])
     print('========================')
     # ============================
 
@@ -161,7 +164,7 @@ if __name__ == "__main__":
     add_SvFObject(theModel, xtmesh, txDataValues, args.regcoeff)
     # printData(theModel)
 
-    theModel.pprint()
+    # theModel.pprint()
 
     with open(args.workdir + '/' + theModel.getname() + '.model.txt', 'w') as out_file:
         theModel.pprint(ostream = out_file)
@@ -182,6 +185,8 @@ if __name__ == "__main__":
     msdSol = pyo.value(MSD_expr(theModel, xtmesh, txDataValues))
     regSol = pyo.value(REG_expr(theModel, xtmesh, regCoeff))
     # (msdSol, regSol) = getMSD_REG(theModel)
+
+    theModel.pprint()
 
     print('SvF obj.: ', pyo.value(theModel.svfObj))
     print('MSD = %f, REG = %f' % (msdSol, regSol))

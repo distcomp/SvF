@@ -73,7 +73,7 @@ def initXtFy(model: pyo.ConcreteModel, tLo: float, tUp: float, Nt: int, funcData
     if xLo > xUp:
         raise Exception(("xLo=%f > xUp=%f")%(xLo, xUp))
     if FxLo > FxUp:
-        raise Exception(("FxLo=%f > FxUp=%f")%(xLo, xUp))
+        raise Exception(("FxLo=%f > FxUp=%f")%(FxLo, FxUp))
 
     model.regCoeff = pyo.Param(initialize=regCoeff)
 
