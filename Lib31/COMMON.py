@@ -2,8 +2,9 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
+Epsilon = 0.001
+ObjToReadSols = False
 _Num = 0       #   номер увеличивается на 1
-
 #setPref = 's_'
 funPrefix = 'f'             #  в ReadMng добавить обработку
 #funPrefix = 'f_'

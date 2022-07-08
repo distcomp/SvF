@@ -146,6 +146,7 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
               if printL : print ("shape", tb.shape)
 #              x2 = []
  #             for i in range(tb.shape[0]) : x2.append(tb[i,0])
+              print (ReadFrom)
               x2 = tb[:,0]
               if Typ == 'tbl':
                   grd = tb[:,1]

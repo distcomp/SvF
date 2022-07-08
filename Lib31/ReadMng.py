@@ -94,6 +94,8 @@ def ReadMng ( ) :
      buf = UTF8replace(buf, '’', "'")
      buf = UTF8replace(buf, '’', "'")
  #    buf = UTF8replace(buf, '\t', "    ")
+     buf = UTF8replace(buf, '–', '-')
+     buf = UTF8replace(buf, '‘', '\'')
      buf = UTF8replace(buf, '∫', '\\int')
      buf = UTF8replace(buf, 'Σ', '\\sum')
      buf = UTF8replace(buf, '∈', '\\in ')
@@ -336,6 +338,10 @@ def ReadMng ( ) :
             elif coMembers[n] == 'useNaN' and buf == '' :  buf = 'True'
             elif Is(Q, "SchemeD1"):
                 SvF.SchemeD1.append(readEqStr());  buf = '\"'+SvF.SchemeD1[-1]+'\"'    # 30
+            elif Is(Q, "ObjToReadSols"):
+                SvF.ObjToReadSols = readBool(); continue
+            elif Is(Q, "funPrefix"):
+                SvF.funPrefix = readEqStr(); continue
             Swr('SvF.' + coMembers[n] + ' = ' + buf)
 #            print ('QQQQQQQQQQQQMEM', Q, buf)
         buf = ''
@@ -355,34 +361,12 @@ def ReadMng ( ) :
 ## 30    elif Is(Q, "Debag"  )     : SvF.Preproc  = False                                       #27
 ##    elif Is(Q, "Preproc"  )   : SvF.Preproc  = True                                         #27
   ##  elif Is(Q, "Compile"  )   : SvF.Preproc  = True                                         #27
-###    elif Is(Q, "printL"  )    : SvF.printL   = readInt();     nSwr( 'SvF.printL = ',SvF.printL )  #27
-###    elif Is(Q, "CVNUMOFITER") : SvF.CVNumOfIter = readInt();  nSwr( 'SvF.CVNumOfIter = ', SvF.CVNumOfIter)  #27
-###    elif Is(Q, "CVSTEP" )     : SvF.CVstep      = readInt();  nSwr( 'SvF.CVstep   = ',SvF.CVstep) #27
-###    elif Is(Q, "OptStep"   )  : SvF.OptStep    = readListFloat(); nSwr( 'SvF.OptStep  = ',SvF.OptStep)
-###    elif Is(Q, "ExitStep"  )  : SvF.ExitStep   = readFloat(); nSwr( 'SvF.ExitStep = ',SvF.ExitStep)
-###    elif(Is(Q, "RunSolver" ) or
-###         Is(Q, "RunMode"   ) ) : SvF.RunMode = readEqStr();   nSwr( 'SvF.RunMode = \''+SvF.RunMode+'\'')
-###    elif Is(Q, "Penalty"   )  : SvF.mngPenalty = readListFloat();  nSwr( 'SvF.mngPenalty = ',SvF.mngPenalty)
-
-###    elif Is(Q,"py_max_iter")                   : SvF.py_max_iter                   = readInt();   nSwr( 'SvF.py_max_iter = ',SvF.py_max_iter)
-###    elif Is(Q,"py_tol")                        : SvF.py_tol                        = readFloat(); nSwr( 'SvF.py_tol = ',SvF.py_tol)
-###    elif Is(Q,"py_warm_start_bound_push")      : SvF.py_warm_start_bound_push      = readFloat(); nSwr( 'SvF.py_warm_start_bound_push = ',SvF.py_warm_start_bound_push)
-###    elif Is(Q,"py_warm_start_mult_bound_push") : SvF.py_warm_start_mult_bound_push = readFloat(); nSwr( 'SvF.py_warm_start_mult_bound_push = ',SvF.py_warm_start_mult_bound_push)
-###    elif Is(Q,"py_constr_viol_tol")            : SvF.py_constr_viol_tol            = readFloat(); nSwr( 'SvF.py_constr_viol_tol = ',SvF.py_constr_viol_tol)
 
 ###    elif Is(Q, "resFile"   )  : SvF.resF = readEqStr();       nSwr( 'SvF.resF = \''+SvF.resF+'\'')
 ###    elif Is(Q, "useNaN" )     :
    ###                     if len (buf) >= 4 :  SvF.useNaN = readBool()
       ###                  else              :  SvF.useNaN = True;
          ###               nSwr( 'SvF.useNaN = ' + str(SvF.useNaN) )
-    elif Is(Q, "DrawErr") :     Swr( '\nTask.DrawErr ()');                Task.DrawErr()
-    elif Is(Q, "Draw") :        Swr( '\nTask.Draw (  \'' + buf + '\' )'); Task.Draw (buf)
-    elif Is(Q, "DrawVar") :     Swr( '\nTask.DrawVar ()');                Task.DrawVar ()
-###    elif Is(Q, "DrawTransp") :  Swr( '\nSvF.DrawTransp = True' );          SvF.DrawTransp = True
-###    elif Is(Q, "Legend") :      SvF.Legend = readBool();  nSwr( '\nSvF.Legend = ',SvF.Legend)
-###    elif Is(Q, "DPI"):          SvF.DPI = readInt(); nSwr('SvF.DPI  = ', SvF.DPI)
-###    elif Is(Q, 'Xsize'):        SvF.Xsize = readFloat(); nSwr('SvF.Xsize  = ', SvF.Xsize)
-###    elif Is(Q, 'Ysize'):        SvF.Ysize = readFloat(); nSwr('SvF.Ysize  = ', SvF.Ysize)
 
 ###    elif Is(Q, "graphic_file_type"): SvF.graphic_file_type = readEqStr();   nSwr('SvF.graphic_file_type  = \'' + SvF.graphic_file_type + '\'')
 ###    elif Is(Q, "MarkerSize") :  SvF.MarkerSize = readFloat();   nSwr( 'SvF.MarkerSize  = ',SvF.MarkerSize)
@@ -492,24 +476,8 @@ def ReadMng ( ) :
             elif raw_upp.find('TABLEWHERE') >= 0:
                 WriteTable30(Treat_FieldNames(raw_line))
             else :
-#                Swr(raw_line)
-                print ('\nraw_line       =', raw_line)
-
-
+#                print ('\nraw_line       =', raw_line)
                 WriteString31(raw_line)
-#                equation, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION ( raw_line, [] )#all_grids )
-                #sel = parser(raw_line)
-                #sel.myprint()
- #               print ('TTTTTTTTTTTTT equation =', equation)
-  #              eqPars.myprint()
-   #             equation = eqPars.join()
-    #            for fu in Task.Funs:
-     #               eqPars.substAllNames_but_dot(fu.V.name, SvF.funPrefix + fu.V.name)
-      #          eqPars.myprint()
-       #         equation = eqPars.join()
-        #        print ('UUUUUUUUUUUUU equation =', equation)
-         #       Swr(equation)
-
             buf = ''
     if EmptyBuf : buf = ''
 
