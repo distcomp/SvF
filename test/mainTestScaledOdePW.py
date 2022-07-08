@@ -186,7 +186,9 @@ if __name__ == "__main__":
     regSol = pyo.value(REG_expr(theModel, xtmesh, regCoeff))
     # (msdSol, regSol) = getMSD_REG(theModel)
 
-    theModel.pprint()
+    with open(args.workdir + '/' + theModel.getname() + '.model.txt', 'w') as out_file:
+        theModel.pprint(ostream = out_file)
+        out_file.close()
 
     print('SvF obj.: ', pyo.value(theModel.svfObj))
     print('MSD = %f, REG = %f' % (msdSol, regSol))
