@@ -124,6 +124,7 @@ def ReadMng ( ) :
      buf = UTF8replace(buf, '\\left', '')
      buf = UTF8replace(buf, '\\right', '')
      buf = UTF8replace(buf, '\\!', '')
+     buf = UTF8replace(buf, '\\partial ', 'd')       #  частная производная
      buf = UTF8replace(buf, '\\partial', 'd')       #  частная производная
      buf = UTF8replace(buf,  '∂', 'd')       #  частная производная
 
