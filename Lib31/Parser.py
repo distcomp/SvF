@@ -202,6 +202,7 @@ class  parser:
 
         if lev_br > 0:
                 print ("*****************  Not enapht )))))))) ****************  lev_br =", lev_br)
+                print('in', self.join())
                 exit (-1)
                                                         #######  СКОБКИ   для (,[,),] in etc - номера скобок и запятых
         for itn, it in enumerate(self.items) :                                          

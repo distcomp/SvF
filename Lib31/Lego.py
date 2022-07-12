@@ -621,7 +621,7 @@ class Fun (Object) :
 
         V_tb = tabl.getField_tb (self.V.name)
         if V_tb is None :
-            print ("GetData ****************************** No Field in ", tabl.name,  "For Var", self.V.name, "****")
+#            print ("GetData ****************************** No Field in ", tabl.name,  "For Var", self.V.name, "****")
             haveAll = False
         else :
             self.V.dat = zeros( tabl.NoR, float64 )
@@ -631,7 +631,7 @@ class Fun (Object) :
         for a in self.A :
             A_tb.append( tabl.getField_tb (a.oname) )
             if A_tb[-1] is None :
-                print ("GetData ****************************** No Field in ", tabl.name,  "For Arg", a.name, "*****")
+ #               print ("GetData ****************************** No Field in ", tabl.name,  "For Arg", a.name, "*****")
                 haveAll = False
             else :
                 a.dat = zeros( tabl.NoR, float64 )
@@ -806,7 +806,7 @@ class Fun (Object) :
                   self.var[x,y].value = self.NDT
                   self.var[x,y].fixed = True
 
-    def sumXX ( self ) :   pass
+#    def sumXX ( self ) :   pass
 
     def delta( self, n ) :
 #        print  self.tbl[n,self.V.num] - self.Ftbl ( n ) 
@@ -1493,7 +1493,7 @@ class Fun (Object) :
 
     def interpol ( self, lev, X,Y=0,Z=0 ) :   # X,Y,Z  в шагах
         if self.param or not SvF.Use_var: gr = self.grd
-        else                           : gr = self.var            # 29
+        else                            : gr = self.var            # 29
  #       print ("Use", SvF.Use_var)
         if lev == 3 :
             Zi = int(floor ( Z ))
@@ -1515,32 +1515,25 @@ class Fun (Object) :
             if self.type == 'G':
                 def η(x) :
                     return py.sqrt(x ** 2 + SvF.Epsilon)
-                dgr = [0.0]
-                for n in self.A[0].mNodS:  dgr.append ( gr[n] - gr[n - 1] )
-                ret = gr[0]+0.5*dgr[self.A[0].Ub]*X
-                for n in self.A[0].NodSm:
-                    ret += 0.5 * (dgr[n+1]-dgr[n]) * (η(X-n)-n)
-#                for n in self.A[0].mNodS:
- #                   ret += 0.5 * (dgr[n]-dgr[n-1]) * (η(X-n+1)-n+1)
-#                for n in self.A[0].mNodS:
-#                    ret += 0.5 * (dgr[n]-dgr[n-1]) * (py.sqrt( (X-n+1) ** 2 + SvF.Epsilon )-n+1)
+#                dgr = [0.0]
+ #               for n in self.A[0].mNodS:  dgr.append ( gr[n] - gr[n - 1] )
+  #              ret = gr[0]+0.5*(dgr[1] + dgr[self.A[0].Ub])*X  # gr[0]+0.5*dgr[self.A[0].Ub]*X VVV
+                ret = gr[0]+0.5*(gr[1]-gr[0] + gr[self.A[0].Ub]-gr[self.A[0].Ub-1])*X  # ABC
+                for n in self.A[0].mNodSm: # for n in self.A[0].NodSm: VVV
+                    ret += 0.5*(gr[n+1] - 2*gr[n] + gr[n-1])*(η(X-n)-n) # (dgr[n+1]-dgr[n])
                 return ret
             elif self.type == 'G7':
                 def η(x):
                     return py.sqrt(x ** 2 + SvF.Epsilon)
-                dgr = [0.0]
-                for n in self.A[0].mNodS:  dgr.append(gr[n] - gr[n - 1])
-                ret = 0.5*(gr[0]+gr[self.A[0].Ub]) + 0.5*dgr[1]*(X) + 0.5*dgr[self.A[0].Ub]*(X-self.A[0].Ub+1)
+##                dgr = [0.0]
+ ##               for n in self.A[0].mNodS:  dgr.append(gr[n] - gr[n - 1])
+  ##              ret = 0.5 * (gr[0] + gr[self.A[0].Ub]) + 0.5*dgr[1]* X + 0.5*dgr[self.A[0].Ub] * (X-self.A[0].Ub)
+                dgr_1 = gr[1] - gr[0]
+                dgr_Ub = gr[self.A[0].Ub] - gr[self.A[0].Ub-1]
+                ret = 0.5 * (gr[0] + gr[self.A[0].Ub]) + 0.5 * dgr_1 * X + 0.5 * dgr_Ub * (X - self.A[0].Ub)
 #                ret = 0.5*(gr[0]+gr[self.A[0].Ub]-1) + 0.5*dgr[1]*(X) + 0.5*dgr[self.A[0].Ub-1]*(X-self.A[0].Ub+1)
-                for j in self.A[0].mmNodS:
-                    ret += 0.5 * dgr[j] * η(X - j + 1)
-                for j in self.A[0].mNodSm:
-                    ret -= 0.5 * dgr[j] * η(X - j)
-##                for j in self.A[0].mmNodS:
-  ##                  ret += 0.5 * (dgr[j] - dgr[j-1]) * η(X - j + 1)
-#                ret = gr[0] + 0.5 * ( dgr[1] + dgr[self.A[0].Ub] ) * X
- #               for j in self.A[0].mmNodS:
-  #                  ret += 0.5 * (dgr[j]-dgr[j-1]) * (η(X-j+1)-j+1)
+                for n in self.A[0].mNodSm:
+                    ret += 0.5 * (gr[n+1] - 2 * gr[n] + gr[n-1]) * η(X - n)
                 return ret
 
             elif self.type == 'G_ind':

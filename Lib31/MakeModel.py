@@ -393,6 +393,8 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
 
 def fromTEXplus(equation) :
     print ('TEXsubst', equation)
+  #  if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
+   # else :                      equation = UTF8replace(equation, '^', '')
 
     sel = parser(equation)
     repars = True
@@ -472,10 +474,17 @@ def fromTEXplus(equation) :
 
                 if repars :
                     equation = sel.join()
+                    print (equation)
                     sel = parser(equation)
 #                    print ('Tex', it.part, equation );  sel.myprint()
                     break
-                                                   #    d/dt(Vac(t))  ->  \d(t,Vac(t))
+
+    if SvF.UseHomeforPower:
+        equation = UTF8replace(equation, '^', '**')
+    else:
+        equation = UTF8replace(equation, '^', '')
+    sel = parser(equation)
+                                        #    d/dt(Vac(t))  ->  \d(t,Vac(t))
     if equation.find ('d/d') >= 0 :
       for ip in range(len(sel.items) - 3):
         if sel.items[ip].part == 'd' and sel.items[ip + 1].part == '/' and sel.items[ip + 2].part[0] == 'd':
@@ -498,8 +507,8 @@ def fromTEXplus(equation) :
  #     1/0
 #      sel = parser(equation)
 
-    if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
-    else :                      equation = UTF8replace(equation, '^', '')
+#    if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
+ #   else :                      equation = UTF8replace(equation, '^', '')
     return equation
 
 
