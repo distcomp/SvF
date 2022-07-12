@@ -29,7 +29,7 @@ def plotScaledModelPW(model: pyo.ConcreteModel, XTscaler: XTScaling, txDataValue
 
     fig, ax = plt.subplots()
     ax.plot(t, Xt, label='Xt')
-    ax.plot(t_data, x_data, 'ro', label='XtData')
+    ax.plot(t_data, x_data, 'ro', label=("%s, err=%.1f %%" % ('XtData', 100*XTscaler.errData)))
     ax.set(xlabel='t', ylabel='x(t)', title=model.getname() + ', x(t)')
     ax.grid()
     plt.legend()

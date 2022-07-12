@@ -16,6 +16,7 @@ from testPlotPW import plotScaledModelPW
 import subprocess
 
 IPOPT_EXE = '/opt/solvers/bin/ipopt'
+SCIP_EXE  = '/opt/solvers/bin/scip'
 # IPOPT_EXE = 'ipopt'
 
 def getModelName(prefix, args):
@@ -28,7 +29,7 @@ def getModelName(prefix, args):
         prefixOffSpaces = prefixOffSpaces + '_ETA'
     else:
         prefixOffSpaces = prefixOffSpaces + '_SQRT'
-    return ('%s_ODE%d_Nt_%d_Nx_%d_err_%.3f_reg_%.3f')%(prefixOffSpaces, args.order, Nt, Nx, err, reg)
+    return ('%s_ODE%d_Nt_%d_Nx_%d_err_%.f_reg_%.4f')%(prefixOffSpaces, args.order, Nt, Nx, err, reg)
 
 def getNLname(model, args):
     return model.getname()
@@ -82,7 +83,9 @@ def check_args(args):
 
     return tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp
 
-
+# -o 2 --tLoUpND 0. 3. 30 15 --xLoUpN -1.5 1.5 10 --FxLoUp -17.0 17. -err .05 -reg 0.001 -eps 0.001
+# GLOBAL
+#-o 2 --tLoUpND 0. 3. 5 10 --xLoUpN -1.5 1.5 5 --FxLoUp -5.0 5. -err .05 -reg 0.001 -eps 0.001 -s scip
 import argparse
 def makeParser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)#@!!ctlbr517
@@ -114,12 +117,13 @@ if __name__ == "__main__":
     print(">>>> tLo=%f, tUp=%f, Nt=%d, xLo=%f, xUp=%f, Nx=%d, FxLo=%f, FxUp=%f" % (tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp) )
 
     # Experimental data with error
-    randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Ndata)]
+    randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Ndata+1)]
     def generatorXtData(t: float, k: int):
         if args.order == 2:
-            return math.sin(2*t) + math.cos(2*t) #*(1. + randomError[k])
+            return (math.sin(2*t) + math.cos(2*t))*(1. + randomError[k])
         elif args.order == 1:
-            return (1./(1.+t))*(1. + randomError[k]) # 2*math.exp(t)
+            return math.exp(t)*(1. + randomError[k])
+            # return (1./(1.+t))*(1. + randomError[k]) # 2*math.exp(t)
         else:
             raise Exception("UNKNOWN Generator XtData")
     # Fill txValuesData list
@@ -133,7 +137,7 @@ if __name__ == "__main__":
         xLo, xUp = min(x, xLo), max(x, xUp)
     # Bounds on t and x may be CHANGED !
     # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    xtmesh  = XTScaling(tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp)
+    xtmesh  = XTScaling(tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp, args.errdata)
     # ===========================================
     print('>>>>>>>>> DATA =========')
     print(">>>> tLo=%f, tUp=%f, Nt=%d, xLo=%f, xUp=%f, Nx=%d, FxLo=%f, FxUp=%f" % (tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp) )
@@ -178,7 +182,7 @@ if __name__ == "__main__":
     if args.solver == 'ipopt':
         subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
     else:
-        subprocess.check_call('scipampl' + ' ' + nl_file + " -AMPL scip4pw.set", shell=True)
+        subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL scip4pw.set", shell=True)
 
     readSol(theModel, nl_file)
 
