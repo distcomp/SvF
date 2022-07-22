@@ -1,33 +1,92 @@
 #
 # expected solution X=5, Y=6
 #
-from pyomo.core import *
+# from pyomo.core import *
+
+import pyomo.environ as pyo
 
 from write import get_smap_var
 from write import write_nl_only
 
-xdata = [1., 3., 6., 10.]
+xdata = [1., 3., 6., 9]
 ydata  = [6.,2.,8.,7.]
 
-model = ConcreteModel()
+xMesh = [float(j)+.1 for j in range(4)] #
+xVals = [0.5*(2*k + 1) for k in range(0,3)] # x-values to calc. Fx, .5, 1.5, 2.5
 
-model.X = Var(bounds=(1,10))
-model.Y = Var(bounds=(0,100))
+model = pyo.ConcreteModel()
 
-model.con = Piecewise(model.Y,model.X,
-                      pw_pts=xdata,
-                      pw_constr_type='EQ',
-                      f_rule=ydata,
-                      pw_repn='SOS2')
+model.xMesh = pyo.Set(initialize=xMesh, domain=pyo.Reals)
+model.xValsSet = pyo.Set(initialize=xVals, domain=pyo.Reals)
 
-# see what we get for Y when X=5
-def con2_rule(model):
-    return model.X==5
+# model.xValsSet[0]
 
-model.con2 = Constraint(rule=con2_rule)
+def xVals_init(m, x):
+    return pyo.value(x)
+model.xVals    = pyo.Param(model.xValsSet, initialize=xVals_init)
 
-model.obj = Objective(expr=model.Y, sense=maximize)
+model.Fx = pyo.Var(model.xMesh, bounds=(-10., 10))
+model.pwFxVal = pyo.Var(model.xValsSet)
+
+def SOS_indices_init(m, x):
+    return [(x, xj) for xj in m.xMesh]
+model.SOS_indices = pyo.Set(model.xValsSet, dimen=2, ordered=True, initialize=SOS_indices_init)
+
+def SOS_var_indices_init(m):
+    return [(x,xj) for x in m.xValsSet for xj in m.xMesh]
+model.sos_var_indices = pyo.Set(ordered=True, dimen=2, initialize=SOS_var_indices_init)
+model.wsos = pyo.Var(model.sos_var_indices, within=pyo.NonNegativeReals) # SOS2 variable
+
+model.SOS_set_cons = pyo.SOSConstraint(model.xValsSet, var=model.wsos, index=model.SOS_indices, sos=2)
+
+def wsos_sum_cons_rule(m, x):
+    return sum(m.wsos[x, xj] for xj in m.xMesh) == 1
+model.wsos_sum_cons = pyo.Constraint(model.xValsSet, rule=wsos_sum_cons_rule)
+
+def pw_Fx_cons_rule(m, x):
+    return (m.pwFxVal[x] == sum(m.Fx[xj]*m.wsos[x, xj] for xj in m.xMesh))
+model.pw_Fx_cons = pyo.Constraint(model.xValsSet, rule=pw_Fx_cons_rule)
+
+def wx_at_xval_cons_rule(m, x):
+    return model.xVals[x] == sum(xj*m.wsos[x, xj] for xj in m.xMesh)
+model.wx_at_xval_cons = pyo.Constraint(model.xValsSet, rule=wx_at_xval_cons_rule)
 
 model.pprint()
+quit()
 
-write_nl_only(model, "testPWSOS.nl", symbolic_solver_labels=True)
+# model.X = pyo.Var(bounds=(1,10))
+# model.Y = pyo.Var(bounds=(0,100))
+#
+# model.ySet = pyo.RangeSet(1, 4)
+# model.yVar = pyo.Var(model.ySet, bounds=(0,10))
+#
+# def yMesh_rule(m, x):
+#     if 0.99 < x < 1.1:
+#         return m.yVar[1]
+#     elif 2.99 < x < 3.1:
+#         return m.yVar[2]
+#     elif 5.99 < x < 6.1:
+#         return m.yVar[3]
+#     elif 8.99 < x < 9.1:
+#         return m.yVar[4]
+#     else:
+#         return 0
+#
+#
+# model.con = pyo.Piecewise(model.Y,model.X,
+#                       pw_pts=xdata,
+#                       pw_constr_type='EQ',
+#                       f_rule=yMesh_rule,
+#                       pw_repn='SOS2')
+#
+# # see what we get for Y when X=5
+# def con2_rule(model):
+#     return model.X==5
+#
+# model.con2 = pyo.Constraint(rule=con2_rule)
+#
+# model.obj = pyo.Objective(expr=model.Y, sense=pyo.maximize)
+#
+# model.pprint()
+#
+# write_nl_only(model, "testPWSOS.nl", symbolic_solver_labels=True)
