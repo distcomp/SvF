@@ -4,8 +4,9 @@ import random
 
 import pyomo.environ as pyo
 
-from testScaledOdePW import init_XtFx, add_ode1_XtFx, add_ode2_XtFx, add_SvFObject, \
-                            MSD_expr, REG_expr, XTScaling
+from testScaledOdePW import init_XtFx, add_ode1_XtFx, add_ode2_XtFx, \
+                            add_ode1_XtFx_sos, add_ode2_XtFx_sos, \
+                            MSD_expr, REG_expr,  add_SvFObject, XTScaling
 # from testSplinePW import addSpline_XtFy
 
 # The following imports are from /asl_io/write module
@@ -26,10 +27,17 @@ def getModelName(prefix, args):
     err = args.errdata
     prefixOffSpaces = prefix.replace(" ",'')
     if args.useEta:
-        prefixOffSpaces = prefixOffSpaces + '_ETA'
+        discretMethod = 'ETA'
     else:
-        prefixOffSpaces = prefixOffSpaces + '_SQRT'
-    return ('%s_ODE%d_Nt_%d_Nx_%d_err_%.f_reg_%.4f')%(prefixOffSpaces, args.order, Nt, Nx, err, reg)
+        discretMethod = 'SQRT'
+    if args.sos2:
+        discretMethod = 'SOS2'
+    if not args.sos2:
+        return ('%s_%s_ODE%d_%s_Nt_%d_Nx_%d_err_%.f_reg_%.4f')%(
+            prefixOffSpaces, discretMethod, args.order, args.solver, Nt, Nx, err*100, reg)
+    else:
+        return ('%s_%s_ODE%d_Nt_%d_Nx_%d_err_%.f_reg_%.4f') % (
+        prefixOffSpaces, discretMethod, args.order, Nt, Nx, err*100, reg)
 
 def getNLname(model, args):
     return model.getname()
@@ -83,9 +91,10 @@ def check_args(args):
 
     return tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp
 
-# -o 2 --tLoUpND 0. 3. 30 15 --xLoUpN -1.5 1.5 10 --FxLoUp -17.0 17. -err .05 -reg 0.001 -eps 0.001
+# -o 2 --tLoUpND 0. 3. 30 15 --xLoUpN -1.5 1.5 10 --FxLoUp -7.0 7. -err .05 -reg 0.001 -eps 0.001
+# -o 1 --tLoUpND 0.0 3. 20 10  --xLoUpN .0 25.0 30 --FxLoUp .0 26. -eps 0.001 -reg 1. -err 0.0 -s ipopt
 # GLOBAL
-#-o 2 --tLoUpND 0. 3. 5 10 --xLoUpN -1.5 1.5 5 --FxLoUp -5.0 5. -err .05 -reg 0.001 -eps 0.001 -s scip
+#-o 2 --tLoUpND 0. 3. 25 10 --xLoUpN -1.5 1.5 20 --FxLoUp -7.0 7. -err .05 -reg 1 -eps 0.001 -s ipopt -s scip
 import argparse
 def makeParser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)#@!!ctlbr517
@@ -100,6 +109,7 @@ def makeParser():
     parser.add_argument('-reg', '--regcoeff', default=.005, type=float, help='Regularization coefficient')
     parser.add_argument('-err', '--errdata', default=.1, type=float, help='Error of data')
     parser.add_argument('-eta', '--useEta', action='store_true', help='use Eta in discretization')
+    parser.add_argument('-sos2', '--sos2', action='store_true', help='use SOS2 for discretization')
     return parser
 
 if __name__ == "__main__":
@@ -159,9 +169,15 @@ if __name__ == "__main__":
     # if args.order == 0:
     #     addSpline_XtFy(theModel, eps=args.epsilon, useEta=args.useEta)
     if args.order == 1:
-        add_ode1_XtFx(theModel, xtmesh, eps=args.epsilon, useEta=args.useEta)
+        if not args.sos2:
+            add_ode1_XtFx(theModel, xtmesh, eps=args.epsilon, useEta=args.useEta)
+        else:
+            add_ode1_XtFx_sos(theModel, xtmesh)
     elif args.order == 2:
-        add_ode2_XtFx(theModel, xtmesh, eps=args.epsilon, useEta=args.useEta)
+        if not args.sos2:
+            add_ode2_XtFx(theModel, xtmesh, eps=args.epsilon, useEta=args.useEta)
+        else:
+            add_ode2_XtFx_sos(theModel, xtmesh)
     else:
         raise Exception("UNKNOWN Type of equation")
 
@@ -179,7 +195,7 @@ if __name__ == "__main__":
     print(nl_file)
     subprocess.check_call("pwd")
     # quit()
-    if args.solver == 'ipopt':
+    if args.solver == 'ipopt' and not args.sos2 :
         subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
     else:
         subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL scip4pw.set", shell=True)
@@ -198,6 +214,8 @@ if __name__ == "__main__":
     print('MSD = %f, REG = %f' % (msdSol, regSol))
     print('F(x): ', [pyo.value(theModel.Fx[j]) for j in pyo.RangeSet(0,Nx)])
     print('X(t): ', [pyo.value(theModel.Xt[t]) for t in pyo.RangeSet(0,Nt)])
+    for k in theModel.ode2_sos_bs.index_set():
+        print('wsos[%f]: ' % (pyo.value(k)), [pyo.value(theModel.ode2_sos_bs[k].wsos[xj]) for xj in pyo.RangeSet(0, Nx)])
 
     # quit()
 
