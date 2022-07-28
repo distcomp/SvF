@@ -207,6 +207,8 @@ def add_ode1_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
     {w} \in SOS
     """
     dt = (xts.tUp - xts.tLo)/xts.Nt
+    dx = (xts.xUp - xts.xLo)/xts.Nx
+    scaled_x = lambda x: (x - xts.xLo)/dx
     # pyo.RangeSet(0, xts.Nx)
     model.setOde1K = pyo.RangeSet(1, xts.Nt)
 
@@ -215,7 +217,7 @@ def add_ode1_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
     model.expr_dxdt_k = pyo.Expression(model.setOde1K, rule=expr_dxdt_k_rule)
 
     def expr_x_k_for_F_rule(m, k):
-        return (m.Xt[k] + m.Xt[k-1])/2
+        return scaled_x((m.Xt[k] + m.Xt[k-1])/2)
     model.expr_x_k_for_F = pyo.Expression(model.setOde1K, rule = expr_x_k_for_F_rule)
 
     def ode1_sos_block_rule(b, k):
@@ -241,6 +243,8 @@ def add_ode2_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
     {w} \in SOS
     """
     dt = (xts.tUp - xts.tLo)/xts.Nt
+    dx = (xts.xUp - xts.xLo)/xts.Nx
+    scaled_x = lambda x: (x - xts.xLo)/dx
     # pyo.RangeSet(0, xts.Nx)
     model.setOde2K = pyo.RangeSet(1, xts.Nt - 1)
 
@@ -249,16 +253,17 @@ def add_ode2_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
     model.expr_d2xdt2_k = pyo.Expression(model.setOde2K, rule=expr_d2xdt2_k_rule)
 
     def expr_x_k_for_F_rule(m, k):
-        return (m.Xt[k])
+        return scaled_x(m.Xt[k])
     model.expr_x_k_for_F = pyo.Expression(model.setOde2K, rule = expr_x_k_for_F_rule)
 
     def ode2_sos_block_rule(b, k):
+        jSet = pyo.RangeSet(0, xts.Nx)
         b.wsos = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.NonNegativeReals)
-        b.wsos_sum_cons = pyo.Constraint(expr = sum(b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == 1.)
-        b.wsos_SOS_cons = pyo.SOSConstraint(var = b.wsos, sos=2)
-        b.wsos_at_x_cons = pyo.Constraint(expr = sum(xj * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_x_k_for_F[k]) # x
+        b.wsos_sum_cons = pyo.Constraint(expr = sum(b.wsos[xj] for xj in jSet) == 1.)
+        b.wsos_SOS_cons = pyo.SOSConstraint(var = b.wsos, sos=2) #, weights=[1 for j in jSet]
+        b.wsos_at_x_cons = pyo.Constraint(expr = sum(xj * b.wsos[xj] for xj in jSet) == b.model().expr_x_k_for_F[k]) # x
         b.pw_Fx_cons = pyo.Constraint(
-            expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_d2xdt2_k[k])
+            expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in jSet) == b.model().expr_d2xdt2_k[k])
 
     model.ode2_sos_bs = pyo.Block(model.setOde2K, rule = ode2_sos_block_rule)
 

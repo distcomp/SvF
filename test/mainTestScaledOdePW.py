@@ -95,6 +95,9 @@ def check_args(args):
 # -o 1 --tLoUpND 0.0 3. 20 10  --xLoUpN .0 25.0 30 --FxLoUp .0 26. -eps 0.001 -reg 1. -err 0.0 -s ipopt
 # GLOBAL
 #-o 2 --tLoUpND 0. 3. 25 10 --xLoUpN -1.5 1.5 20 --FxLoUp -7.0 7. -err .05 -reg 1 -eps 0.001 -s ipopt -s scip
+
+# -sos2 -o 2 --tLoUpND 0. 3. 14 5 --xLoUpN -1.5 1.5 7 --FxLoUp -7.0 7. -reg .1 -err .0 -s scip
+# -sos2 -o 1 --tLoUpND 0.0 3. 10 5  --xLoUpN .0 25.0 5 --FxLoUp .0 26. -reg .1 -err 0.0
 import argparse
 def makeParser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)#@!!ctlbr517
@@ -117,6 +120,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # vargs = vars(args)
     print('Arguments of the test')
+    if args.sos2:
+        args.solver = 'scip'
     print('======================')
     for arg in vars(args):
         print(arg + ":", getattr(args, arg))
@@ -198,7 +203,7 @@ if __name__ == "__main__":
     if args.solver == 'ipopt' and not args.sos2 :
         subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
     else:
-        subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL scip4pw.set", shell=True)
+        subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL", shell=True)
 
     readSol(theModel, nl_file)
 
@@ -214,8 +219,13 @@ if __name__ == "__main__":
     print('MSD = %f, REG = %f' % (msdSol, regSol))
     print('F(x): ', [pyo.value(theModel.Fx[j]) for j in pyo.RangeSet(0,Nx)])
     print('X(t): ', [pyo.value(theModel.Xt[t]) for t in pyo.RangeSet(0,Nt)])
-    for k in theModel.ode2_sos_bs.index_set():
-        print('wsos[%f]: ' % (pyo.value(k)), [pyo.value(theModel.ode2_sos_bs[k].wsos[xj]) for xj in pyo.RangeSet(0, Nx)])
+    if args.sos2:
+        if args.order == 2:
+            for k in theModel.ode2_sos_bs.index_set():
+                print('wsos[%f]: ' % (pyo.value(k)), [pyo.value(theModel.ode2_sos_bs[k].wsos[xj]) for xj in pyo.RangeSet(0, Nx)])
+        if args.order == 1:
+            for k in theModel.ode1_sos_bs.index_set():
+                print('wsos[%f]: ' % (pyo.value(k)), [pyo.value(theModel.ode1_sos_bs[k].wsos[xj]) for xj in pyo.RangeSet(0, Nx)])
 
     # quit()
 
