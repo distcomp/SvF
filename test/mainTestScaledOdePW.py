@@ -15,6 +15,7 @@ from write import get_smap_var
 from read import read_sol_smap_var #, read_sol_smap
 from testPlotPW import plotScaledModelPW
 import subprocess
+import time
 
 IPOPT_EXE = '/opt/solvers/bin/ipopt'
 SCIP_EXE  = '/opt/solvers/bin/scip'
@@ -22,6 +23,7 @@ SCIP_EXE  = '/opt/solvers/bin/scip'
 
 def getModelName(prefix, args):
     Nt = args.tLoUpND[2]
+    Nd = args.tLoUpND[3]
     Nx = args.xLoUpN[2]
     reg = args.regcoeff
     err = args.errdata
@@ -32,12 +34,16 @@ def getModelName(prefix, args):
         discretMethod = 'SQRT'
     if args.sos2:
         discretMethod = 'SOS2'
+    odeType = ''
+    if args.order == 1:
+         odeType = args.ode1
+
     if not args.sos2:
-        return ('%s_%s_ODE%d_%s_Nt_%d_Nx_%d_err_%.f_reg_%.4f')%(
-            prefixOffSpaces, discretMethod, args.order, args.solver, Nt, Nx, err*100, reg)
+        return ('%s_%s_ODE%s_%s_Nt_%d_Nd_%d_Nx_%d_err_%.f_reg_%.4f')%(
+            prefixOffSpaces, discretMethod, str(args.order)+odeType, args.solver, Nt, Nd, Nx, err*100, reg)
     else:
-        return ('%s_%s_ODE%d_Nt_%d_Nx_%d_err_%.f_reg_%.4f') % (
-        prefixOffSpaces, discretMethod, args.order, Nt, Nx, err*100, reg)
+        return ('%s_%s_ODE%s_Nt_%d_Nd_%d_Nx_%d_err_%.f_reg_%.4f') % (
+            prefixOffSpaces, discretMethod, str(args.order)+odeType, Nt, Nd, Nx, err*100, reg)
 
 def getNLname(model, args):
     return model.getname()
@@ -104,6 +110,7 @@ def makeParser():
     parser.add_argument('-pr', '--prefix', default="OdePw", type=str, help='Prefix of problem name')
     parser.add_argument('-wd', '--workdir', default='tmp', help='working directory')
     parser.add_argument('-s', '--solver', default='ipopt', choices=['ipopt', 'scip'], help='solver to use')
+    parser.add_argument('-ode1', '--ode1', default='exp', choices=['exp', 'square'], help='type of ODE1')
     parser.add_argument('-t', '--tLoUpND', nargs='+', default=[0., 3., 10, 5], type=float, help='t: Lo Up N number of data')
     parser.add_argument('-x', '--xLoUpN', nargs='+', default=[-1.5, 1.5, 5], type=float, help='x: Lo Up N')
     parser.add_argument('-Fx', '--FxLoUp', nargs='+', default=[-100., 100.], type=float, help='Lo Up limits for Fx')
@@ -137,8 +144,12 @@ if __name__ == "__main__":
         if args.order == 2:
             return (math.sin(2*t) + math.cos(2*t))*(1. + randomError[k])
         elif args.order == 1:
-            return math.exp(t)*(1. + randomError[k])
-            # return (1./(1.+t))*(1. + randomError[k]) # 2*math.exp(t)
+            if args.ode1 == 'exp':
+                return math.exp(t)*(1. + randomError[k])
+            elif args.ode1 == 'square':
+                return (1./(1. - t))*(1. + randomError[k])
+            else:
+                raise Exception("UNKNOWN ODE1: %s" % (args.ode1))
         else:
             raise Exception("UNKNOWN Generator XtData")
     # Fill txValuesData list
@@ -200,11 +211,13 @@ if __name__ == "__main__":
     print(nl_file)
     subprocess.check_call("pwd")
     # quit()
+    tic = time.perf_counter()
     if args.solver == 'ipopt' and not args.sos2 :
         subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\"", shell=True)# +
     else:
         subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL", shell=True)
-
+    toc = time.perf_counter()
+    print("!!!!! Solved in: %f sec !!!!!!" % (toc - tic))
     readSol(theModel, nl_file)
 
     msdSol = pyo.value(MSD_expr(theModel, xtmesh, txDataValues))
