@@ -1,5 +1,9 @@
-con2
-con.SOS2_constraint[1]
-con.SOS2_constraint[2]
-con.SOS2_constraint[3]
-obj
+pwFxSosBlocks[0.5].pw_Fx_cons
+pwFxSosBlocks[1.5].pw_Fx_cons
+pwFxSosBlocks[2.5].pw_Fx_cons
+pwFxSosBlocks[0.5].wsos_sum_cons
+pwFxSosBlocks[0.5].wsos_at_x_cons
+pwFxSosBlocks[1.5].wsos_sum_cons
+pwFxSosBlocks[1.5].wsos_at_x_cons
+pwFxSosBlocks[2.5].wsos_sum_cons
+pwFxSosBlocks[2.5].wsos_at_x_cons
