@@ -4,9 +4,63 @@
 # from pyomo.core import *
 import time
 import pyomo.environ as pyo
-
+from pyomo.core.base.piecewise import _GrayCode
 from write import get_smap_var
 from write import write_nl_only
+from piecewise_yvar import *
+greycode = _GrayCode(8)
+print(greycode)
+# quit()
+
+model = pyo.ConcreteModel()
+
+xdata = [float(j+1) for j in range(9) ]
+ydata  = [float(10*x + x)*(-1)**x for x in xdata]
+
+model.Idx = pyo.RangeSet(1,3)
+model.X = pyo.Var(model.Idx, bounds=(1,9))
+model.Y = pyo.Var(model.Idx, bounds=(0,100))
+# model.X2 = pyo.Var(bounds=(1,9))
+# model.Y2 = pyo.Var(bounds=(0,100))
+
+model.xMesh = pyo.Set(initialize=xdata, domain=pyo.Reals)
+model.Fx = pyo.Var(model.xMesh, within=pyo.Reals, bounds=(0, 100))
+# model.ySet = pyo.RangeSet(1, 4)
+# model.yVar = pyo.Var(model.ySet, bounds=(0,10))
+#
+# def yMesh_rule(m, x):
+#     if 0.99 < x < 1.1:
+#         return m.yVar[1]
+#     elif 2.99 < x < 3.1:
+#         return m.yVar[2]
+#     elif 5.99 < x < 6.1:
+#         return m.yVar[3]
+#     elif 8.99 < x < 9.1:
+#         return m.yVar[4]
+#     else:
+#         return 0
+#
+def Ylist_rule(m, k):
+    return (m.Y[k] + m.Y[max(1,k - 1)])
+model.Ylist = pyo.Expression(model.Idx, rule=Ylist_rule)
+
+def pwf_rule(m, j, x):
+    return m.Fx[x]
+model.pwCons = Piecewise(model.Idx,model.Ylist,model.X,
+                      pw_pts=xdata,
+                      pw_constr_type='EQ',
+                      f_rule=pwf_rule,
+                      pw_repn='LOG')
+# model.con = Piecewise(model.Y2,model.X2,
+#                       pw_pts=xdata,
+#                       pw_constr_type='EQ',
+#                       f_rule=pwf_rule,
+#                       pw_repn='LOG')
+
+model.pprint()
+write_nl_only(model, "testPWSOS-LOG",  symbolic_solver_labels=True)
+quit()
+
 
 xMesh = [float(j) for j in range(5)] # 200 ~9 sec
 xVals = [0.5*(2*k + 1) for k in range(4)] # 150 x-values to calc. Fx, .5, 1.5, 2.5
@@ -83,36 +137,7 @@ write_nl_only(model, "testPWSOS-indices",  symbolic_solver_labels=True)
 toc = time.perf_counter()
 print("SOS_indices, len(xMesh)=%d, len(xVals)=%d took %f sec" % (len(xMesh), len(xVals), toc - tic))
 
-quit()
-
-
-xdata = [1., 3., 6., 9]
-ydata  = [6.,2.,8.,7.]
-
-model.X = pyo.Var(bounds=(1,10))
-model.Y = pyo.Var(bounds=(0,100))
-
-model.ySet = pyo.RangeSet(1, 4)
-model.yVar = pyo.Var(model.ySet, bounds=(0,10))
-
-def yMesh_rule(m, x):
-    if 0.99 < x < 1.1:
-        return m.yVar[1]
-    elif 2.99 < x < 3.1:
-        return m.yVar[2]
-    elif 5.99 < x < 6.1:
-        return m.yVar[3]
-    elif 8.99 < x < 9.1:
-        return m.yVar[4]
-    else:
-        return 0
-
-#
-model.con = pyo.Piecewise(model.Y,model.X,
-                      pw_pts=xdata,
-                      pw_constr_type='EQ',
-                      f_rule=yMesh_rule,
-                      pw_repn='SOS2')
+# quit()
 #
 # # see what we get for Y when X=5
 # def con2_rule(model):
