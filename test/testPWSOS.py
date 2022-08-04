@@ -14,7 +14,7 @@ print(greycode)
 
 model = pyo.ConcreteModel()
 
-xdata = [float(j+1) for j in range(9) ]
+xdata = [float(11*(j+1)) for j in range(9) ]
 ydata  = [float(10*x + x)*(-1)**x for x in xdata]
 
 model.Idx = pyo.RangeSet(1,3)
@@ -43,10 +43,13 @@ model.Fx = pyo.Var(model.xMesh, within=pyo.Reals, bounds=(0, 100))
 def Ylist_rule(m, k):
     return (m.Y[k] + m.Y[max(1,k - 1)])
 model.Ylist = pyo.Expression(model.Idx, rule=Ylist_rule)
+def Xlist_rule(m, k):
+    return (m.X[k]+m.X[max(1,k - 1)])/2
+model.Xlist = pyo.Expression(model.Idx, rule=Xlist_rule)
 
 def pwf_rule(m, j, x):
     return m.Fx[x]
-model.pwCons = Piecewise(model.Idx,model.Ylist,model.X,
+model.pwCons = Piecewise(model.Idx,model.Ylist,model.Xlist,
                       pw_pts=xdata,
                       pw_constr_type='EQ',
                       f_rule=pwf_rule,

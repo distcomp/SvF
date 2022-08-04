@@ -1108,7 +1108,8 @@ class Piecewise(Block):
 
         # Check that the variables args are actually Pyomo Vars
         if not( isinstance(self._domain_var,_VarData) or \
-                isinstance(self._domain_var,IndexedVar) ):
+                isinstance(self._domain_var,IndexedVar) or \
+                isinstance(self._range_var, IndexedExpression) ):
             msg = "Piecewise component has invalid "\
                   "argument type for domain variable, %s"
             raise TypeError(msg % (repr(self._domain_var),))
@@ -1244,36 +1245,37 @@ class Piecewise(Block):
                 # hence the assert below
                 assert not (_is_indexed and (index is None))
                 _self_domain_pts_index = self._domain_points[None]
-
-        if self._unbounded_domain_var is False:
-            # We add the requirment that the domain variable used by Piecewise is
-            # always bounded from above and below.
-            if (_self_xvar.lb is None) or (_self_xvar.ub is None):
-                msg = "Piecewise '%s[%s]' found an unbounded variable "\
-                      "used for the constraint domain: '%s'. "\
-                      "Piecewise component requires the domain variable have "\
-                      "lower and upper bounds. Refer to the Piecewise help "\
-                      "documentation for information on how to disable this "\
-                      "restriction"
-                raise ValueError(msg % (self.name, index, _self_xvar))
-
-        if self._warn_domain_coverage is True:
-            # Print a warning when the feasible region created by the piecewise
-            # constraints does not include the domain variables bounds
-            if (_self_xvar.lb is not None) and (_self_xvar.lb < min(_self_domain_pts_index)):
-                msg = "**WARNING: Piecewise '%s[%s]' feasible region does not "\
-                    "include the lower bound of domain variable: %s.lb = %s < %s. "\
-                    "Refer to the Piecewise help documentation for information on "\
-                    "how to disable this warning."
-                print(msg % ( self.name, index, _self_xvar, _self_xvar.lb,
-                              min(_self_domain_pts_index) ))
-            if (_self_xvar.ub is not None) and (_self_xvar.ub > max(_self_domain_pts_index)):
-                    msg = "**WARNING: Piecewise '%s[%s]' feasible region does not "\
-                        "include the upper bound of domain variable: %s.ub = %s > %s. "\
-                        "Refer to the Piecewise help documentation for information on "\
-                        "how to disable this warning."
-                    print(msg % ( self.name, index, _self_xvar, _self_xvar.ub,
-                                  max(_self_domain_pts_index) ))
+# VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+        # if self._unbounded_domain_var is False:
+        #     # We add the requirment that the domain variable used by Piecewise is
+        #     # always bounded from above and below.
+        #     if (_self_xvar.lb is None) or (_self_xvar.ub is None):
+        #         msg = "Piecewise '%s[%s]' found an unbounded variable "\
+        #               "used for the constraint domain: '%s'. "\
+        #               "Piecewise component requires the domain variable have "\
+        #               "lower and upper bounds. Refer to the Piecewise help "\
+        #               "documentation for information on how to disable this "\
+        #               "restriction"
+        #         raise ValueError(msg % (self.name, index, _self_xvar))
+        #
+        # if self._warn_domain_coverage is True:
+        #     # Print a warning when the feasible region created by the piecewise
+        #     # constraints does not include the domain variables bounds
+        #     if (_self_xvar.lb is not None) and (_self_xvar.lb < min(_self_domain_pts_index)):
+        #         msg = "**WARNING: Piecewise '%s[%s]' feasible region does not "\
+        #             "include the lower bound of domain variable: %s.lb = %s < %s. "\
+        #             "Refer to the Piecewise help documentation for information on "\
+        #             "how to disable this warning."
+        #         print(msg % ( self.name, index, _self_xvar, _self_xvar.lb,
+        #                       min(_self_domain_pts_index) ))
+        #     if (_self_xvar.ub is not None) and (_self_xvar.ub > max(_self_domain_pts_index)):
+        #             msg = "**WARNING: Piecewise '%s[%s]' feasible region does not "\
+        #                 "include the upper bound of domain variable: %s.ub = %s > %s. "\
+        #                 "Refer to the Piecewise help documentation for information on "\
+        #                 "how to disable this warning."
+        #             print(msg % ( self.name, index, _self_xvar, _self_xvar.ub,
+        #                           max(_self_domain_pts_index) ))
+# VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 
         if len(_self_domain_pts_index) <= 1:
             # TODO: Technically one could interpret this
