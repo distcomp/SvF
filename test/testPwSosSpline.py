@@ -4,41 +4,30 @@ import random
 
 import pyomo.environ as pyo
 
-from piecewise_yvar import Piecewise
-
-
 """
-Add ODE of the 1st and 2nd order to the SvF model when all unknown functions are discretized by a mesh-grid
-dx(t)/dt = F(x(t))
-d2x(t)/d2t = F(x(t),x'(t))
+Add spline to approximate
+y = F(x) by PW function F(x) represented by SOS2
 """
 
 class XTScaling:
-    def __init__(self, tLo, tUp, Nt: int, xLo, xUp, Nx: int, FxLo, FxUp, errData):
+    def __init__(self, xLo, xUp, Nx: int, FxLo, FxUp, errData):
         if FxLo > FxUp:
             raise Exception(("FxLo=%f > FxUp=%f") % (FxLo, FxUp))
         if xLo > xUp:
             raise Exception(("xLo=%f > xUp=%f") % (xLo, xUp))
-        if tLo > tUp:
-            raise Exception(("tLo=%f > tUp=%f") % (tLo, tUp))
-        self.tLo, self.tUp, self.Nt, self.xLo, self.xUp, self.Nx = tLo, tUp, Nt, xLo, xUp, Nx
-        self.dt, self.dx = (tUp - tLo)/(Nt), (xUp - xLo)/(Nx)
+        self.xLo, self.xUp, self.Nx = xLo, xUp, Nx
+        self.dx = (xUp - xLo)/(Nx)
         self.FxLo, self.FxUp = FxLo, FxUp
         self.errData = errData
-
-
-    def t2st(self, t):
-        return (t - self.tLo)/(self.dt)
     def x2sx(self, x):
         return (x - self.xLo)/(self.dx)
-    def st2t(self, st):
-        return self.tLo + st*self.dt
     def sx2x(self, sx):
         return self.xLo + sx*self.dx
 
-def init_XtFx(model: pyo.ConcreteModel, xts: XTScaling): # Nt: int, Nx: int,  FxLo: float, FxUp: float):
+def init_WFx(model: pyo.ConcreteModel, xts: XTScaling): # Nt: int, Nx: int,  FxLo: float, FxUp: float):
     # Values of sx(st) for SCALED x, t  !!!
-    model.Xt = pyo.Var(pyo.RangeSet(0, xts.Nt), within=pyo.Reals, bounds=(xts.xLo, xts.xUp))
+    model.W = pyo.Var(pyo.RangeSet(0, xts.Nx))
+    model.Wsos2 = pyo.SOSConstraint(var=model.W, sos=2)
     # Values of Fx(sx) for SCALED argument !!!
     model.Fx = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.Reals, bounds=(xts.FxLo, xts.FxUp))
 
@@ -91,6 +80,11 @@ def pwFx_eta(m: pyo.ConcreteModel, x, xts:XTScaling, k):
     sx = (x - xts.xLo)/dx
     return  0.5 * (  m.Fx[0] + m.Fx[xts.Nx] + sA(m,1)*(sx - 0) + sA(m, xts.Nx)*(sx - xts.Nx) +
               pyo.quicksum( (m.Fx[j] - 2*m.Fx[j-1] + m.Fx[j-2])*m.Eta[k, j-1] for j in range(2, xts.Nx + 1) ))
+    # return ( ((m.Fx[0] + m.Fx[Nx-1]) + (sA(m,1)*(x - 0) + sA(m,Nx)*(x - Nx + 1)) +
+    #           sum(sA(m, j)*m.Eta[tk, j-1] for j in range(2, Nx+1)) -
+    #           sum(sA(m, j)*m.Eta[tk, j]   for j in range(1, Nx)) )/2
+    #         )
+
 
 def pw_xt_val(m: pyo.ConcreteModel, t: float, xts: XTScaling):
     """
@@ -119,6 +113,39 @@ def pw_xt_val(m: pyo.ConcreteModel, t: float, xts: XTScaling):
 #         raise Exception("pw_x_val: scaled_x (%f) IS NOT IN [0, %d]" %(scaled_x, Nx))
 #     j = int(scaled_x)
 #     return (m.Fx[j]*(j + 1 - scaled_x) + m.Xt[min(j+1, Nx)]*(scaled_x - j))
+
+def add_ode1_XtFxX(model: pyo.ConcreteModel, xts: XTScaling, eps: float = 0.01, useEta = True):
+    """
+    Add ODE of the form
+    dx(t)/dt = Fpw(x(t))
+    It is assumed that
+    x \in [xLo, xUp] - is scaled mesh for x;
+    t \in [tLo, tUp] -                for t;
+    """
+    dt = (xts.tUp - xts.tLo)/xts.Nt
+
+    def ode1_XtFx_sqrt_rule(m, k):
+        return ((m.Xt[k] - m.Xt[k-1])/dt == pwFx_sqrt(m,(m.Xt[k] + m.Xt[k-1])/2, xts, eps ))
+
+    model.setOde1K = pyo.RangeSet(1, xts.Nt)
+    if useEta:
+        # raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
+        model.setEtaJ = pyo.RangeSet(1, xts.Nx - 1)
+        model.Eta = pyo.Var(model.setOde1K, model.setEtaJ, within=pyo.PositiveReals)
+
+    # def Eta1_rule(m, k, j):
+    #     # print("Eta_rule[%d,%d]"%(k,j))
+    #     return (m.Eta[k, j]**2 == ((m.Xt[k] + m.Xt[k-1])/2. - j)**2 + eps)
+    #     # return (m.Eta[k, j]**2 == (cntrX(m, k) - m.meshX[j])**2 + eps)
+    if useEta:
+        raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
+        # model.Eta1_constr = pyo.Constraint(model.setOde1K, model.setEtaJ, rule=Eta1_rule)
+
+    if useEta:
+        raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
+        # model.Scaled_Ode1_Eta = pyo.Constraint(model.setOde1K, rule=scaled_ode1_XtFx_eta_rule)
+    else:
+        model.Ode1_Sqrt = pyo.Constraint(model.setOde1K, rule=ode1_XtFx_sqrt_rule)
 
 def add_ode2_XtFx(model: pyo.ConcreteModel, xts: XTScaling, eps: float = 0.01, useEta = True):
     """
@@ -189,154 +216,3 @@ def add_ode1_XtFx(model: pyo.ConcreteModel, xts: XTScaling, eps: float = 0.001, 
         model.Scaled_Ode2_Eta = pyo.Constraint(model.setOde2K, rule=scaled_ode2_XtFx_eta_rule)
     else:
         model.Scaled_Ode1_Sqrt = pyo.Constraint(model.setOde1K, rule=ode1_XtFx_sqrt_rule)
-
-def add_ode1_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
-    """
-    Add ODE of the form
-    dx(t)/dt = F(x(t)) for variables
-    It is assumed that
-    x \in [xLo, xUp] - is scaled mesh for x;
-    t \in [tLo, tUp] -                for t;
-    x = sum w_j*x_j
-    F(x) = sum w_j*Fx_j,
-    sum w_j = 1, w_j >= 0,
-    {w} \in SOS
-    """
-    dt = (xts.tUp - xts.tLo)/xts.Nt
-    dx = (xts.xUp - xts.xLo)/xts.Nx
-    scaled_x = lambda x: (x - xts.xLo)/dx
-    # pyo.RangeSet(0, xts.Nx)
-    model.setOde1K = pyo.RangeSet(1, xts.Nt)
-
-    def expr_dxdt_k_rule(m, k):
-        return (m.Xt[k] - m.Xt[k-1])/dt
-    model.expr_dxdt_k = pyo.Expression(model.setOde1K, rule=expr_dxdt_k_rule)
-
-    def expr_x_k_for_F_rule(m, k):
-        return scaled_x((m.Xt[k] + m.Xt[k-1])/2)
-    model.expr_x_k_for_F = pyo.Expression(model.setOde1K, rule = expr_x_k_for_F_rule)
-
-    def ode1_sos_block_rule(b, k):
-        b.wsos = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.NonNegativeReals)
-        b.wsos_sum_cons = pyo.Constraint(expr = sum(b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == 1.)
-        b.wsos_SOS_cons = pyo.SOSConstraint(var = b.wsos, sos=2)
-        b.wsos_at_x_cons = pyo.Constraint(expr = sum(xj * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_x_k_for_F[k]) # x
-        b.pw_Fx_cons = pyo.Constraint(
-            expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_dxdt_k[k])
-
-    model.ode1_sos_bs = pyo.Block(model.setOde1K, rule = ode1_sos_block_rule)
-
-def add_ode1_XtFx_log(model: pyo.ConcreteModel, xts: XTScaling):
-    """
-    Add ODE of the form
-    dx(t)/dt = F(x(t)) for variables
-    It is assumed that
-    x \in [xLo, xUp] - is scaled mesh for x;
-    t \in [tLo, tUp] -                for t;
-    x = sum w_j*x_j
-    F(x) = sum w_j*Fx_j,
-    sum w_j = 1, w_j >= 0,
-    {w} \in SOS IN LOG Representation !
-    """
-    dt = (xts.tUp - xts.tLo)/xts.Nt
-    dx = (xts.xUp - xts.xLo)/xts.Nx
-    scaled_x = lambda x: (x - xts.xLo)/dx
-    # pyo.RangeSet(0, xts.Nx)
-    model.setOde1K = pyo.RangeSet(1, xts.Nt)
-
-    def expr_dxdt_k_rule(m, k):
-        return (m.Xt[k] - m.Xt[k-1])/dt
-    model.expr_dxdt_k = pyo.Expression(model.setOde1K, rule=expr_dxdt_k_rule)
-
-    def expr_x_k_for_F_rule(m, k):
-        return scaled_x((m.Xt[k] + m.Xt[k-1])/2)
-    model.expr_x_k_for_F = pyo.Expression(model.setOde1K, rule = expr_x_k_for_F_rule)
-
-    def pwf_rule(m, k, j):
-        return m.Fx[j]
-    model.pwCons = Piecewise(model.setOde1K, model.expr_dxdt_k, model.expr_x_k_for_F,
-                             pw_pts=[j for j in pyo.RangeSet(0, xts.Nx)],
-                             pw_constr_type='EQ',
-                             f_rule=pwf_rule,
-                             pw_repn='LOG')
-    # def ode1_sos_block_rule(b, k):
-    #     b.wsos = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.NonNegativeReals)
-    #     b.wsos_sum_cons = pyo.Constraint(expr = sum(b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == 1.)
-    #     b.wsos_SOS_cons = pyo.SOSConstraint(var = b.wsos, sos=2)
-    #     b.wsos_at_x_cons = pyo.Constraint(expr = sum(xj * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_x_k_for_F[k]) # x
-    #     b.pw_Fx_cons = pyo.Constraint(
-    #         expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_dxdt_k[k])
-    #
-    # model.ode1_sos_bs = pyo.Block(model.setOde1K, rule = ode1_sos_block_rule)
-
-def add_ode2_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
-    """
-    Add ODE of the form
-    d2x(t)/dt2 = F(x(t)) for variables
-    It is assumed that
-    x \in [xLo, xUp] - is scaled mesh for x;
-    t \in [tLo, tUp] -                for t;
-    x = sum w_j*x_j
-    F(x) = sum w_j*Fx_j,
-    sum w_j = 1, w_j >= 0,
-    {w} \in SOS
-    """
-    dt = (xts.tUp - xts.tLo)/xts.Nt
-    dx = (xts.xUp - xts.xLo)/xts.Nx
-    scaled_x = lambda x: (x - xts.xLo)/dx
-    # pyo.RangeSet(0, xts.Nx)
-    model.setOde2K = pyo.RangeSet(1, xts.Nt - 1)
-
-    def expr_d2xdt2_k_rule(m, k):
-        return (m.Xt[k+1] - 2*m.Xt[k] + m.Xt[k-1])/(dt**2)
-    model.expr_d2xdt2_k = pyo.Expression(model.setOde2K, rule=expr_d2xdt2_k_rule)
-
-    def expr_x_k_for_F_rule(m, k):
-        return scaled_x(m.Xt[k])
-    model.expr_x_k_for_F = pyo.Expression(model.setOde2K, rule = expr_x_k_for_F_rule)
-
-    def ode2_sos_block_rule(b, k):
-        jSet = pyo.RangeSet(0, xts.Nx)
-        b.wsos = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.NonNegativeReals)
-        b.wsos_sum_cons = pyo.Constraint(expr = sum(b.wsos[xj] for xj in jSet) == 1.)
-        b.wsos_SOS_cons = pyo.SOSConstraint(var = b.wsos, sos=2) #, weights=[1 for j in jSet]
-        b.wsos_at_x_cons = pyo.Constraint(expr = sum(xj * b.wsos[xj] for xj in jSet) == b.model().expr_x_k_for_F[k]) # x
-        b.pw_Fx_cons = pyo.Constraint(
-            expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in jSet) == b.model().expr_d2xdt2_k[k])
-
-    model.ode2_sos_bs = pyo.Block(model.setOde2K, rule = ode2_sos_block_rule)
-
-
-# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-# def add_ode1_XtFxX(model: pyo.ConcreteModel, xts: XTScaling, eps: float = 0.01, useEta = True):
-#     """
-#     Add ODE of the form
-#     dx(t)/dt = Fpw(x(t))
-#     It is assumed that
-#     x \in [xLo, xUp] - is scaled mesh for x;
-#     t \in [tLo, tUp] -                for t;
-#     """
-#     dt = (xts.tUp - xts.tLo)/xts.Nt
-#
-#     def ode1_XtFx_sqrt_rule(m, k):
-#         return ((m.Xt[k] - m.Xt[k-1])/dt == pwFx_sqrt(m,(m.Xt[k] + m.Xt[k-1])/2, xts, eps ))
-#
-#     model.setOde1K = pyo.RangeSet(1, xts.Nt)
-#     if useEta:
-#         # raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
-#         model.setEtaJ = pyo.RangeSet(1, xts.Nx - 1)
-#         model.Eta = pyo.Var(model.setOde1K, model.setEtaJ, within=pyo.PositiveReals)
-#
-#     # def Eta1_rule(m, k, j):
-#     #     # print("Eta_rule[%d,%d]"%(k,j))
-#     #     return (m.Eta[k, j]**2 == ((m.Xt[k] + m.Xt[k-1])/2. - j)**2 + eps)
-#     #     # return (m.Eta[k, j]**2 == (cntrX(m, k) - m.meshX[j])**2 + eps)
-#     if useEta:
-#         raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
-#         # model.Eta1_constr = pyo.Constraint(model.setOde1K, model.setEtaJ, rule=Eta1_rule)
-#
-#     if useEta:
-#         raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
-#         # model.Scaled_Ode1_Eta = pyo.Constraint(model.setOde1K, rule=scaled_ode1_XtFx_eta_rule)
-#     else:
-#         model.Ode1_Sqrt = pyo.Constraint(model.setOde1K, rule=ode1_XtFx_sqrt_rule)

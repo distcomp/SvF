@@ -616,7 +616,7 @@ class _LOGPiecewise(object):
         bin_y_index = S_i
 
         # create vars
-        pblock.LOG_lambda = Var(vertices,within=NonNegativeReals)
+        pblock.LOG_lambda = Var(vertices,within=NonNegativeReals, bounds=(0, 1))
         lmda = pblock.LOG_lambda
         pblock.LOG_bin_y = Var(bin_y_index,within=Binary)
         bin_y = pblock.LOG_bin_y
