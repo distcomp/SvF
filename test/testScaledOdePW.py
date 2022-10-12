@@ -72,7 +72,7 @@ def add_SvFObject(model: pyo.ConcreteModel, xts: XTScaling, txValuesData: list, 
 def sA(m: pyo.ConcreteModel, j): return (m.Fx[j] - m.Fx[j-1])
 def s_eta_sqrt(sx, j: int, eps):
     # dx = (xts.xUp - xts.xLo)/xts.Nx
-    return  pyo.sqrt((sx - j)**2 + eps)
+    return  (sx - j)**2/pyo.sqrt((sx - j)**2 + eps) # pyo.sqrt((sx - j)**2 + eps)
 
 # 1/2*(FF(y(0))+FF(y(Ny))+A(1)*(y-y(0))+A(Ny)*(y-y(Ny))) + 1/2*(sum( A(j)*eta(j-1,y,e),j,2,Ny) - sum( A(j)*eta(j,y,e),j,1,Ny-1))
 # pyo.quicksum(z for z in [x, - Nx, + 1])) +
