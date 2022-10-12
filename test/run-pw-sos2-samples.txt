@@ -1,0 +1,22 @@
+/mnt/hgst2/ext4/git_work/SvF/test/mainTestScaledOdePW.py 
+ScaledOde1PW-SQRT-SQUARE-ipopt 
+-o 1 -ode1 square --tLoUpND 0.0 .8 10 15  --xLoUpN .0 4. 10 --FxLoUp -.5 20. -eps 0.001 -reg .05 -err 0. -s ipopt
+
+ScaledOde1PW-SQRT-SQUARE
+-sos2 -o 1 -ode1 square --tLoUpND 0.0 .8 10 15  --xLoUpN .0 4. 5 --FxLoUp -.5 20. -eps 0.001 -reg .05 -err 0. -s scip
+
+ScaledOde1PW-SQRT-SQUARE-SOS2
+-sos2 -o 1 -ode1 square --tLoUpND 0.0 .8 15 10  --xLoUpN .0 4. 7  --FxLoUp -.5 20. -reg .01 -err 0.
+
+ScaledOde1PW-SQRT-EXP
+-o 1 -ode1 exp --tLoUpND 0.0 .8 20 15  --xLoUpN .0 4. 15 --FxLoUp -.5 20. -eps 0.001 -reg .1 -err 0. -s ipopt
+
+
+ScaledOde2PW-SQRT-ipopt
+-o 2 --tLoUpND 0. 3. 15 20 --xLoUpN -1.5 1.5 10 --FxLoUp -7.0 7. -reg .1 -err .0 -s ipopt
+
+ScaledOde2PW-SOS
+-sos2 -o 2 --tLoUpND 0. 3. 15 20 --xLoUpN -1.5 1.5 10 --FxLoUp -7.0 7. -reg .1 -err .0 -s scip
+
+ScaledOde2PW-SQRT
+-o 2 --tLoUpND 0. 3. 25 10 --xLoUpN -1.5 1.5 20 --FxLoUp -7.0 7. -err .0 -reg 1 -eps 0.001 -s ipopt
