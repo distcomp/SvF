@@ -142,15 +142,35 @@ if __name__ == "__main__":
     regCoeff = args.regcoeff
     print(">>>> tLo=%f, tUp=%f, Nt=%d, xLo=%f, xUp=%f, Nx=%d, FxLo=%f, FxUp=%f" % (tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp) )
 
+    # True/actual Fx depending on args
+    def getTrueFx(args):
+        if args.order == 2:
+            # F(x) = -4*x
+            return lambda x: -4*x
+        elif args.order == 1:
+            if args.ode1 == 'exp':
+                # F(x) = x
+                return lambda x: x
+            elif args.ode1 == 'square':
+                # F(x) = x^2
+                return lambda x: x**2
+            else:
+                raise Exception("UNKNOWN ODE1: %s" % (args.ode1))
+        else:
+            raise Exception("UNKNOWN Generator XtData")
+
     # Experimental data with error
     randomError = [random.uniform(-args.errdata/2., args.errdata/2.) for k in range(0,Ndata+1)]
     def generatorXtData(t: float, k: int):
         if args.order == 2:
+            # F(x) = -4*x
             return (math.sin(2*t) + math.cos(2*t))*(1. + randomError[k])
         elif args.order == 1:
             if args.ode1 == 'exp':
-                  return math.exp(t)*(1. + randomError[k])
+                # F(x) = x
+                return math.exp(t)*(1. + randomError[k])
             elif args.ode1 == 'square':
+                # F(x) = x^2
                 return (1./(1. - t))*(1. + randomError[k])
             else:
                 raise Exception("UNKNOWN ODE1: %s" % (args.ode1))
@@ -260,7 +280,7 @@ if __name__ == "__main__":
     # quit()
 
     # plotModelPW(theModel, nl_file[:-len('.nl')])
-    plotScaledModelPW(theModel, xtmesh, txDataValues, nl_file[:-len('.nl')])
+    plotScaledModelPW(theModel, xtmesh, txDataValues, getTrueFx(args), nl_file[:-len('.nl')])
     quit()
     #
     # print("\n||||||||||||||||||||||||||||| Ode1_Sqrt |||||||||||||||||||||||||||||")

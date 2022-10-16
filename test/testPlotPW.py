@@ -5,7 +5,9 @@ import pyomo.environ as pyo
 
 from testScaledOdePW import XTScaling
 
-def plotScaledModelPW(model: pyo.ConcreteModel, XTscaler: XTScaling, txDataValues, savefigFileName):
+from typing import Callable
+
+def plotScaledModelPW(model: pyo.ConcreteModel, XTscaler: XTScaling, txDataValues, trueFx: Callable, savefigFileName):
     # t = np.array([pyo.value(model.meshT[i])  for i in model.setTidx], dtype=float)
     tIndex = range(0, XTscaler.Nt + 1)
     t = np.array([XTscaler.st2t(k) for k in tIndex], dtype=float)
@@ -17,10 +19,12 @@ def plotScaledModelPW(model: pyo.ConcreteModel, XTscaler: XTScaling, txDataValue
     # y = np.array([pyo.value(model.meshX[j])  for j in model.setXidx])
     xIndex = range(0, XTscaler.Nx + 1)
     x = np.array([XTscaler.sx2x(j) for j in xIndex], dtype=float)
+    trueFxVals = np.array([trueFx(XTscaler.sx2x(j)) for j in xIndex], dtype=float)
     Fx = np.array([pyo.value(model.Fx[j]) for j in xIndex], dtype=float)
 
     fig, ax = plt.subplots()
     ax.plot(x, Fx, label='F(x)')
+    ax.plot(x, trueFxVals, 'bo', label='trueF(x)')
     ax.set(xlabel='x', ylabel='F(x)', title=model.getname() + ', F(x)')
     ax.grid()
     plt.legend()
