@@ -189,6 +189,7 @@ def add_ode1_XtFx(model: pyo.ConcreteModel, xts: XTScaling, eps: float = 0.001, 
         model.Scaled_Ode2_Eta = pyo.Constraint(model.setOde2K, rule=scaled_ode2_XtFx_eta_rule)
     else:
         model.Scaled_Ode1_Sqrt = pyo.Constraint(model.setOde1K, rule=ode1_XtFx_sqrt_rule)
+        # model.Scaled_Ode1_Sqrt.deactivate()
 
 def add_ode1_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
     """
@@ -225,6 +226,33 @@ def add_ode1_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
             expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_dxdt_k[k])
 
     model.ode1_sos_bs = pyo.Block(model.setOde1K, rule = ode1_sos_block_rule)
+
+def xtp1_wj_wjp1_4_ode1(dt, Xt, Xj, Xjp1, Fxj, Fxjp1):
+    """
+    :param dt:
+    :param Xt: x[t]
+    :param Xj: x[j]
+    :param Xjp1: x[j+1]
+    :param Fxj: F(x[j])
+    :param Fxjp1: F(x[j+1])
+    :return:
+    x[t+1] = ((2*x(j+1)+dt*Fx(j+1)-2*x(j)-dt*Fx(j))*xt(t)+2*dt*Fx(j)*x(j+1)-2*dt*x(j)*Fx(j+1)) / (2*x(j+1)-dt*Fx(j+1)-2*x(j)+dt*Fx(j))
+    w[j]   = -(2*xt(t)-2*x(j+1)+dt*Fx(j+1)) / (2*x(j+1)-dt*Fx(j+1)-2*x(j)+dt*Fx(j))
+    w[j+1] = 1 - w[j]
+    """
+    Det = (2*Xjp1-dt*Fxjp1-2*Xj+dt*Fxj) # ((Fxjp1 - Fxj) * dt - 2 * Xjp1 + 2 * Xj)
+    xtp1 = -(((Fxjp1 - Fxj) * Xt + 2 * Fxj * Xjp1 - 2 * Fxjp1 * Xj) * dt + (2 * Xjp1 - 2 * Xj) * Xt) / Det
+    wj = -(2*Xt-2*Xjp1+dt*Fxjp1)/Det
+    wjp1 = 1 - wj
+    return xtp1, wj, wjp1
+
+def replace_ode1_sm_to_sos(modelSolved: pyo.ConcreteModel, xts: XTScaling):
+    # Calculate model.Xt[k] and b.wsos !!!
+    def xtp1_wj(t,j):
+        pass
+
+    modelSolved.Scaled_Ode1_Sqrt.deactivate()
+    pass
 
 def add_ode1_XtFx_log(model: pyo.ConcreteModel, xts: XTScaling):
     """
@@ -268,6 +296,27 @@ def add_ode1_XtFx_log(model: pyo.ConcreteModel, xts: XTScaling):
     #         expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_dxdt_k[k])
     #
     # model.ode1_sos_bs = pyo.Block(model.setOde1K, rule = ode1_sos_block_rule)
+
+def xtp1_wj_wjp1_4_ode2(dt, Xtm1, Xt, Xj, Xjp1, Fxj, Fxjp1):
+    """
+    :param dt:
+    :param Xt: x[t]
+    :param Xtm1: x[t-1]
+    :param Xj: x[j]
+    :param Xjp1: x[j+1]
+    :param Fxj: F(x[j])
+    :param Fxjp1: F(x[j+1])
+    :return:
+    x[t+1] = ((2*x(j+1)+dt^2*Fx(j+1)-2*x(j)-dt^2*Fx(j))*xt(t)+(x(j)-x(j+1))*xt(t-1)+dt^2*Fx(j)*x(j+1)-dt^2*x(j)*Fx(j+1)) / (x(j+1)-x(j))
+    w[j]   = -(xt(t)-x(j+1)) / (x(j+1)-x(j))
+    w[j+1] = 1 - w[j]
+    """
+    Det = (Xjp1 - Xj)
+    xtp1 = ((2*(Xjp1 - Xj) + dt**2*(Fxjp1  - Fxj))*Xt + (Xj - Xjp1)*Xtm1 + dt**2*(Fxj*Xjp1 - Xj*Fxjp1)) / Det
+    wj = -(Xt - Xjp1)/Det
+    wjp1 = 1 - wj
+    return xtp1, wj, wjp1
+
 
 def add_ode2_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
     """
