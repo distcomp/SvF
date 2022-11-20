@@ -173,8 +173,8 @@ def add_ode1_XtFx(model: pyo.ConcreteModel, xts: XTScaling, eps: float = 0.001, 
     model.setOde1K = pyo.RangeSet(1, xts.Nt)
     if useEta:
         raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
-        model.setEtaJ = pyo.RangeSet(1, Nx - 1)
-        model.Eta = pyo.Var(model.setOde2K, model.setEtaJ, within=pyo.PositiveReals)
+        # model.setEtaJ = pyo.RangeSet(1, Nx - 1)
+        # model.Eta = pyo.Var(model.setOde2K, model.setEtaJ, within=pyo.PositiveReals)
 
     def Eta2_rule(m, k, j):
         # print("Eta_rule[%d,%d]"%(k,j))
@@ -182,11 +182,11 @@ def add_ode1_XtFx(model: pyo.ConcreteModel, xts: XTScaling, eps: float = 0.001, 
         # return (m.Eta[k, j]**2 == (cntrX(m, k) - m.meshX[j])**2 + eps)
     if useEta:
         raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
-        model.Eta2_constr = pyo.Constraint(model.setOde2K, model.setEtaJ, rule=Eta2_rule)
+        # model.Eta2_constr = pyo.Constraint(model.setOde2K, model.setEtaJ, rule=Eta2_rule)
 
     if useEta:
         raise Exception("add_ode1_XtFx: %s" % ("Eta NOT IMPLEMENTED Yet!"))
-        model.Scaled_Ode2_Eta = pyo.Constraint(model.setOde2K, rule=scaled_ode2_XtFx_eta_rule)
+        # model.Scaled_Ode2_Eta = pyo.Constraint(model.setOde2K, rule=scaled_ode2_XtFx_eta_rule)
     else:
         model.Scaled_Ode1_Sqrt = pyo.Constraint(model.setOde1K, rule=ode1_XtFx_sqrt_rule)
         # model.Scaled_Ode1_Sqrt.deactivate()
@@ -227,7 +227,7 @@ def add_ode1_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
 
     model.ode1_sos_bs = pyo.Block(model.setOde1K, rule = ode1_sos_block_rule)
 
-def xtp1_wj_wjp1_4_ode1(dt, Xt, Xj, Xjp1, Fxj, Fxjp1):
+def xtp1_wj_for_ode1(dt, Xt, Xj, Xjp1, Fxj, Fxjp1):
     """
     :param dt:
     :param Xt: x[t]
@@ -243,16 +243,28 @@ def xtp1_wj_wjp1_4_ode1(dt, Xt, Xj, Xjp1, Fxj, Fxjp1):
     Det = (2*Xjp1-dt*Fxjp1-2*Xj+dt*Fxj) # ((Fxjp1 - Fxj) * dt - 2 * Xjp1 + 2 * Xj)
     xtp1 = -(((Fxjp1 - Fxj) * Xt + 2 * Fxj * Xjp1 - 2 * Fxjp1 * Xj) * dt + (2 * Xjp1 - 2 * Xj) * Xt) / Det
     wj = -(2*Xt-2*Xjp1+dt*Fxjp1)/Det
-    wjp1 = 1 - wj
-    return xtp1, wj, wjp1
+    # wjp1 = 1 - wj
+    return xtp1, wj
 
 def replace_ode1_sm_to_sos(modelSolved: pyo.ConcreteModel, xts: XTScaling):
-    # Calculate model.Xt[k] and b.wsos !!!
-    def xtp1_wj(t,j):
-        pass
-
+    pyo.ConcreteModel.name
     modelSolved.Scaled_Ode1_Sqrt.deactivate()
-    pass
+    add_ode1_XtFx_sos(pyo.ConcreteModel, xts)
+    # Calculate model.Xt[k] and b.wsos !!!
+    dt = (xts.tUp - xts.tLo)/xts.Nt
+    for k in modelSolved.setOde1K:
+        for j in pyo.RangeSet(0, xts.Nx - 1):
+            Xt = pyo.value(modelSolved.Xt[k-1])
+            Xj = j
+            Xjp1 = j + 1
+            Fxj = pyo.value(modelSolved.Fx[j])
+            Fxjp1 = pyo.value(modelSolved.Fx[j+1])
+            xtp1, wj = xtp1_wj_for_ode1(dt, Xt, Xj, Xjp1, Fxj, Fxjp1)
+            if wj >=0 and wj <=1:
+                modelSolved.Xt[k].value = xtp1
+                modelSolved.ode1_sos_bs[k].wsos[j].value = wj
+                modelSolved.ode1_sos_bs[k].wsos[j+1].value = 1 - wj
+
 
 def add_ode1_XtFx_log(model: pyo.ConcreteModel, xts: XTScaling):
     """
@@ -297,7 +309,7 @@ def add_ode1_XtFx_log(model: pyo.ConcreteModel, xts: XTScaling):
     #
     # model.ode1_sos_bs = pyo.Block(model.setOde1K, rule = ode1_sos_block_rule)
 
-def xtp1_wj_wjp1_4_ode2(dt, Xtm1, Xt, Xj, Xjp1, Fxj, Fxjp1):
+def xtp1_wj_wjp1_for_ode2(dt, Xtm1, Xt, Xj, Xjp1, Fxj, Fxjp1):
     """
     :param dt:
     :param Xt: x[t]

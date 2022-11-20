@@ -6,7 +6,8 @@ import pyomo.environ as pyo
 
 from testScaledOdePW import init_XtFx, add_ode1_XtFx, add_ode2_XtFx, \
                             add_ode1_XtFx_sos, add_ode2_XtFx_sos, add_ode1_XtFx_log, \
-                            MSD_expr, REG_expr,  add_SvFObject, XTScaling
+                            MSD_expr, REG_expr,  add_SvFObject, XTScaling, \
+                            replace_ode1_sm_to_sos
 # from testSplinePW import addSpline_XtFy
 
 # The following imports are from /asl_io/write module
@@ -68,6 +69,9 @@ def readSol(model, nl_file):
     model.solutions.load_from(results)
     return
 
+def IpoptScip4SOS2(IpoptModel):
+    pass
+
 def printData(model):
     Nt = len(model.Xt) - 1
     Nx = len(model.Fx) - 1
@@ -122,6 +126,7 @@ def makeParser():
     parser.add_argument('-reg', '--regcoeff', default=.005, type=float, help='Regularization coefficient')
     parser.add_argument('-err', '--errdata', default=.1, type=float, help='Error of data')
     parser.add_argument('-eta', '--useEta', action='store_true', help='use Eta in discretization')
+    parser.add_argument('-pw2sos', '--pw2sos', action='store_true', help='use PW to get initial solution for SOS2')
     parser.add_argument('-sos2', '--sos2', action='store_true', help='use SOS2 for discretization')
     parser.add_argument('-log', '--log', action='store_true', help='use LOG for discretization')
     return parser
@@ -198,25 +203,23 @@ if __name__ == "__main__":
     # print("data, x: ", [tx[1] for tx in txDataValues])
     print('========================')
     # ============================
-
+    if args.pw2sos:
+        args.prefix = "OdePw2sos"
     theModel = pyo.ConcreteModel(getModelName(args.prefix, args))
     # theModel.name = getNLname(theModel, args)
     print("Model name: ", theModel.getname())
 
     init_XtFx(theModel, xtmesh)
 
-    # quit()
-    # if args.order == 0:
-    #     addSpline_XtFy(theModel, eps=args.epsilon, useEta=args.useEta)
     if args.order == 1:
-        if args.sos2:
+        if args.sos2 and not args.pw2sos:
             add_ode1_XtFx_sos(theModel, xtmesh)
-        if args.log:
+        if args.log and not args.pw2sos:
             add_ode1_XtFx_log(theModel, xtmesh)
-        if not args.sos2 and not args.log:
+        if not args.sos2 and not args.log : # and args.pw2sos
             add_ode1_XtFx(theModel, xtmesh, eps=args.epsilon, useEta=args.useEta)
     elif args.order == 2:
-        if args.sos2:
+        if args.sos2 and not args.pw2sos:
             add_ode2_XtFx_sos(theModel, xtmesh)
         if args.log:
             raise Exception("LOG is not implemented for ODE2 yet")
@@ -227,7 +230,7 @@ if __name__ == "__main__":
         # else:
         #     add_ode2_XtFx_sos(theModel, xtmesh)
     else:
-        raise Exception("UNKNOWN Type of equation")
+        raise Exception("UNKNOWN Type of equation OR pw2sos !!!")
 
     add_SvFObject(theModel, xtmesh, txDataValues, args.regcoeff)
     # printData(theModel)
@@ -246,9 +249,24 @@ if __name__ == "__main__":
     # The name to distinguish tests
     the_test_name = nl_file[:-len('.nl')]
 
+    print('Running in the folder:')
     subprocess.check_call("pwd")
+    print('||||||||||||||||||||||')
     # quit()
     tic = time.perf_counter()
+    if args.pw2sos:
+        subprocess.check_call(
+            IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\" | tee " + the_test_name + ".log.txt",
+            shell=True)
+        readSol(theModel, nl_file)
+        with open(args.workdir + '/' + theModel.getname() + '.model.txt', 'w') as out_file:
+            theModel.pprint(ostream=out_file)
+            out_file.close()
+        replace_ode1_sm_to_sos(theModel, xtmesh)
+        print(theModel.name)
+
+    # quit()
+
     if args.solver == 'ipopt' and not args.sos2 and not args.log:
         subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\" | tee " + the_test_name + ".log.txt", shell=True)# +
     else:
@@ -282,15 +300,3 @@ if __name__ == "__main__":
     # plotModelPW(theModel, nl_file[:-len('.nl')])
     plotScaledModelPW(theModel, xtmesh, txDataValues, getTrueFx(args), nl_file[:-len('.nl')])
     quit()
-    #
-    # print("\n||||||||||||||||||||||||||||| Ode1_Sqrt |||||||||||||||||||||||||||||")
-    # theModel = pyo.ConcreteModel("test Ode1_Sqrt")
-    # print("Model name: ", theModel.getname())
-    #
-    # initXtFy(theModel, tLo, tUp, Nt, xLo, xUp, Nx)
-    # initUniformMesh4XtFy(theModel)
-    # addDiff1_XtFy(theModel, eps=0.01, useEta=False)
-    # printData(theModel)
-    # theModel.pprint()
-    #
-    # makeNlFile(theModel, workdir="./tmp")
