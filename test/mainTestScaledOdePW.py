@@ -60,7 +60,8 @@ def makeNLfile(model, args):
         os.mkdir(workdir)
     except OSError:
         pass
-    nlFile = write_nl_only(model, workdir + '/' + getNLname(model, args),  symbolic_solver_labels=True)
+    # nlFile = write_nl_only(model, workdir + '/' + getNLname(model, args),  symbolic_solver_labels=True)
+    nlFile = write_nl_only(model, workdir + '/' + model.getname(), symbolic_solver_labels=True)
     return nlFile
 
 def readSol(model, nl_file):
@@ -263,9 +264,19 @@ if __name__ == "__main__":
             theModel.pprint(ostream=out_file)
             out_file.close()
         replace_ode1_sm_to_sos(theModel, xtmesh)
-        print(theModel.name)
-
-    # quit()
+        print("SOS2 Model with initial solution = " + theModel.getname())
+        with open(args.workdir + '/' + theModel.getname() + '.model.txt', 'w') as out_file:
+            theModel.pprint(ostream=out_file)
+            out_file.close()
+        nl_file = makeNLfile(theModel, args)
+        print(nl_file)
+        # The name to distinguish tests
+        the_test_name = nl_file[:-len('.nl')]
+        print("Test name: " + the_test_name)
+        subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt",
+                              shell=True)
+        quit()
+    #
 
     if args.solver == 'ipopt' and not args.sos2 and not args.log:
         subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\" | tee " + the_test_name + ".log.txt", shell=True)# +
