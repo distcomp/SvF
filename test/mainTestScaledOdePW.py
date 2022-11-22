@@ -263,8 +263,24 @@ if __name__ == "__main__":
         with open(args.workdir + '/' + theModel.getname() + '.model.txt', 'w') as out_file:
             theModel.pprint(ostream=out_file)
             out_file.close()
+
+        # sosModel = pyo.ConcreteModel("init" + theModel.getname())
+        # # theModel.name = getNLname(theModel, args)
+        # print("Model name: ", sosModel.getname())
+        #
+        # init_XtFx(sosModel, xtmesh)
+        # add_ode1_XtFx_sos(sosModel, xtmesh)
+        # add_SvFObject(sosModel, xtmesh, txDataValues, args.regcoeff)
+        # init_ode1_sm_to_sos(sosModel, theModel, xtmesh)
+        #
+        print("OBJ BEFORE replacement: " + str(pyo.value(theModel.svfObj)))
+
         replace_ode1_sm_to_sos(theModel, xtmesh)
         print("SOS2 Model with initial solution = " + theModel.getname())
+        print("OBJ AFTER replacement: " + str(pyo.value(theModel.svfObjVar)))
+        # print("OBJ AFTER replacement by Expression: " + str(pyo.value(theModel.svfObj.expr)))
+        # print("OBJ Expression: " + ((theModel.svfObj.expr)))
+        # theModel.svfObj.set_value(pyo.value(theModel.svfObj.expr))
         with open(args.workdir + '/' + theModel.getname() + '.model.txt', 'w') as out_file:
             theModel.pprint(ostream=out_file)
             out_file.close()
@@ -275,13 +291,12 @@ if __name__ == "__main__":
         print("Test name: " + the_test_name)
         subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt",
                               shell=True)
-        quit()
-    #
-
-    if args.solver == 'ipopt' and not args.sos2 and not args.log:
-        subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\" | tee " + the_test_name + ".log.txt", shell=True)# +
+        # quit()
     else:
-        subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt", shell=True)
+        if args.solver == 'ipopt' and not args.sos2 and not args.log:
+            subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\" | tee " + the_test_name + ".log.txt", shell=True)# +
+        else:
+            subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt", shell=True)
     toc = time.perf_counter()
     print("!!!!! Solved in: %f sec !!!!!!" % (toc - tic))
     readSol(theModel, nl_file)

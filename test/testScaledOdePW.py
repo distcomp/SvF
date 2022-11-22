@@ -65,9 +65,14 @@ def add_SvFObject(model: pyo.ConcreteModel, xts: XTScaling, txValuesData: list, 
     :return:
     """
     if regCoeff < 0:
-        raise Exception(("regCoeff = %f < 0")%(regCoeff))
-    model.svfObj = pyo.Objective(expr=MSD_expr(model, xts, txValuesData) +
-                                      REG_expr(model, xts, regCoeff), sense=pyo.minimize)
+        raise Exception("regCoeff = %f < 0" % (regCoeff))
+    # model.svfObj = pyo.Objective(expr=MSD_expr(model, xts, txValuesData) +
+    #                                   REG_expr(model, xts, regCoeff), sense=pyo.minimize)
+    model.svfObjVar = pyo.Var(within=pyo.Reals)
+    model.svfExpression = pyo.Expression(expr = MSD_expr(model, xts, txValuesData) + REG_expr(model, xts, regCoeff))
+    model.svfObjBound = \
+        pyo.Constraint(expr =  model.svfExpression <= model.svfObjVar)
+    model.svfObj = pyo.Objective(expr = model.svfObjVar, sense=pyo.minimize)
 
 def sA(m: pyo.ConcreteModel, j): return (m.Fx[j] - m.Fx[j-1])
 def s_eta_sqrt(sx, j: int, eps):
@@ -271,10 +276,34 @@ def replace_ode1_sm_to_sos(modelSolved: pyo.ConcreteModel, xts: XTScaling):
             Fxjp1 = pyo.value(modelSolved.Fx[j+1])
             xtp1, wj = xtp1_wj_for_ode1(dt, dx, xts.xLo, Xt, Xj, Xjp1, Fxj, Fxjp1)
             if wj >=0 and wj <=1:
-                modelSolved.Xt[k].value = xtp1
-                modelSolved.ode1_sos_bs[k].wsos[j].value = wj
-                modelSolved.ode1_sos_bs[k].wsos[j+1].value = 1 - wj
+                modelSolved.Xt[k].set_value(xtp1)
+                modelSolved.ode1_sos_bs[k].wsos[j].set_value(wj)
+                modelSolved.ode1_sos_bs[k].wsos[j+1].set_value(1 - wj)
+    modelSolved.svfObjVar.set_value(pyo.value(modelSolved.svfExpression))
     modelSolved.name = "init" + modelSolved.getname()
+
+def init_ode1_sm_to_sos(initModel: pyo.ConcreteModel, modelSolved: pyo.ConcreteModel, xts: XTScaling):
+    # Calculate model.Xt[k] and b.wsos !!!
+    dt = (xts.tUp - xts.tLo)/xts.Nt
+    dx = (xts.xUp - xts.xLo)/xts.Nx
+
+    for j in pyo.RangeSet(0, xts.Nx):
+        initModel.Fx[j].set_value(pyo.value(modelSolved.Fx[j]))
+
+    initModel.Xt[0].set_value(pyo.value(modelSolved.Xt[0]))
+
+    for k in modelSolved.setOde1K:
+        for j in pyo.RangeSet(0, xts.Nx - 1):
+            Xt = pyo.value(modelSolved.Xt[k-1])
+            Xj = float(j)
+            Xjp1 = float(j + 1)
+            Fxj = pyo.value(modelSolved.Fx[j])
+            Fxjp1 = pyo.value(modelSolved.Fx[j+1])
+            xtp1, wj = xtp1_wj_for_ode1(dt, dx, xts.xLo, Xt, Xj, Xjp1, Fxj, Fxjp1)
+            if wj >=0 and wj <=1:
+                initModel.Xt[k].value = xtp1
+                initModel.ode1_sos_bs[k].wsos[j].value = wj
+                initModel.ode1_sos_bs[k].wsos[j+1].value = 1 - wj
 
 def add_ode1_XtFx_log(model: pyo.ConcreteModel, xts: XTScaling):
     """
