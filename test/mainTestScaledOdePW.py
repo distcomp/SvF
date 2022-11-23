@@ -7,7 +7,7 @@ import pyomo.environ as pyo
 from testScaledOdePW import init_XtFx, add_ode1_XtFx, add_ode2_XtFx, \
                             add_ode1_XtFx_sos, add_ode2_XtFx_sos, add_ode1_XtFx_log, \
                             MSD_expr, REG_expr,  add_SvFObject, XTScaling, \
-                            replace_ode1_sm_to_sos
+                            replace_ode1_sm_to_sos, replace_ode2_sm_to_sos
 # from testSplinePW import addSpline_XtFy
 
 # The following imports are from /asl_io/write module
@@ -83,12 +83,12 @@ def printData(model):
     print("||||||||||||||||||||||||||||||||")
 
 def check_args(args):
-    Nt = int(args.tLoUpND[2])
     tLo = args.tLoUpND[0]
     tUp = args.tLoUpND[1]
-    Nx = int(args.xLoUpN[2])
+    Nt = int(args.tLoUpND[2])
     xLo = args.xLoUpN[0]
     xUp = args.xLoUpN[1]
+    Nx = int(args.xLoUpN[2])
     FxLo = args.FxLoUp[0]
     FxUp = args.FxLoUp[1]
     theFunc = "check_args"
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         tk = tLo + k*(tUp - tLo)/Ndata
         txDataValues.append( (tk, generatorXtData(tk, k)) )
     for tx in txDataValues:
-        t, x = tx[0], tx[1]
+        t, x = tx[0], tx[1]*0.9
         tLo, tUp = min(t, tLo), max(t, tUp)
         xLo, xUp = min(x, xLo), max(x, xUp)
     # Bounds on t and x may be CHANGED !
@@ -264,23 +264,17 @@ if __name__ == "__main__":
             theModel.pprint(ostream=out_file)
             out_file.close()
 
-        # sosModel = pyo.ConcreteModel("init" + theModel.getname())
-        # # theModel.name = getNLname(theModel, args)
-        # print("Model name: ", sosModel.getname())
-        #
-        # init_XtFx(sosModel, xtmesh)
-        # add_ode1_XtFx_sos(sosModel, xtmesh)
-        # add_SvFObject(sosModel, xtmesh, txDataValues, args.regcoeff)
-        # init_ode1_sm_to_sos(sosModel, theModel, xtmesh)
-        #
         print("OBJ BEFORE replacement: " + str(pyo.value(theModel.svfObj)))
+        if args.order == 1:
+            replace_ode1_sm_to_sos(theModel, xtmesh)
+        elif args.order == 2:
+            replace_ode2_sm_to_sos(theModel, xtmesh)
+        else:
+            raise Exception("UNSUPPORTED order for pw2sos !!!")
 
-        replace_ode1_sm_to_sos(theModel, xtmesh)
         print("SOS2 Model with initial solution = " + theModel.getname())
         print("OBJ AFTER replacement: " + str(pyo.value(theModel.svfObjVar)))
-        # print("OBJ AFTER replacement by Expression: " + str(pyo.value(theModel.svfObj.expr)))
-        # print("OBJ Expression: " + ((theModel.svfObj.expr)))
-        # theModel.svfObj.set_value(pyo.value(theModel.svfObj.expr))
+
         with open(args.workdir + '/' + theModel.getname() + '.model.txt', 'w') as out_file:
             theModel.pprint(ostream=out_file)
             out_file.close()

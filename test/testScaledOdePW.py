@@ -38,9 +38,11 @@ class XTScaling:
 
 def init_XtFx(model: pyo.ConcreteModel, xts: XTScaling): # Nt: int, Nx: int,  FxLo: float, FxUp: float):
     # Values of sx(st) for SCALED x, t  !!!
-    model.Xt = pyo.Var(pyo.RangeSet(0, xts.Nt), within=pyo.Reals, bounds=(xts.xLo, xts.xUp))
+    DX = xts.xUp - xts.xLo
+    DFx = xts.FxUp - xts.FxLo
+    model.Xt = pyo.Var(pyo.RangeSet(0, xts.Nt), within=pyo.Reals, bounds=(xts.xLo - DX*.1, xts.xUp + DX*.1))
     # Values of Fx(sx) for SCALED argument !!!
-    model.Fx = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.Reals, bounds=(xts.FxLo, xts.FxUp))
+    model.Fx = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.Reals, bounds=(xts.FxLo - DFx*.1, xts.FxUp + - DFx*.1))
 
 def MSD_expr(m: pyo.ConcreteModel, xts: XTScaling, txValuesData: list):
     MSD_summands = []
@@ -282,28 +284,28 @@ def replace_ode1_sm_to_sos(modelSolved: pyo.ConcreteModel, xts: XTScaling):
     modelSolved.svfObjVar.set_value(pyo.value(modelSolved.svfExpression))
     modelSolved.name = "init" + modelSolved.getname()
 
-def init_ode1_sm_to_sos(initModel: pyo.ConcreteModel, modelSolved: pyo.ConcreteModel, xts: XTScaling):
-    # Calculate model.Xt[k] and b.wsos !!!
-    dt = (xts.tUp - xts.tLo)/xts.Nt
-    dx = (xts.xUp - xts.xLo)/xts.Nx
-
-    for j in pyo.RangeSet(0, xts.Nx):
-        initModel.Fx[j].set_value(pyo.value(modelSolved.Fx[j]))
-
-    initModel.Xt[0].set_value(pyo.value(modelSolved.Xt[0]))
-
-    for k in modelSolved.setOde1K:
-        for j in pyo.RangeSet(0, xts.Nx - 1):
-            Xt = pyo.value(modelSolved.Xt[k-1])
-            Xj = float(j)
-            Xjp1 = float(j + 1)
-            Fxj = pyo.value(modelSolved.Fx[j])
-            Fxjp1 = pyo.value(modelSolved.Fx[j+1])
-            xtp1, wj = xtp1_wj_for_ode1(dt, dx, xts.xLo, Xt, Xj, Xjp1, Fxj, Fxjp1)
-            if wj >=0 and wj <=1:
-                initModel.Xt[k].value = xtp1
-                initModel.ode1_sos_bs[k].wsos[j].value = wj
-                initModel.ode1_sos_bs[k].wsos[j+1].value = 1 - wj
+# def init_ode1_sm_to_sos(initModel: pyo.ConcreteModel, modelSolved: pyo.ConcreteModel, xts: XTScaling):
+#     # Calculate model.Xt[k] and b.wsos !!!
+#     dt = (xts.tUp - xts.tLo)/xts.Nt
+#     dx = (xts.xUp - xts.xLo)/xts.Nx
+#
+#     for j in pyo.RangeSet(0, xts.Nx):
+#         initModel.Fx[j].set_value(pyo.value(modelSolved.Fx[j]))
+#
+#     initModel.Xt[0].set_value(pyo.value(modelSolved.Xt[0]))
+#
+#     for k in modelSolved.setOde1K:
+#         for j in pyo.RangeSet(0, xts.Nx - 1):
+#             Xt = pyo.value(modelSolved.Xt[k-1])
+#             Xj = float(j)
+#             Xjp1 = float(j + 1)
+#             Fxj = pyo.value(modelSolved.Fx[j])
+#             Fxjp1 = pyo.value(modelSolved.Fx[j+1])
+#             xtp1, wj = xtp1_wj_for_ode1(dt, dx, xts.xLo, Xt, Xj, Xjp1, Fxj, Fxjp1)
+#             if wj >=0 and wj <=1:
+#                 initModel.Xt[k].value = xtp1
+#                 initModel.ode1_sos_bs[k].wsos[j].value = wj
+#                 initModel.ode1_sos_bs[k].wsos[j+1].value = 1 - wj
 
 def add_ode1_XtFx_log(model: pyo.ConcreteModel, xts: XTScaling):
     """
@@ -338,36 +340,35 @@ def add_ode1_XtFx_log(model: pyo.ConcreteModel, xts: XTScaling):
                              pw_constr_type='EQ',
                              f_rule=pwf_rule,
                              pw_repn='LOG')
-    # def ode1_sos_block_rule(b, k):
-    #     b.wsos = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.NonNegativeReals)
-    #     b.wsos_sum_cons = pyo.Constraint(expr = sum(b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == 1.)
-    #     b.wsos_SOS_cons = pyo.SOSConstraint(var = b.wsos, sos=2)
-    #     b.wsos_at_x_cons = pyo.Constraint(expr = sum(xj * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_x_k_for_F[k]) # x
-    #     b.pw_Fx_cons = pyo.Constraint(
-    #         expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in pyo.RangeSet(0, xts.Nx)) == b.model().expr_dxdt_k[k])
-    #
-    # model.ode1_sos_bs = pyo.Block(model.setOde1K, rule = ode1_sos_block_rule)
 
-def xtp1_wj_wjp1_for_ode2(dt, Xtm1, Xt, Xj, Xjp1, Fxj, Fxjp1):
+def xtp1_wj_wjp1_for_ode2(dt: float, dx: float, xLO: float, Xtm1: float, Xt: float, Xj: float, Xjp1: float, Fxj: float, Fxjp1: float):
     """
-    :param dt:
-    :param Xt: x[t]
-    :param Xtm1: x[t-1]
-    :param Xj: x[j]
-    :param Xjp1: x[j+1]
-    :param Fxj: F(x[j])
-    :param Fxjp1: F(x[j+1])
+    :param dt: (xts.tUp - xts.tLo)/xts.Nt
+    :param dx: (xts.xUp - xts.xLo)/xts.Nx
+    :param xLO: xts.xLo
+    :param Xtm1: x[t-1] = xt(t-1)
+    :param Xt: x[t] = xt(t)
+    :param Xj: x[j] = x(j)
+    :param Xjp1: x[j+1] = x(j+1)
+    :param Fxj: F(x[j]) = Fx(j)
+    :param Fxjp1: F(x[j+1]) = Fx(j+1)
     :return:
-    x[t+1] = ((2*x(j+1)+dt^2*Fx(j+1)-2*x(j)-dt^2*Fx(j))*xt(t)+(x(j)-x(j+1))*xt(t-1)+dt^2*Fx(j)*x(j+1)-dt^2*x(j)*Fx(j+1)) / (x(j+1)-x(j))
-    w[j]   = -(xt(t)-x(j+1)) / (x(j+1)-x(j))
+    Det = dx*x(j+1)-dx*x(j)
+    x[t+1] = -((dt^2*Fx(j+1)-dt^2*Fx(j))*xLO+(-2*dx*x(j+1)-dt^2*Fx(j+1)+2*dx*x(j)+dt^2*Fx(j))*xt(t)+(dx*x(j+1)-dx*x(j))*xt(t-1)-dt^2*dx*Fx(j)*x(j+1)+dt^2*dx*x(j)*Fx(j+1))
+             / Det
+    w[j]   =   (xLO-xt(t)+dx*x(j+1)) / Det
     w[j+1] = 1 - w[j]
-    """
-    Det = (Xjp1 - Xj)
-    xtp1 = ((2*(Xjp1 - Xj) + dt**2*(Fxjp1  - Fxj))*Xt + (Xj - Xjp1)*Xtm1 + dt**2*(Fxj*Xjp1 - Xj*Fxjp1)) / Det
-    wj = -(Xt - Xjp1)/Det
-    wjp1 = 1 - wj
-    return xtp1, wj, wjp1
 
+    Det = dx*Xjp1-dx*Xj
+    x[t+1] = -((dt**2*Fxjp1-dt**2*Fxj)*xLO+(-2*dx*Xjp1-dt**2*Fxjp1+2*dx*Xj+dt**2*Fxj)*Xt+(dx*Xjp1-dx*Xj)*Xtm1-dt**2*dx*Fxj*Xjp1+dt**2*dx*Xj*Fxjp1)
+             / Det
+    w[j]   = (xLO-Xt+dx*Xjp1) / Det
+    """
+    Det = dx*(Xjp1 - Xj)
+    xtp1 = -((dt**2*Fxjp1-dt**2*Fxj)*xLO+(-2*dx*Xjp1-dt**2*Fxjp1+2*dx*Xj+dt**2*Fxj)*Xt+(dx*Xjp1-dx*Xj)*Xtm1-dt**2*dx*Fxj*Xjp1+dt**2*dx*Xj*Fxjp1) / Det
+    wj = (xLO-Xt+dx*Xjp1) / Det
+    # wjp1 = 1 - wj
+    return xtp1, wj
 
 def add_ode2_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
     """
@@ -405,6 +406,30 @@ def add_ode2_XtFx_sos(model: pyo.ConcreteModel, xts: XTScaling):
             expr = sum(b.model().Fx[xj] * b.wsos[xj] for xj in jSet) == b.model().expr_d2xdt2_k[k])
 
     model.ode2_sos_bs = pyo.Block(model.setOde2K, rule = ode2_sos_block_rule)
+
+def replace_ode2_sm_to_sos(modelSolved: pyo.ConcreteModel, xts: XTScaling):
+    # pyo.ConcreteModel.name
+    modelSolved.Scaled_Ode2_Sqrt.deactivate()
+    modelSolved.del_component("Scaled_Ode2_Sqrt")
+    add_ode2_XtFx_sos(modelSolved, xts)
+    # Calculate model.Xt[k] and b.wsos !!!
+    dt = (xts.tUp - xts.tLo)/xts.Nt
+    dx = (xts.xUp - xts.xLo)/xts.Nx
+    for k in modelSolved.setOde2K:
+        for j in pyo.RangeSet(0, xts.Nx - 1):
+            Xtm1 = pyo.value(modelSolved.Xt[k-1])
+            Xt = pyo.value(modelSolved.Xt[k])
+            Xj = float(j)
+            Xjp1 = float(j + 1)
+            Fxj = pyo.value(modelSolved.Fx[j])
+            Fxjp1 = pyo.value(modelSolved.Fx[j+1])
+            xtp1, wj = xtp1_wj_wjp1_for_ode2(dt, dx, xts.xLo, Xtm1, Xt, Xj, Xjp1, Fxj, Fxjp1)
+            if wj >=0 and wj <=1:
+                modelSolved.Xt[k+1].set_value(xtp1)
+                modelSolved.ode2_sos_bs[k].wsos[j].set_value(wj)
+                modelSolved.ode2_sos_bs[k].wsos[j+1].set_value(1 - wj)
+    modelSolved.svfObjVar.set_value(pyo.value(modelSolved.svfExpression))
+    modelSolved.name = "init" + modelSolved.getname()
 
 
 # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
