@@ -17,9 +17,13 @@ from read import read_sol_smap_var #, read_sol_smap
 from testPlotPW import plotScaledModelPW
 import subprocess
 import time
+import datetime as dt
+
+import argparse
 
 IPOPT_EXE = '/opt/solvers/bin/ipopt'
 SCIP_EXE  = '/opt/solvers/bin/scip'
+DATA_FILE = 'pwData.csv'
 # IPOPT_EXE = 'ipopt'
 
 def getModelName(prefix, args):
@@ -105,6 +109,26 @@ def check_args(args):
 
     return tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp
 
+def testPrintParams(args, n2skip = 2, header = False):
+    s = ''
+    n = 0
+    def argVal2str(argval):
+        return ('; '.join(str(v) for v in argval) if (type(argval) in (list, tuple)) else str(argval))
+
+    for arg in vars(args):
+        n = n + 1
+        if n <= n2skip:
+            continue
+        if n == n2skip + 1:
+            s = str(arg if header else (getattr(args, arg)))
+            continue
+        s = s + '; ' + str(arg if header else (getattr(args, arg)))
+
+    with open(args.workdir + '/' + DATA_FILE, 'a') as out_file:
+        out_file.write(s+'\n')
+        out_file.close()
+
+
 # -o 2 --tLoUpND 0. 3. 30 15 --xLoUpN -1.5 1.5 10 --FxLoUp -7.0 7. -err .05 -reg 0.001 -eps 0.001
 # -o 1 --tLoUpND 0.0 3. 20 10  --xLoUpN .0 25.0 30 --FxLoUp .0 26. -eps 0.001 -reg 1. -err 0.0 -s ipopt
 # GLOBAL
@@ -112,28 +136,29 @@ def check_args(args):
 
 # -sos2 -o 2 --tLoUpND 0. 3. 14 5 --xLoUpN -1.5 1.5 7 --FxLoUp -7.0 7. -reg .1 -err .0 -s scip
 # -sos2 -o 1 --tLoUpND 0.0 3. 10 5  --xLoUpN .0 25.0 5 --FxLoUp .0 26. -reg .1 -err 0.0
-import argparse
 def makeParser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)#@!!ctlbr517
     parser.add_argument('-pr', '--prefix', default="OdePw", type=str, help='Prefix of problem name')
     parser.add_argument('-wd', '--workdir', default='tmp', help='working directory')
+    parser.add_argument('-dt', '--datetime', default=dt.datetime.now().strftime("%d/%m/%Y-%H:%M:%S"), type=str, help='Time of start')
     parser.add_argument('-s', '--solver', default='ipopt', choices=['ipopt', 'scip'], help='solver to use')
+    parser.add_argument('-o', '--order', default=2, choices=[1,2,0], type=int, help='ODE order 1 or 2 (reduced form), 0 - SPLINE')
     parser.add_argument('-ode1', '--ode1', default='exp', choices=['exp', 'square'], help='type of ODE1')
+    parser.add_argument('-pw2sos', '--pw2sos', action='store_true', help='use PW to get initial solution for SOS2')
+    parser.add_argument('-sos2', '--sos2', action='store_true', help='use SOS2 for discretization')
+    parser.add_argument('-log', '--log', action='store_true', help='use LOG for discretization')
     parser.add_argument('-t', '--tLoUpND', nargs='+', default=[0., 3., 10, 5], type=float, help='t: Lo Up N number of data')
     parser.add_argument('-x', '--xLoUpN', nargs='+', default=[-1.5, 1.5, 5], type=float, help='x: Lo Up N')
     parser.add_argument('-Fx', '--FxLoUp', nargs='+', default=[-100., 100.], type=float, help='Lo Up limits for Fx')
-    parser.add_argument('-o', '--order', default=2, choices=[1,2,0], type=int, help='ODE order 1 or 2 (reduced form), 0 - SPLINE')
     parser.add_argument('-eps', '--epsilon', default=0.01, type=float, help='Epsilon to smooth pos()')
     parser.add_argument('-reg', '--regcoeff', default=.005, type=float, help='Regularization coefficient')
     parser.add_argument('-err', '--errdata', default=.1, type=float, help='Error of data')
     parser.add_argument('-eta', '--useEta', action='store_true', help='use Eta in discretization')
-    parser.add_argument('-pw2sos', '--pw2sos', action='store_true', help='use PW to get initial solution for SOS2')
-    parser.add_argument('-sos2', '--sos2', action='store_true', help='use SOS2 for discretization')
-    parser.add_argument('-log', '--log', action='store_true', help='use LOG for discretization')
     return parser
 
 if __name__ == "__main__":
     parser = makeParser()
+    parser.add_argument('-dur', '--duration', default=.0, type=float)
     args = parser.parse_args()
     # vargs = vars(args)
     print('Arguments of the test')
@@ -147,6 +172,10 @@ if __name__ == "__main__":
     Ndata = int(args.tLoUpND[3])
     regCoeff = args.regcoeff
     print(">>>> tLo=%f, tUp=%f, Nt=%d, xLo=%f, xUp=%f, Nx=%d, FxLo=%f, FxUp=%f" % (tLo, tUp, Nt, xLo, xUp, Nx, FxLo, FxUp) )
+
+    # testPrintParams(args, header=True)
+    # quit()
+
 
     # True/actual Fx depending on args
     def getTrueFx(args):
@@ -292,8 +321,12 @@ if __name__ == "__main__":
         else:
             subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt", shell=True)
     toc = time.perf_counter()
-    print("!!!!! Solved in: %f sec !!!!!!" % (toc - tic))
+    totalTime = toc - tic
+    print("!!!!! Solved in: %f sec !!!!!!" % (totalTime))
     readSol(theModel, nl_file)
+
+    args.duration = totalTime
+    testPrintParams(args)
 
     msdSol = pyo.value(MSD_expr(theModel, xtmesh, txDataValues))
     regSol = pyo.value(REG_expr(theModel, xtmesh, regCoeff))
@@ -307,7 +340,7 @@ if __name__ == "__main__":
     print('MSD = %f, REG = %f' % (msdSol, regSol))
     print('F(x): ', [pyo.value(theModel.Fx[j]) for j in pyo.RangeSet(0,Nx)])
     print('X(t): ', [pyo.value(theModel.Xt[t]) for t in pyo.RangeSet(0,Nt)])
-    if args.sos2:
+    if args.sos2 or args.pw2sos:
         if args.order == 2:
             for k in theModel.ode2_sos_bs.index_set():
                 print('wsos[%f]: ' % (pyo.value(k)), [pyo.value(theModel.ode2_sos_bs[k].wsos[xj]) for xj in pyo.RangeSet(0, Nx)])
@@ -315,8 +348,6 @@ if __name__ == "__main__":
             for k in theModel.ode1_sos_bs.index_set():
                 print('wsos[%f]: ' % (pyo.value(k)), [pyo.value(theModel.ode1_sos_bs[k].wsos[xj]) for xj in pyo.RangeSet(0, Nx)])
 
-    # quit()
-
-    # plotModelPW(theModel, nl_file[:-len('.nl')])
     plotScaledModelPW(theModel, xtmesh, txDataValues, getTrueFx(args), nl_file[:-len('.nl')])
+
     quit()
