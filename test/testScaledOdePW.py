@@ -42,7 +42,14 @@ def init_XtFx(model: pyo.ConcreteModel, xts: XTScaling): # Nt: int, Nx: int,  Fx
     DFx = xts.FxUp - xts.FxLo
     model.Xt = pyo.Var(pyo.RangeSet(0, xts.Nt), within=pyo.Reals, bounds=(xts.xLo - DX*.1, xts.xUp + DX*.1))
     # Values of Fx(sx) for SCALED argument !!!
-    model.Fx = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.Reals, bounds=(xts.FxLo - DFx*.1, xts.FxUp + - DFx*.1))
+    model.Fx = pyo.Var(pyo.RangeSet(0, xts.Nx), within=pyo.Reals, bounds=(xts.FxLo - DFx*.1, xts.FxUp + DFx*.1))
+    model.tLo = pyo.Param(initialize=xts.tLo)
+    model.tUp = pyo.Param(initialize=xts.tUp)
+    model.xLo = pyo.Param(initialize=xts.xLo)
+    model.xUp = pyo.Param(initialize=xts.xUp)
+    model.FxLo = pyo.Param(initialize=xts.FxLo)
+    model.FxUp = pyo.Param(initialize=xts.FxUp)
+
 
 def MSD_expr(m: pyo.ConcreteModel, xts: XTScaling, txValuesData: list):
     MSD_summands = []

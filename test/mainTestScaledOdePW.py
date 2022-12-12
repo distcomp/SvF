@@ -23,6 +23,7 @@ import argparse
 
 IPOPT_EXE = '/opt/solvers/bin/ipopt'
 SCIP_EXE  = '/opt/solvers/bin/scip'
+# SCIP_EXE  = '/usr/local/bin/scipampl703'
 DATA_FILE = 'pwData.csv'
 # IPOPT_EXE = 'ipopt'
 
@@ -217,7 +218,7 @@ if __name__ == "__main__":
         tk = tLo + k*(tUp - tLo)/Ndata
         txDataValues.append( (tk, generatorXtData(tk, k)) )
     for tx in txDataValues:
-        t, x = tx[0], tx[1]*0.9
+        t, x = tx[0], tx[1] #*0.9
         tLo, tUp = min(t, tLo), max(t, tUp)
         xLo, xUp = min(x, xLo), max(x, xUp)
     # Bounds on t and x may be CHANGED !
@@ -312,14 +313,13 @@ if __name__ == "__main__":
         # The name to distinguish tests
         the_test_name = nl_file[:-len('.nl')]
         print("Test name: " + the_test_name)
-        subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt",
-                              shell=True)
+        subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt",  shell=True) # nl_file[:-len('.nl')]
         # quit()
     else:
         if args.solver == 'ipopt' and not args.sos2 and not args.log:
             subprocess.check_call(IPOPT_EXE + ' ' + nl_file + " -AMPL \"option_file_name=" + "ipopt.opt\" | tee " + the_test_name + ".log.txt", shell=True)# +
         else:
-            subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt", shell=True)
+            subprocess.check_call(SCIP_EXE + ' ' + nl_file[:-len('.nl')] + " -AMPL | tee " + the_test_name + ".log.txt", shell=True) # nl_file[:-len('.nl')]
     toc = time.perf_counter()
     totalTime = toc - tic
     print("!!!!! Solved in: %f sec !!!!!!" % (totalTime))

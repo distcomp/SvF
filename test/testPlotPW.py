@@ -23,8 +23,8 @@ def plotScaledModelPW(model: pyo.ConcreteModel, XTscaler: XTScaling, txDataValue
     Fx = np.array([pyo.value(model.Fx[j]) for j in xIndex], dtype=float)
 
     fig, ax = plt.subplots()
-    ax.plot(x, Fx, label='F(x)')
-    ax.plot(x, trueFxVals, 'bo', label='trueF(x)')
+    ax.plot(x, Fx, 'bo', label='F(x)')
+    ax.plot(x, trueFxVals, label='trueF(x)')
     ax.set(xlabel='x', ylabel='F(x)') #, title=model.getname() + ', F(x)')
     ax.set_title(model.getname() + ', F(x)', fontdict = {'fontsize': 10, 'fontweight':'bold'})
     ax.grid()
