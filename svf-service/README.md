@@ -1,5 +1,5 @@
-# SvF-remote
-
+# SvF-remote Everest application
+Enables to run all SvF-scenario remotely on a resources conneced with [EverestOpt]([https://optmod.distcomp.org) portal.
 
 The link to a stable implementation of svf-remote is [https://optmod.distcomp.org/apps/vladimirv/svf-remote](https://optmod.distcomp.org/apps/vladimirv/svf-remote).
 
