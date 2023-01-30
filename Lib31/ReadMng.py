@@ -101,21 +101,24 @@ def ReadMng ( ) :
      buf = UTF8replace(buf, '∈', '\\in ')
      buf = UTF8replace(buf, '√', 'sqrt')
      buf = UTF8replace(buf, '∙', '*')
-     buf = UTF8replace(buf, 'τ', 'tau1')       #  tau   - не ест Pioma
-     buf = UTF8replace(buf, 'μ', 'muu')
-     buf = UTF8replace(buf, '\\mu', 'muu')
-     buf = UTF8replace(buf, '\\Delta', 'Delta')
-     buf = UTF8replace(buf, 'π', 'pi')
-     buf = UTF8replace(buf, 'α', 'alpha')
-#     buf = UTF8replace(buf, 'φ', 'fi')
-     buf = UTF8replace(buf, 'σ', 'sigma')
-     buf = UTF8replace(buf, 'ξ', 'xi')
-#     buf = UTF8replace(buf, '\'', 'apst')
-     buf = UTF8replace(buf, 'Ω', 'Omega')
-     buf = UTF8replace(buf, 'Δ', 'Delta')
-     buf = UTF8replace(buf, 'δ', 'delta')
+     buf = UTF8replace(buf, '·', '*')   #  другая точка
+
+     if not SvF.UseGreek :
+        buf = UTF8replace(buf, 'τ', 'tau1')       #  tau   - не ест Pioma
+        buf = UTF8replace(buf, 'μ', 'muu')
+        buf = UTF8replace(buf, 'π', 'pi')
+        buf = UTF8replace(buf, 'α', 'alpha')
+#        buf = UTF8replace(buf, 'φ', 'fi')
+        buf = UTF8replace(buf, 'σ', 'sigma')
+        buf = UTF8replace(buf, 'ξ', 'xi')
+#        buf = UTF8replace(buf, '\'', 'apst')
+        buf = UTF8replace(buf, 'Ω', 'Omega')
+        buf = UTF8replace(buf, 'Δ', 'Delta')
+        buf = UTF8replace(buf, 'δ', 'delta')
 
 #     print ('AFTER:', buf)
+     buf = UTF8replace(buf, '\\mu', 'muu')
+     buf = UTF8replace(buf, '\\Delta', 'Delta')
 
      buf = UTF8replace(buf, '\\tau', 'tau1')         # TEX   tau   - не ест Pioma
 
@@ -150,19 +153,25 @@ def ReadMng ( ) :
 
 
      n=0
-#     print 'WWW', buf
-     while n<len(buf) :
-        p = buf[n]
-#        if ',;:+-/%()[]{}^=<>!'.find(p) >= 0:    #  without  '.*'  Select *  from  ../Trajectories.tbl where x !=to_x
-#        if '.,;:+-*/%()[]{}^=<>!'.find(p) >= 0:
-        if ',;:+-*/%()[]{}^=<>!'.find(p) >= 0:     #  '.'    ???
+     if SvF.Substitude:
+       quotes= 0
+       while n<len(buf) :
+         p = buf[n]
+         if p == '\'' or p == '\"' :   #  а не в строке ли мы?
+             quotes = 1 - quotes
+         if quotes == 0:
+#         if ',;:+-/%()[]{}^=<>!'.find(p) >= 0:    #  without  '.*'  Select *  from  ../Trajectories.tbl where x !=to_x
+#         if '.,;:+-*/%()[]{}^=<>!'.find(p) >= 0:
+           if ',;:+-*/%()[]{}^=<>!'.find(p) >= 0:     #  '.'    ???
              if n+1<len(buf) :
                  if buf[n+1] == ' ' :  buf = buf[:n+1] + buf[n+2:]
              if n-1>=0 :
-                 if buf[n-1] == ' ' :  buf = buf[:n-1] + buf[n:]
-        n += 1
+                 if buf[n-1] == ' ' :
+                     buf = buf[:n-1] + buf[n:]
+                     continue
+         n += 1
      buf_up = buf.upper()                           # ИСКЛЮЧЕНИЯ
-     buf_up = buf.upper()
+#     buf_up = buf.upper()
      p = buf_up.find ('SELECT*')
      if p >= 0 : buf = buf[:p+6]+' * '+buf[p+7:]
 
@@ -196,7 +205,7 @@ def ReadMng ( ) :
 
  def readFloat():
      txt = readEqStr()
-     if SvF.Compile : return txt
+#     if SvF.Compile : return txt     14.08.22
      ret=getfloatNaN( txt )
      if isnan(ret) :
          print ('ERR convertion:', txt)
@@ -205,8 +214,7 @@ def ReadMng ( ) :
 
  def readInt():
      txt = readEqStr()
-#30     if SvF.Preproc: return txt
-     if SvF.Compile : return txt
+#     if SvF.Compile : return txt     14.08.22
      ret=getfloatNaN( txt )
      if isnan(ret) :
          print ('ERR convertion:', txt)
@@ -215,8 +223,7 @@ def ReadMng ( ) :
 
  def readBool():
      txt = readEqStr()
-# 30     if SvF.Preproc: return txt
-     if SvF.Compile : return txt
+ #    if SvF.Compile : return txt                   14.08.22
 
      if txt == 'True'  : return True
      if txt == 'False' : return False
@@ -343,6 +350,17 @@ def ReadMng ( ) :
                 SvF.ObjToReadSols = readBool(); continue
             elif Is(Q, "funPrefix"):
                 SvF.funPrefix = readEqStr(); continue
+            elif Is(Q, "UseGreek"):
+                SvF.UseGreek = readBool(); continue
+            elif Is(Q, "Substitude"):
+                SvF.Substitude = readBool();  continue
+            elif Is(Q, "Use^forPower"):
+                SvF.UseHomeforPower = readBool();  continue
+            elif Is(Q, "TabSize"):
+                TabSize = readInt();   SvF.TabString = ' ' * TabSize;  continue
+            elif Is(Q, "Default_step"):
+                SvF.Default_step = readFloat();  continue
+
             Swr('SvF.' + coMembers[n] + ' = ' + buf)
 #            print ('QQQQQQQQQQQQMEM', Q, buf)
         buf = ''
@@ -354,8 +372,8 @@ def ReadMng ( ) :
     elif Is(Q, "SetStartDir") :
                     os.chdir(SvF.startDir);
 #                    printS ( '*******************  Se CWD:', getcwd(), SvF.startDir )
-    elif Is(Q, "Use^forPower") :  SvF.UseHomeforPower = readBool(); ## 30 nSwr( 'SvF.UseHomeforPower = '+SvF.UseHomeforPower ) #28
-    elif Is(Q, "TabSize"  )   : TabSize  = readInt();   SvF.TabString = ' ' * TabSize
+#    elif Is(Q, "Use^forPower") :  SvF.UseHomeforPower = readBool(); ## 30 nSwr( 'SvF.UseHomeforPower = '+SvF.UseHomeforPower ) #28
+#    elif Is(Q, "TabSize"  )   : TabSize  = readInt();   SvF.TabString = ' ' * TabSize
 ## 30                nSwr( 'SvF.TabSize = ',SvF.TabSize )  #29
 ##    elif Is(Q, "SchemeD1") :  SvF.DIF1 = readEqStr();  nSwr( 'SvF.DIF1 = \''+SvF.DIF1+'\'') #27
 ###    elif Is(Q, "VERSION" )    : SvF.Version  = readFloat();   nSwr( 'SvF.Version = ',SvF.Version)      #27
@@ -403,23 +421,17 @@ def ReadMng ( ) :
                         return Task
     elif Is(Q, "MakeSets_byParam") :
             args = buf.split(' ');  #args[0] = '\''+ args[0] + '\''
-            print ("UUUUUUUUUUUUUUU", args)
+ #           print ("UUUUUUUUUUUUUUU", args)
             col_name = '.dat(\''+args[0]+'\')'
             Swr('SvF_MakeSets_byParam ( SvF.curentTabl'+col_name+', '+','.join(args[1:])+' )' )
-            if 0 :  ## 30 not SvF.Preproc:   #  Устарело
-                args = buf.split(' '); CVstep=0; CVmargin=0
-                if len (args) > 1: CVstep   = int(args[1])
-                if len (args) > 2: CVmargin = int(args[2])
-                SvF.testSet, SvF.teachSet = MakeSets_byParam(SvF.curentTabl, args[0], CVstep, CVmargin)
+#            if 0 :  ## 30 not SvF.Preproc:   #  Устарело
+ #               args = buf.split(' '); CVstep=0; CVmargin=0
+  #              if len (args) > 1: CVstep   = int(args[1])
+   #             if len (args) > 2: CVmargin = int(args[2])
+    #            SvF.testSet, SvF.teachSet = MakeSets_byParam(SvF.curentTabl, args[0], CVstep, CVmargin)
     elif Is(Q, "MakeSets_byParts") :
             args = buf.split(' ')
             Swr('SvF.testSet, SvF.teachSet = MakeSets_byParts ( SvF.curentTabl.NoR, '+','.join(args)+' )' )
-            if 0:  ## 30 not SvF.Preproc:
-                CVstep=7;  CVpartSize = 1;  CVmargin=0        # по умолчанию
-                if len (args) > 0: CVstep     = int(args[0])
-                if len (args) > 1: CVpartSize = int(args[1])
-                if len (args) > 2: CVmargin   = int(args[2])
-                SvF.testSet, SvF.teachSet = MakeSets_byParts(SvF.curentTabl.NoR, CVstep, CVpartSize, CVmargin)
     elif Is(Q, "WriteSvFtbl" ):
                     Swr( '\nSvF.curentTabl.WriteSvFtbl (  \'' + buf + '\' )')
 ## 30                    if not SvF.Preproc: SvF.curentTabl.WriteSvFtbl ( readEqStr() )
@@ -440,8 +452,8 @@ def ReadMng ( ) :
     elif Is(Q, "TBL:") :  Tab.TblOperation(buf)
     elif Is(Q, "DEF:") :  WriteModelDef26 ( buf )
 
-    elif Is(Q, "LocolSolverName" ) :  SvF.LocalSolverName = readEqStr()
-    elif Is(Q, "SolverName"      ) :  SvF.SolverName      = readEqStr()
+ #   elif Is(Q, "LocalSolverName" ) :  SvF.LocalSolverName = readEqStr()
+  #  elif Is(Q, "SolverName"      ) :  SvF.SolverName      = readEqStr()
     elif Is(Q, "Hack_Stab"       ) :  SvF.Hack_Stab  = bool(readStr()=='True');
 
 #    elif ( Is(Q,"DataFile") or

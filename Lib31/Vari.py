@@ -9,6 +9,7 @@ class Vari ():                  #  var  ###################################
       self.name  = name
       self.oname = name
       self.draw_name = name
+      self.data_name = name + '-data'
       self.avr     = 0          #  для вычитания
       self.sigma   = 1
       self.sigma2  = 1

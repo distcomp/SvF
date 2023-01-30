@@ -11,7 +11,7 @@ import COMMON as co
  ############################## 21.10 #################################
 
                                                                #elems
-def AddMarginBor ( tSet, CVmargin, NoR, border ) :   #  tSet  [ [...], [...] ... [...] ]
+def AddMarginBor ( tSet, CVmargin, NoR, border=None ) :   #  tSet  [ [...], [...] ... [...] ]
     teachSet = deepcopy(tSet)                                  #  e
     for ne, elems in enumerate(tSet) :
         for e in elems :
@@ -67,15 +67,15 @@ def SvF_MakeSets_byParam( arr, CVstep=0, CVmargin=0, border=None ):  # sort if m
  #   1/0
 
 
-                                                        # MakeSets_byParts 7 1583  - 7 раз по 1583 (полтлра литра :)
+                                                    # MakeSets_byParts 7 1583  - 7 раз по 1583 (полтлра литра :)
 def MakeSets_byParts ( NoR, CVstep=7, CVpart_size=1, CVmargin=0) :
     print  (CVpart_size, CVstep, CVmargin,)
 
-    if CVstep == 0 : CVstep = ceil (NoR/CVpart_size) #
-    else :           CVstep = int( CVstep )
+    if CVstep == 0:  CVstep = ceil (NoR/CVpart_size)
+    else:            CVstep = int( CVstep )
 
     testSet = []
-    for s in range(CVstep) : testSet.append ([])
+    for s in range(CVstep): testSet.append ([])
 
     n = 0
     num = 0
@@ -87,11 +87,12 @@ def MakeSets_byParts ( NoR, CVstep=7, CVpart_size=1, CVmargin=0) :
             if num == NoR: break
         if num == NoR: break
         n += 1
-    if CVmargin == 0 :
-        teachSet =  testSet
+    if CVmargin == 0:
+        teachSet = testSet
     else :
-        teachSet = AddMargin ( testSet, CVmargin, NoR )
-                        
+        teachSet = AddMarginBor ( testSet, CVmargin, NoR )
+#        teachSet = AddMargin ( testSet, CVmargin, NoR )
+
     co.CV_NoR = NoR
     co.CV_NoSets = len (testSet)
 

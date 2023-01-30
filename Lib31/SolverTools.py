@@ -19,36 +19,31 @@ from pyomo.opt import (ReaderFactory,ResultsFormat)
 
 from ssop_session import *
 
-
-def Factory (optFile , py_max_iter, py_tol ): # , warm_start_bound_push      =1e-6,
-    opt = SolverFactory(co.LocalSolverName)
-    opt.options["print_level"] = 4 #4 #6
-    opt.options['warm_start_init_point']      = 'yes'
-    opt.options['warm_start_bound_push']      = co.py_warm_start_bound_push
-    opt.options['warm_start_mult_bound_push'] = co.py_warm_start_mult_bound_push
-    opt.options['constr_viol_tol']            = co.py_constr_viol_tol
-    opt.options['mu_init']                    = 1e-6
-    opt.options['max_iter']             = py_max_iter
-    opt.options["tol"]                  = py_tol
-#    opt.options['acceptable_tol']       = 1e-10
-    opt.options['print_user_options']      = 'yes'
-
-    if platform.system() != 'Windows':
-            opt.options["linear_solver"] = 'ma57'
- #           opt.options["linear_solver"] = 'ma86'
-    if  optFile != None :
-        if co.RunMode[0] != 'L' or co.RunMode[2] != 'L' :
- #           writeIpoptOptionsFile(opt.options, co.tmpFileDir+'/'+optFile)
-            makeSolverOptionsFile(co.tmpFileDir+'/'+optFile, "ipopt", opt.options)
+def Factory (optFile , py_max_iter, py_tol ):
+    opt = None
+    if optFile is None or co.RunMode[0] == 'L' or co.RunMode[2] == 'L' :
+        opt = SolverFactory(co.LocalSolverName)  #'server' :  co.LocalSolverName
+        opt.options.update( co.solverOptVal )
+    if (not optFile is None) and \
+        (co.RunMode[0] != 'L' or co.RunMode[2] != 'L'):
+        makeSolverOptionsFile(co.tmpFileDir + '/' + optFile, "ipopt", co.solverOptVal)
     return opt
 
-def writeIpoptOptionsFile(optsDict, fNameOpts):
-    fOpts = open(fNameOpts, 'w')
-    for key in optsDict.keys():
-        if key != 'solver': fOpts.write('%s %s\n' % (key, str(optsDict[key])))
-    fOpts.close()
 
+#    opt.options["print_level"] = 4 #4 #6
+ #   opt.options['warm_start_init_point']      = 'yes'
+  #  opt.options['warm_start_bound_push']      = co.py_warm_start_bound_push
+   # opt.options['warm_start_mult_bound_push'] = co.py_warm_start_mult_bound_push
+    #opt.options['constr_viol_tol']            = co.py_constr_viol_tol
+#    opt.options['mu_init']                    = 1e-6
+ #   opt.options['max_iter']             = py_max_iter
+  #  opt.options["tol"]                  = py_tol
+#  #  opt.options['acceptable_tol']       = 1e-10
+    #opt.options['print_user_options']      = 'yes'
+#    print (opt.options)
 
+#    if platform.system() != 'Windows':    opt.options["linear_solver"] = 'ma57'
+ #           opt.options["linear_solver"] = 'ma86'
 
 def makeNlFile ( Gr, stab_file ) :
             _, smap_id = Gr.write( stab_file, format=ProblemFormat.nl )#,  io_options={'symbolic_solver_labels': True})  # создаем стаб
@@ -60,14 +55,11 @@ def setMuToTeach (Gr, teachSet = [] ) :                     #  teachSet соде
 #            for m in range(com.CV_NoR) : Gr.mu[m] = 1
         if co.CV_NoR > 0:
             Gr.mu[:] = 1
-            for s in teachSet  : Gr.mu[s] = 0
-
-
+            for s in teachSet: Gr.mu[s] = 0
 
 def makeNlFileTeach ( Gr, stab_file, teachSet_k ) :
             setMuToTeach(Gr, teachSet_k )
             return makeNlFile(Gr, co.tmpFileDir + "/" + stab_file + ".nl")
-
 
 def makeNlFileS ( Gr, teachSet ) : #, symbol_map, nls ) :
         sym_maps = []
@@ -92,17 +84,22 @@ def makeNlFileS ( Gr, teachSet ) : #, symbol_map, nls ) :
 
 def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
         if RunMo == 'S':                                        # RUN dist    #===== solve in parallel ===========
-            theSession = SsopSession(name=co.TaskName,
-                                     token= co.token,
-                                     resources=[
-                                                ssop_config.SSOP_RESOURCES["pool-scip-ipopt"]
+            SvF_resources = []                                                  #####   ABC   28/01/2023
+            for r in co.Resources:
+                SvF_resources.append(ssop_config.SSOP_RESOURCES[r])
+            theSession = SsopSession(name      = co.TaskName,
+                                     token     = co.token,
+                                     resources = SvF_resources,
+
+##                                     resources=[
+  ##                                              ssop_config.SSOP_RESOURCES["pool-scip-ipopt"]
                                                 #ssop_config.SSOP_RESOURCES["hse"],
                                         #        ssop_config.SSOP_RESOURCES["vvvolhome2"],
                                                 #ssop_config.SSOP_RESOURCES["vvvoldell"],
                                          #       ssop_config.SSOP_RESOURCES["ui4.kiae.vvvol"],
                                                 #ssop_config.SSOP_RESOURCES["govorun.vvvol"],
                                                 #ssop_config.SSOP_RESOURCES["vvvolhome"]
-                                               ],
+    ##                                           ],
                                      workdir=tmpFileDir, debug=False)
 #            optFile = 'peipopt.opt'
  #           makeIpoptOptionsFile(co.tmpFileDir,  optFile)
@@ -126,8 +123,15 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
           for pName in __peProblems:                  # RUN Nl local
             print ("solve", pName+".nl")
 #            subprocess.check_call('ipopt3_11_1 -s ' + pName+".nl"+" \"option_file_name=peipopt.opt\"", shell=True)
-            subprocess.check_call(co.SolverName+' ' +tmpFileDir+'/'+ pName+".nl -AMPL"+
+            if co.SolverName.find('ipopt') >=0:
+                subprocess.check_call(co.SolverName+' ' +tmpFileDir+'/'+ pName+".nl -AMPL"+
                                   " \"option_file_name=" +tmpFileDir+ "peipopt.opt\"", shell=True)
+            elif co.SolverName.find('scip') >=0:
+                subprocess.check_call(co.SolverName+' ' +tmpFileDir+'/'+ pName+" -AMPL"+
+                                  " \"option_file_name=" +tmpFileDir+ "peipopt.opt\"", shell=True)
+            else:
+                print ("Solver Name ?");  exit (-17)
+
         #def gatherNlFileS ( __peProblems, sym_maps ) :
         resultss = []
         for k, pName in enumerate(__peProblems):                         #

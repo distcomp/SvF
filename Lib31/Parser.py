@@ -10,6 +10,7 @@ import COMMON as com
 
 NUM_SymbolStart = '1234567890.'
 NUM_Symbol      = '1234567890.e'
+#OPER_Symbol     = '+-*/=<>%!\'\"'
 OPER_Symbol     = '+-*/=<>%!'
 #OPER_Symbol     = '+-*/=^%'
 NAME_Aditional  = '1234567890_'
@@ -95,7 +96,10 @@ class  parser:
                     it.part = sub
 
     def substAllNames_but_dot_plus (self, fin, sub) :
+            quotes = 0
             for itn, it in enumerate(self.items) :
+                if it.part == '\'' or it.part == '\"' :  quotes = 1 - quotes
+                if quotes == 1 : continue                                 #  в строках не заменяем !
                 if it.part == fin :
                     if itn + 1 < len(self.items):
                         #                        if fin == 'Y': print ('UUUUUUUUUUUUUUUUUUU', self.items[itn + 1].part)
@@ -104,8 +108,6 @@ class  parser:
                     if itn > 0:
                         if self.items[itn - 1].part == '.':
                             continue
-
-
                     it.part = sub
 
 
@@ -341,7 +343,7 @@ class  parser:
     def dif1  ( self, dif_minus, dif_plus, grids ) :       #  DIF 1      \d(t,H2O(t))
         if self.text.find ('\\d') == -1: return  dif_minus, dif_plus
         self.reparse_funs ( grids ) 
-        print (self.join())
+ ##       print (self.join())
 #        if self.find_type ( '\\d' ) == -1 :     return  dif_minus
         if com.printL : print ('DIF '+ com.SchemeD1[-1])
         for itn, it in enumerate(self.items) :
@@ -358,10 +360,10 @@ class  parser:
 #                    1/0
                 else :                                                      # grid func
                     gr_name = args[0]
-                    print (args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')
+ ##                   print (args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')
                     plus_st  = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')  # t -> t+1
                     minus_st = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + gr_name + '__p.step)')  # t -> t+1
-                    print ('plus_st', plus_st, 'minus_st', minus_st)
+   ##                 print ('plus_st', plus_st, 'minus_st', minus_st)
 
                     for Sch in reversed(com.SchemeD1) :
 #                        print ('                                                             ', gr_name, Sch)
@@ -381,7 +383,7 @@ class  parser:
                         dif_plus.append(gr_name)
 #                        print ("Not implemented yet:   " + com.SchemeD1);  exit (-1)
                     else :
-                        print('\n**********************com.SchemeD1', com.SchemeD1[-1])
+     ##                   print('\n**********************com.SchemeD1', com.SchemeD1[-1])
                         1 / 0
                 it.part = '';  it.type = ''
                 for p in range ( self.items[itn+1].etc[0]+1, self.items[itn+1].etc[-1] ) :
@@ -389,7 +391,7 @@ class  parser:
                 self.items[p-1].part = dif1
 #                    dif_minus.append ( gr_name)
         self.reparse_funs ( grids ) 
-        self.myprint()
+##        self.myprint()
 #        1/0
         if com.printL : print (self.join ())
         if com.printL : print ('DIF END')
@@ -425,7 +427,7 @@ class  parser:
  #                   cop = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + step + ')')  # t -> t+1
   #                  copM = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + step + ')')  # t -> t-1
    #                 dif2 = '(' + cop + '+' + copM + '-2*' + args[1] + ')/' + step + '**2'
-                    print ('dif2:', dif2)
+  ##                  print ('dif2:', dif2)
                     it.part = '';  it.type = ''
                     for p in range ( self.items[itn+1].etc[0]+1, self.items[itn+1].etc[-1] ) :
 #                        print self.items[p].part

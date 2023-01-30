@@ -147,7 +147,7 @@ def readMNGfile ( fName ):
      #   print (ord(lines_buf[0][0]),ord(lines_buf[0][1]))
         if ord(lines_buf[0][0]) == 65279:       #  Win редактор гадит в первую строку !!!!!
             lines_buf[0] = lines_buf[0][1:]
-        print ('IIIII',lines_buf[0].rstrip())
+  ##      print ('IIIII',lines_buf[0].rstrip())
  #       print (len(lines_buf[0].rstrip()))
   #      print (lines_buf[0].rstrip()[:])
    #     print (lines_buf[0].rstrip()[2:])

@@ -60,7 +60,7 @@ def WriteTable30(buf):  #  разбор Table
     if len(parts) >= 8: where = parts[7]
     else :              where = ''
     if AsName == '':  AsName = leftName
-    print (leftName,'!', Fields, '!',FileName,'!', AsName, '!',where )
+#    print (leftName,'!', Fields, '!',FileName,'!', AsName, '!',where )
     WriteSelectTable(leftName, Fields, FileName, AsName, where)
     return
 
@@ -75,7 +75,7 @@ def WriteGridString30(g):
         if g.className == 'Grid':
             if is_nan(g.min):   g.min = 'SvF.curentTabl.dat(\'' + g.oname + '\')[:].min()'
             if is_nan(g.max):   g.max = 'SvF.curentTabl.dat(\'' + g.oname + '\')[:].max()'
-            if is_nan(g.step):  g.step = -50
+            if is_nan(g.step):  g.step = SvF.Default_step  #-50
             ret = 'Grid(\'' + g.name + '\',' + str(g.min) + ',' + str(g.max) + ',' + str(g.step) + ',\'' + g.ind + '\',\'' + g.oname + '\')'
         else:
             ret = 'Domain (\'' + g.name + '\',' + g.A[0].name + ',' + str(g.visX)
@@ -133,7 +133,7 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
         elif parts[0].find('\\inn')>0: p=parts[0].find('\\inn')   # Param:  H(X,Y) \\in [0,1]
         if p > 0 :
             parts[0] = parts[0][:p] + ';' + parts[0][p:]
-            print('P0', parts[0])
+ #           print('P0', parts[0])
             buf1 = ';'.join (parts)
             parts = buf1.split(';')
 
@@ -265,7 +265,7 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
                 f_str += WriteGridString30(a)
   #              f_str += 'Grid(\''+a.name+'\','+str(a.min)+','+str(a.max)+','+str(a.step)\
    #                            +',\''+a.ind+'\',\''+a.oname+'\')'
-                print(WriteGridString30(a))
+  ###              print(WriteGridString30(a))
     #            print ('Grid(\''+a.name+'\','+str(a.min)+','+str(a.max)+','+str(a.step)\
      #                          +',\''+a.ind+'\',\''+a.oname+'\')')
           f_str += '],' + str(fun.param)+','+str(fun.PolyPow)+','+Finitialize+', \'' + fun.DataReadFrom + '\') '
@@ -392,7 +392,7 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
 
 
 def fromTEXplus(equation) :
-    print ('TEXsubst', equation)
+ #   print ('TEXsubst', equation)
   #  if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
    # else :                      equation = UTF8replace(equation, '^', '')
 
@@ -421,7 +421,7 @@ def fromTEXplus(equation) :
                     repars = True
                     it.type = 'int'
                     lim_min = it.part.split('_')[1]
-                    print ('lim_min', lim_min)
+  ##                  print ('lim_min', lim_min)
 #                    UTF8replace (it.part,'\\int_','\\int(')
    #                 print (it.part)
                     it.part=it.part[0:4]+'('+lim_min
@@ -446,17 +446,17 @@ def fromTEXplus(equation) :
                 if it.part.find('\\sum_') == 0:  # SUMMA  запись  ∫_{0}^{rp}{d(x)*expr} -> ∫(0,rp,d(x)*expr)
                     repars = True
                     it.type = 'sum'
-                    print ('it.partTT', it.part, itn, sel.items[itn].part)
+#                    print ('it.partTT', it.part, itn, sel.items[itn].part)
                     lim_min = it.part.split('_')[1]
-                    print('lim_min |'+ lim_min+'|')
+ #                   print('lim_min |'+ lim_min+'|')
                     #                    UTF8replace (it.part,'\\int_','\\int(')
                     #                 print (it.part)
                     it.part = it.part[0:4] + '(' + lim_min
                     #                  print(it.part)
                     pos = itn + 1
-                    print('it.part', it.part, sel.items[itn].part, sel.items[itn + 1].part, sel.items[itn + 2].part)
+  #                  print('it.part', it.part, sel.items[itn].part, sel.items[itn + 1].part, sel.items[itn + 2].part)
                     if len(lim_min) == 0:  # {lim_min}  in   int_{lim_min}
-                        print (sel.items[itn + 1].part)
+   #                     print (sel.items[itn + 1].part)
                         sel.items[itn + 1].part = ''
                         sel.items[sel.items[itn + 1].etc[1]].part = ''
                         pos = sel.items[itn + 1].etc[1] + 1
@@ -474,7 +474,7 @@ def fromTEXplus(equation) :
 
                 if repars :
                     equation = sel.join()
-                    print (equation)
+    #                print (equation)
                     sel = parser(equation)
 #                    print ('Tex', it.part, equation );  sel.myprint()
                     break
@@ -526,7 +526,10 @@ def ParseEQUATION ( equation, all_grids, Mode = 'EQ' ) :
         reparse = True
         while reparse :
           reparse = False
+          quotes = 0
           for iit, it in enumerate(eqPars.items) :
+            if it.part == '\'' or it.part == '\"':  quotes = 1 - quotes
+            if quotes == 1: continue                    # в строках не работаем !
             if it.type == 'name' :                  # нет  (
                 if iit < len(eqPars.items)-1 :
                     if eqPars.items[iit+1].part == '.' : continue          #  F.Complex...
@@ -543,8 +546,8 @@ def ParseEQUATION ( equation, all_grids, Mode = 'EQ' ) :
           if reparse :  eqPars   = parser ( eqPars.join() )
         if SvF.printL:  eqPars.myprint()
 
-        print ('ALL_Grids B', len(all_grids))
-        for g in all_grids : print (g.name)
+   #     print ('ALL_Grids B', len(all_grids))
+  #      for g in all_grids : print (g.name)
 
  #       if Mode == 'EQ' :
         for g in Task.Grids:                                       # пополняем  all_grids  из общих Гридов
@@ -572,7 +575,7 @@ def ParseEQUATION ( equation, all_grids, Mode = 'EQ' ) :
 
 def ParseEQplus31 ( buf, Mode = 'EQ' ):
     Task = SvF.Task
-    print('BB2:', buf)
+ #   print('BB2:', buf)
     buf = buf.rstrip();
     if buf == '': return
     if buf[-1] == ';' : buf = buf[:-1]          # Убираем последний ;
@@ -612,14 +615,16 @@ def ParseEQplus31 ( buf, Mode = 'EQ' ):
             eqPars = parser(equation)
             eqPars.substAllNames_but_dot(ind_n, grid_n)
             equation = eqPars.join()
-    print("EE", equation)
+#    print("EE", equation)
 
     equation, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION(equation, all_grids, Mode)
-#    print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation, len(all_grids) )
+
+ #   print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation, len(all_grids) )
     for g in constraint_grids:
         eqPars.substAllNames_but_dot(g.name, g.ind)  ## 30g+
         eqPars.substAllNames(g.name + '__p', g.name)
-        print('substAllNames', eqPars.join())
+ #       print('substAllNames', eqPars.join())
+ #   eqPars.myprint()
     for fu in Task.Funs:
         if fu.dim != 0 :
             eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name)
@@ -651,9 +656,9 @@ def WriteModelEQ31 ( buf ):
         for i, e in enumerate( equation ):      #    ,<   ->   <=
             if e in ['!', '=', '<', '>']:
                 if equation[i+1] == '=' : break
-                print ('BS', e, equation)
+    #            print ('BS', e, equation)
                 equation = equation[:i+1]+ '=' + equation[i+1:]
-                print ('AS', equation)
+     #           print ('AS', equation)
                 break
 
         global eqNUM
@@ -687,7 +692,11 @@ def WriteModelEQ31 ( buf ):
 
 def WriteString31(buf):
     if buf == '': return
-#    print ('WriteString31________________', buf)
+    print ('WriteString31________________', buf, SvF.Substitude, (not SvF.Substitude) )
+    if SvF.Substitude == False :
+        Swr( buf );
+        return
+
     for i, s in enumerate (buf) :                                   # НЕ ТИПИЧНЫЕ СТРОКИ
         if s!=' ' : break
 #    print (i)
@@ -704,6 +713,7 @@ def WriteString31(buf):
 #    if equation.find('dayVac')>=0:     1/0
     equation = Treat_FieldNames(equation)
     eqPars = parser(equation)
+#    eqPars.myprint()
     p_eq = eqPars.find_part_type('=', 'oper')
     if p_eq > 0:                                    # A_Immun(t9) = ∫_{m
         bracket_clo = p_eq - 1
@@ -754,8 +764,8 @@ def WriteString31(buf):
     Swr(level*' '+ equation)
 #    if len (constraint_grids) > 0:
     if len (explicit_grids) > 0:
-        print (equation)
-        eqPars.myprint()
+   #     print (equation)
+    #    eqPars.myprint()
         p_eq = eqPars.find_part_type ('=', 'oper')
  #       1/0
     return
@@ -860,7 +870,7 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
             beg, delta, end = getFromBrackets (objP[1],'(')
             if beg == None :  beg, delta, end = getFromBrackets (objP[1],'{')  #  стары1 вариант
             MsdType = beg
-            print ('MsdType=', beg, delta, end)
+     #       print ('MsdType=', beg, delta, end)
   #          print 'DELTA1', delta
             if delta !='' and delta !=' ' :
                 for ifu, fu in enumerate ( SvF.Task.Funs ) :
@@ -926,9 +936,9 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
             if p_mu >= 0 :
                 p_mu_end = part.find(']', p_mu)
                 repl = part[p_mu:p_mu_end+1]
-                print (repl)
+      #          print (repl)
                 part = part.replace(repl,repl+'()')
-                print (part)
+       #         print (part)
   #              1/0
 
 #            if p == ' ': continue     # если нет штрафа
