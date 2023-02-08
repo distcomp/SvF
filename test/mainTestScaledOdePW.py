@@ -21,8 +21,8 @@ import datetime as dt
 
 import argparse
 
-IPOPT_EXE = '/opt/solvers/bin/ipopt'
-SCIP_EXE  = '/opt/solvers/bin/scip'
+IPOPT_EXE = '/opt/scipopt803/bin/ipopt'
+SCIP_EXE  = '/opt/scipopt803/bin/scip'
 # SCIP_EXE  = '/usr/local/bin/scipampl703'
 DATA_FILE = 'pwData.csv'
 # IPOPT_EXE = 'ipopt'
