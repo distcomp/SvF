@@ -177,6 +177,7 @@ def testEstim (Gr, k) :  # k - testSet
             if co.Task.DeltaVal is None:  spart += (fu.V.dat[s]-fu.CVval[s])**2   #fu.delta(s) ** 2               # 29
             else:                         spart += Task.DeltaVal(Gr, ifu, fu.V.dat, s) ** 2
             npart += 1
+#            if k <= 1:  print ('=',k,s, spart,npart,  fu.V.dat[s], fu.CVval[s], (fu.V.dat[s]-fu.CVval[s])**2)
         if npart > 0:  print ('  ', spart, npart, sqrt(spart / npart), sqrt(spart / npart) / fu.V.sigma * 100.,)
         else:          print (spart, npart, 'NoVal', 'NoVal',)
     # OLTCHEV

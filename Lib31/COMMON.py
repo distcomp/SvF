@@ -2,6 +2,11 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
+DrawMode = 'Screen&File'
+Resources = [ "pool-scip-ipopt" ]
+
+Substitude = True
+Default_step = -50
 Epsilon = 0.001
 ObjToReadSols = False
 _Num = 0       #   номер увеличивается на 1
@@ -11,6 +16,7 @@ funPrefix = 'f'             #  в ReadMng добавить обработку
 Prefix   = ''
 Comment = False              #  в ReadMng
 
+UseGreek = False
 
 comment_buf = ''
 StartModel_pos = 0   #  кол-во записанных символов в последней строке
@@ -31,13 +37,12 @@ TabString       = '    '
 
 Use_var = False         # 29
 
+#   Drow  #############################
 MarkerSize     = 1
 MarkerColor    = 'red'
 DataColor      = 'b'
 DataMarkerSize = 2
 Draw_data_str  = 'data'
-Ylabel_x       = 0.03
-Xlabel_x        = 1
 
 LineWidth      = 1
 LineColor      = 'red'
@@ -47,8 +52,23 @@ DPI             = 100
 Xsize           = 5
 Ysize           = 4
 X_axe           = ''
-
+X_axe_month     = 2
+X_lim           = []
+Y_lim           = []
+locator         = None
+FONT_SIZE       = 16
+Ylabel_x       = 0.03
+Xlabel_x        = 1
+Ylabel_y       = 1.02
+Xlabel_y        = -0.01
+xaxis_step      = 0
+yaxis_step      = 0
+subplots_left   =0.15
+subplots_right  =0.9
+subplots_top    =0.9
+subplots_bottom =0.1
 graphic_file_type = 'png'
+
 #TranspGrid  = 'N'
 #SaveDeriv   = False
 #SaveGrid    = 'N'
@@ -105,16 +125,33 @@ optFact          = None
 token      =  ''
 optFile    =  'peipopt.opt'
 
-LocalSolverName  = 'ipopt' #3_11_1'
-SolverName       = 'ipopt'
+#LocalSolverName  = 'ipopt' #3_11_1'
+LocalSolverName  = '/opt/solvers/bin/ipopt'
+
+#SolverName       = 'ipopt'
+SolverName       = '/opt/solvers/bin/ipopt'  # 3.14.09
 #RunSolver   = 'Local'   #   LocalParallel   ServerParallel
+
+solverOptVal =  {  "linear_solver"              : 'ma57'\
+                 , 'max_iter'                   : 50000 \
+                 , "print_level"                : 4     \
+                 , 'warm_start_init_point'      : 'yes' \
+                 , 'warm_start_bound_push'      : 1e-6 \
+                 , 'warm_start_mult_bound_push' : 1e-6 \
+                 , 'constr_viol_tol'            : 1e-4 \
+                 , 'mu_init'                    : 1e-6 \
+                 , "tol"                        : 1e-9 \
+                 , 'print_user_options'         : 'yes'
+                }
+#    opt.options['acceptable_tol']       = 1e-10
+
 RunMode     = 'L&L'
 #RunMode     = 'P+P'
 Hack_Stab   = False
-py_max_iter = 50000
+py_max_iter = 50000    #
 py_tol = 1e-9  #  -11
 #acceptable_tol
-py_warm_start_bound_push = 1e-6
+py_warm_start_bound_push = 1e-6   #
 py_warm_start_mult_bound_push = 1e-6
 py_constr_viol_tol = 1e-4  ##1e-11
 #py_tol = 1e-9

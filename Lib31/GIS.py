@@ -34,8 +34,20 @@ class Polyline (Object):
                     self.X.append( X.grdNaNreal(i) )
                     self.Y.append( Y.grdNaNreal(i) )
 
+    def Save(self, fName=''):
+        if fName == '':
+                fName = self.name + ".txt"
+        try:
+            fi = open(fName, "w")
+        except IOError as e:
+            print("Can''t open file: ", fName)
+            return
+        fi.write('\tX\tY\t#SvFver_62_tbl\n')
+        print ("LLL", len(self.X))
+        for i in range (len(self.X)):
+            fi.write(str(self.X[i]) + "\t" + str(self.Y[i]) + '\n')
+        fi.close()
 
- #           print 'self.X', self.X
 
     def Draw(self, mask, pixSize=1, Val=None):
         for p in range(len(self.X)):

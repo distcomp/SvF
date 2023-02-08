@@ -16,28 +16,27 @@ from GIS     import *
 import matplotlib.ticker
 
 def DrawComb( param ):
+    if SvF.DrawMode == '' :  return
     print ('           Draw', param)
     Transp = SvF.DrawTransp
-    FONT_SIZE = 16 #24  # 16 # 7
+    FONT_SIZE = SvF.FONT_SIZE  #16 #24  # 16 # 7
     NUM_FONT_SIZE = 14
     axisNUM_FONT_SIZE = 15 #20
     yRotation = 0
     FONTstyle = 'italic'
-#    Xsize = 8
- #   Ysize = 7
-    Xsize = SvF.Xsize
-    Ysize = SvF.Ysize
-#    Xsize = 5
- #   Ysize = 4
-    fig, ax = plt.subplots(figsize=(Xsize, Ysize), dpi=SvF.DPI)
-    #     ax.xaxis.set_label_coords(1.03, +0.06)
-#    ax.xaxis.set_label_coords(1.04,  0.060)
-    ax.xaxis.set_label_coords(SvF.Xlabel_x, -0.01 ) # SvF.Xlabel_x ) #-0.01)
-    ax.yaxis.set_label_coords(SvF.Ylabel_x, 1.02)  # в длиннах оси
-#    ax.yaxis.set_label_coords(0.03, 1.02)  # в длиннах оси
-    #     plt.yticks(fontsize=axisNUM_FONT_SIZE, rotation=90)
+    fig, ax = plt.subplots(figsize=(SvF.Xsize, SvF.Ysize), dpi=SvF.DPI)
+    #fig.tight_layout()
+    plt.subplots_adjust(left=SvF.subplots_left, right=SvF.subplots_right,
+                        top=SvF.subplots_top, bottom=SvF.subplots_bottom)
+
     plt.yticks(fontsize=axisNUM_FONT_SIZE, rotation=0)
     plt.xticks(fontsize=axisNUM_FONT_SIZE, rotation=0)
+    if SvF.xaxis_step != 0:
+        ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=SvF.xaxis_step))
+    if SvF.yaxis_step != 0:
+        ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=SvF.yaxis_step))
+
+    #  plt.rcParams['font.family'] = ['Computer Modern Serif', 'serif']
 
     # colorMap = 'binary'
     # colorMap = 'gray'
@@ -116,7 +115,7 @@ def DrawComb( param ):
             elif par.split(':')[0] == 'DM':  DataMarker = par.split(':')[1]         # DataMarker  = 'o'
             elif par.split(':')[0] == 'DMS': DataMarkerSize = float(par.split(':')[1])   #  DataMarkerSize
             elif par.split(':')[0] == 'DLW': DataLineWidth = float(par.split(':')[1])
-            elif par.split(':')[0] == 'LSt': LineStyle = par.split(':')[1]          # Line Style
+            elif par.split(':')[0] == 'LSt': LineStyle = par.split(':')[1]          # Line Style  dotted dashed
             elif par.split(':')[0] == 'LW':  LineWidth = float ( par.split(':')[1] )  # LineWidth
             elif par.split(':')[0] == 'M':   Marker = par.split(':')[1]  # Marker  = 'o'
             elif par.split(':')[0] == 'MC':  MarkerColor = par.split(':')[1]   #  MarkerCol
@@ -127,9 +126,9 @@ def DrawComb( param ):
             elif par == 'DrawErr'         :  DrawErr = True
             elif par == 'Flow'            :  Flow = True
 #            elif par.split(':')[0] == 'MEW': MarkerEdgeWidth = float(par.split(':')[1])  # MarkerEdgeWidth
-            elif par.split(':')[0] == 'Xstep':
-                Xstep = float(par.split(':')[1])
-                ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator (base=Xstep))
+#            elif par.split(':')[0] == 'Xstep':
+ #               Xstep = float(par.split(':')[1])
+  #              ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator (base=Xstep))
             else: print ('Draw  ????????????? ************************ par =', par)
         if not fun is None :
             if name == '': name = fun.V.name
@@ -160,51 +159,55 @@ def DrawComb( param ):
                 markersize=MarkerSize, marker='o', markerfacecolor='#FFFFFF')
 #            print tb_x, tb_y, "red", V.name
         elif to_draw == 'Fun1':  # LINE
- #           Xstep = 0.4
-  #          ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=Xstep))  # 0.5))
             name = fun.V.name                   # 25/04
             file_name += name
 #            print (file_name)
             A = fun.A[0]
             tb_x = A.Val #zeros(A.Ub + 1, float64)
             tb_y = zeros(A.Ub + 1, float64)
-            for i in A.NodS:
-              tb_y[i] = fun.grdNaNreal(i)
+            for i in A.NodS:   tb_y[i] = fun.grdNaNreal(i)
+
             x_min = tb_x[0];  x_max = tb_x[-1]
 
             if not DrawErr:
                 if not ((A.dat is None) or (V.dat is None)):                # DRAW  data    #  точки  данные
- #                   print (A.dat); print (V.dat)
-                    if name != '' : label_name = V.draw_name + SvF.Draw_data_str  #'data'
-#                    if name != '' : label_name = V.oname + SvF.Draw_data_str  #'data'
-                    else          : label_name = ''
+                    label_name = V.data_name            #  17.07
                     if not SvF.Legend: label_name = ''
                     if str(type(A.dat)) == '<class \'list\'>' :
                         Adat = [x + A.min for x in A.dat]
                     else :
                         Adat = A.dat + A.min
-#                    print ('LL', label_name)
-#                    plt.plot(A.dat + A.min, V.dat, color = DataColor, label=label_name,
-                    plt.plot(Adat, V.dat, color = DataColor, label=label_name,
-                                    markersize=DataMarkerSize, marker=DataMarker, markerfacecolor=DataColor,
-                                    linewidth=DataLineWidth)  # markerfacecolor='#FFFFFF' '#000000'
+
+                    if Transp:
+                        plt.plot(V.dat, Adat, color=DataColor, label=label_name,
+                            markersize=DataMarkerSize, marker=DataMarker, markerfacecolor=DataColor, linewidth=DataLineWidth)
+                    else:
+                        plt.plot(Adat, V.dat, color = DataColor, label=label_name,
+                            markersize=DataMarkerSize, marker=DataMarker, markerfacecolor=DataColor,  linewidth=DataLineWidth)  # markerfacecolor='#FFFFFF' '#000000'
                                                                             # Draw Model  линии модели
-#                ax.plot(tb_x, tb_y, LineColor, label='', linestyle=LineStyle, linewidth=LineWidth,
- #                               markersize=MarkerSize, marker='o', markerfacecolor='#FFFFFF')
                 if LineWidth==0 and MarkerSize==0 : label_name = ''
                 else                              : label_name = V.oname
 #                else                              : label_name = V.draw_name
                 if not SvF.Legend: label_name = ''
-                ax.plot(tb_x, tb_y, LineColor, label=label_name, linestyle=LineStyle, linewidth=LineWidth,   # function
-                        markersize=MarkerSize, marker='o', markerfacecolor='#FFFFFF')
+
+                if Transp:
+                    ax.plot(tb_y, tb_x, LineColor, label=label_name, linestyle=LineStyle, linewidth=LineWidth,
+                            markersize=MarkerSize, marker='o', markerfacecolor='#FFFFFF')
+                else :
+                    ax.plot(tb_x, tb_y, LineColor, label=label_name, linestyle=LineStyle, linewidth=LineWidth,   # function
+                            markersize=MarkerSize, marker='o', markerfacecolor='#FFFFFF')
             if DrawErr:
               tb_err = deepcopy(V.dat)
               for n in fun.sR:
                   tb_err[n] = fun.delta(n)
               plt.plot( A.dat + A.min, tb_err, LineColor, label=name + 'Err', linewidth=1, #DataColor, #LineWidth,
                      markersize=MarkerSize, marker=Marker, markerfacecolor='#000000')  # markerfacecolor='#FFFFFF'
-            ax.set_ylabel(V.draw_name, size=FONT_SIZE, rotation=yRotation)
-            ax.set_xlabel(A.oname, size=FONT_SIZE)
+            if Transp:
+                ax.set_xlabel(V.draw_name, size=FONT_SIZE)
+                ax.set_ylabel(A.oname, size=FONT_SIZE, rotation=yRotation)
+            else :
+                ax.set_ylabel(V.draw_name, size=FONT_SIZE, rotation=yRotation)
+                ax.set_xlabel(A.oname, size=FONT_SIZE)
 
             import datetime
             if SvF.X_axe == 'Date' :
@@ -218,10 +221,14 @@ def DrawComb( param ):
                     ticks.append(tb_x[i])
                     if month == 1:
                         ticks_lab.append(str((begin + datetime.timedelta(int(tb_x[i]))).year))
-                    elif int(month / 2) * 2 == month:
-                        ticks_lab.append('')
-                    else:
+                    elif int( (month-1)/ SvF.X_axe_month ) * SvF.X_axe_month == month-1:
                         ticks_lab.append(str(month))
+                    else:
+                        ticks_lab.append('')
+#                    elif int( (month)/ SvF.X_axe_month ) * SvF.X_axe_month == month:
+#                        ticks_lab.append('')
+#                    else:
+#                        ticks_lab.append(str(month))
               if len(ticks) > NoTicks:
                 NoTicks = len(ticks)
                 ax.set_xticks(ticks)
@@ -266,11 +273,13 @@ def DrawComb( param ):
                     for i in Ay.NodS:
                         if Transp:      z[i, j] = fun.grdNaNreal (i, j)
                         else:           z[i, j] = fun.grdNaNreal (j, i)
+                from matplotlib import ticker, cm
 
                 z = ma.masked_where(z <= -9999, z)  #################### NODATA == NaN  !!!
  #              if mii == maa and len(levs) == 1: levs = [mii - 1, mii, mii + 1]
                 if mii == maa and type(levs) == type(1): levs = [mii - 1, mii, mii + 1]     #28
-                cs = ax.contourf(X, Y, z, levs, cmap=colorMap)  # cm.PuBu_r  cm.autumn   cm.gray
+#                cs = ax.contourf(X, Y, z, levs, locator=ticker.LogLocator(base=2.0), cmap=colorMap)  # cm.PuBu_r  cm.autumn   cm.gray
+                cs = ax.contourf(X, Y, z, levs, locator=SvF.locator, cmap=colorMap)  # cm.PuBu_r  cm.autumn   cm.gray
 
                 if (not mii is None) and mii != maa:
                     cs1 = ax.contour(X, Y, z, levs, colors='k', linewidths=0.5)
@@ -278,11 +287,14 @@ def DrawComb( param ):
 
                 plt.xlabel(Ax.oname, fontsize=FONT_SIZE + 1, style=FONTstyle)
                 plt.ylabel(Ay.oname, fontsize=FONT_SIZE + 1, style=FONTstyle, rotation=yRotation)
+
                 if SvF.Legend :
-                    plt.title(fun.onameFun(), fontsize=FONT_SIZE + 1, style=FONTstyle, y=1.01)  # , pad = 3)
-                    cbar = plt.colorbar(cs)
-                    ticklabs = cbar.ax.get_yticklabels()
-                    cbar.ax.set_yticklabels(ticklabs, fontsize=NUM_FONT_SIZE)
+                    leg_name = fun.V.draw_name
+                    if leg_name == '' : leg_name = fun.onameFun()
+                    plt.title(leg_name, fontsize=FONT_SIZE + 1, style=FONTstyle, y=1.01, x=0.7)  # , pad = 3)
+                    cbar = plt.colorbar(cs)      
+ #                   ticklabs = cbar.ax.get_yticklabels()  #########################################   2022.10.27   ????????????
+  #                  cbar.ax.set_yticklabels(ticklabs, fontsize=NUM_FONT_SIZE)  ###################  ?????????????
           # Data
                 if not (Ax.dat is None or Ay.dat is None):
                     plt.plot(Ax.dat + Ax.min, Ay.dat + Ay.min, LineColor, # label="y+",
@@ -300,10 +312,19 @@ def DrawComb( param ):
                          marker=Marker, linewidth=LineWidth, linestyle=LineStyle ) #, fillstyle='none' )
                 file_name += name
 
+    if len(SvF.X_lim) != 0: plt.xlim(SvF.X_lim )
+    if len(SvF.Y_lim) != 0: plt.ylim(SvF.Y_lim )
+
     if D2 == False and SvF.Legend:
         ax.legend(fancybox=True, prop={'size': FONT_SIZE}, framealpha=0)  # framealpha -
         #  ax.legend(loc=1, prop={'size': FONT_SIZE})
 #    print (file_name + '.'+ SvF.graphic_file_type)
-    if DrawErr:  plt.savefig(file_name+'Err.' + SvF.graphic_file_type, dpi=SvF.DPI)  # (os.path.join('%s'%dir,'inner_int_gamma_%g%s.%s'%(fun.gamma, suffix, fmt)), dpi = dpi)
-    else:        plt.savefig(file_name + '.'+ SvF.graphic_file_type, dpi=SvF.DPI)
-    plt.show()
+
+    ax.xaxis.set_label_coords( SvF.Xlabel_x, SvF.Xlabel_y ) #-0.01 ) # SvF.Xlabel_x ) #-0.01)
+    ax.yaxis.set_label_coords( SvF.Ylabel_x, SvF.Ylabel_y ) #1.02)  # в длиннах оси
+
+    if SvF.DrawMode.find('File') >= 0 :
+        if DrawErr:  plt.savefig(file_name+'Err.' + SvF.graphic_file_type, dpi=SvF.DPI)  # (os.path.join('%s'%dir,'inner_int_gamma_%g%s.%s'%(fun.gamma, suffix, fmt)), dpi = dpi)
+        else:        plt.savefig(file_name + '.'+ SvF.graphic_file_type, dpi=SvF.DPI)
+    if SvF.DrawMode.find('Screen') >= 0 :
+        plt.show()

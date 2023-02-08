@@ -16,7 +16,7 @@ from Object    import *
 
 def ParseSelect30(buf):  ##  разбор  Select
     buf = buf.strip().replace(', ',",")
-    print (buf)
+#    print (buf)
     part = SplitIgnor(buf, 'Select ')
     #      print (part)
     leftName = part[0][:-1]
@@ -42,7 +42,7 @@ def ParseSelect30(buf):  ##  разбор  Select
 def  Treat_FieldNames (raw_line) :
         for itb, tb in enumerate ( SvF.Task.Objects ) :  #  from Tbls   Dat.X -> Dat.dat('X')
             if tb.Otype == 'Table' :
-                tb.Oprint()
+ #               tb.Oprint()
  #               print ('tb.name',tb.name)
                 if findNamePos(raw_line, tb.name ) < 0 : continue
                 print('\nTABB ' + raw_line, tb.name)
@@ -54,17 +54,17 @@ def  Treat_FieldNames (raw_line) :
                     if itn+2 >= len (pars.items) : break
                     if pars.items[itn+1].part != '.' : break
                     fld = pars.items[itn+2].part
-                    print ('fld', fld)
+ #                   print ('fld', fld)
                     if ( fld !='dat' and fld !='AddField' and fld !='sR' and fld !='NoR'  and fld !='AppendRec' and
                          fld != 'WriteSvFtbl' and fld != 'Flds' and fld != 'KillRowsByMask' and fld != 'KillField'
                        ):
                         pars.items[itn+2].part = 'dat(\''+fld+'\')'
  #                       raw_line = SubstitudeName(raw_line, fld, 'dat(\''+fld+'\')')
-                        print ('\nTABA '+pars.join(), pars.items[itn].part, pars.items[itn+1].part, pars.items[itn+2].part)
+  #                      print ('\nTABA '+pars.join(), pars.items[itn].part, pars.items[itn+1].part, pars.items[itn+2].part)
   #                      print('\nTABE ' + raw_line)
                     itn += 3
                 raw_line = pars.join()
-                print('\nTABA ' + pars.join() )
+#                print('\nTABA ' + pars.join() )
         return raw_line
 
 
@@ -89,7 +89,7 @@ def joinTab(*Tabs):
 def joinTabBy(By, *Tabs):                #  TMo = joinTabBy ( 't', TMos, Spline )
     for j, tbl in enumerate(Tabs):
         if j == 0:
-            print (tbl.NoR)
+ #           print (tbl.NoR)
             ret = deepcopy(tbl)
             ret.name = 'joinTabBy_Result'
             retByNum = ret.getFieldNum(By)
@@ -104,10 +104,10 @@ def joinTabBy(By, *Tabs):                #  TMo = joinTabBy ( 't', TMos, Spline 
                 exit (-1)
 
             r = -1
-            print ('shape', ret.Flds[retByNum].tb.shape[0])
+  #          print ('shape', ret.Flds[retByNum].tb.shape[0])
             while ( r < ret.NoR-1 and r < tbj.NoR-1 ):
                 r +=1
-                print (r, ret.Flds[retByNum].tb[r] , tbj.Flds[tbjByNum].tb[r])
+   #             print (r, ret.Flds[retByNum].tb[r] , tbj.Flds[tbjByNum].tb[r])
                 if ret.Flds[retByNum].tb[r] == tbj.Flds[tbjByNum].tb[r] : continue
                 ind = where (tbj.Flds[tbjByNum].tb[r:]==ret.Flds[retByNum].tb[r])
 #                print (ind[0])
@@ -125,7 +125,7 @@ def joinTabBy(By, *Tabs):                #  TMo = joinTabBy ( 't', TMos, Spline 
             while ret.NoR != tbj.NoR :
                 if ret.NoR > tbj.NoR : ret.KillRow (ret.NoR-1)
                 else                 : tbj.KillRow (tbj.NoR-1)
-            print('NoR RET TBJ', ret.NoR, tbj.NoR)
+    #        print('NoR RET TBJ', ret.NoR, tbj.NoR)
             ret = joinTab (ret, tbj)
 ## 30    SvF.Task.KillTbl(ret.name)  # kill the same name
 ##    SvF.Task.AddTbl(ret)
@@ -167,7 +167,7 @@ def  TblOperation (buf):
             rights = parts[1].split(',')
             lat_tbl = getTbl_tbl (rights[0])
             lon_tbl = getTbl_tbl (rights[1])
-            print (lefts, rights)
+     #       print (lefts, rights)
             if buf.find ('TblLatLonToAzimut') > 0 :
                 for i in range(x_tbl.shape[0]):  x_tbl[i],y_tbl[i] = LatLonToAzimut( lat_tbl[i],lon_tbl[i] )
             else :
@@ -178,7 +178,7 @@ def  TblOperation (buf):
         if len(parts)==2 :
             parts[1] = parts[1].split(')')[0]
             getTbl(parts[0]).AddField( parts[1] )
-            print ('AddField :', parts[1], 'to', parts[0])
+      #      print ('AddField :', parts[1], 'to', parts[0])
             return
         
         parts = buf.replace ( ' ', '').split ( '=' )
@@ -189,11 +189,11 @@ def  TblOperation (buf):
             for ifld, fld in enumerate (tb.Flds) :
                 right = right.replace ( tb.name +'.'+ fld.name,
                                         'SvF.Task.Tbls['+str(itb)+'].Flds['+str(ifld)+'].tb')
-        print (right)
+  #      print (right)
 
         tb_num, fld_num = getTblFieldNums (left)
         SvF.Task.Tbls[tb_num].Flds[fld_num].tb = eval (right)
-        print ('Operation', parts)
+   #     print ('Operation', parts)
         return
        
 
@@ -225,7 +225,7 @@ class Table (Object):
 
         if self.name == '' : self.name = 'curentTabl'
         if SvF.printL : print ('\nSelect', fields, '\n  from', fromFile, 'name:'+self.name+'|')
-        print('\n*Table*', fields, '\n  from', fromFile, 'name:'+self.name+'|')
+#        print('*Table*', fields, ' from', fromFile, 'name:'+self.name+'|')
         ff_nn = SplitIgnor ( fromFile, ' AS ' )     # Имя файла и таблицы
 
         _fields = self.fields_str.split(',')                   # Fields
@@ -337,7 +337,7 @@ class Table (Object):
     def Operation ( self, buf ) :
 ##30        buf = SvF.Task.substitudeDef(buf)
         part = buf.replace ( ' ', '').split ( '=' )
-        print ('Operation', part)
+ #       print ('Operation', part)
         rightPart = part[1]
         leftCol = part[0].split('.')[1]
 ###        leftInd = self.cols.index (leftCol)
@@ -347,7 +347,7 @@ class Table (Object):
    ###         rightPart = rightPart.replace('curentTabl.'+c, 'self.tbl[:,'+str(ic)+']')
         for ic, c in enumerate(self.Flds) :
             rightPart = rightPart.replace('curentTabl.'+c.name, 'c.tb[:]')
-        print (rightPart)
+  #      print (rightPart)
 #        print self.tbl[:,1]
 ###        self.tbl[:,leftInd] = eval (rightPart)
         self.Flds[leftInd].tb[:] = eval(rightPart)
@@ -355,7 +355,7 @@ class Table (Object):
 #        1/0
 
     def TblLonLatToGaussKruger ( self ) :
-            print ('col 0 and 1 convert To GaussKruger')
+   #         print ('col 0 and 1 convert To GaussKruger')
 #            print 'degree :', self.tbl[0][0], self.tbl[0][1]
             for i in range(self.NoR):
                 self.Flds[0].tb[i], self.Flds[1].tb[i] = WGS84toGausKru(self.Flds[1].tb[i], self.Flds[0].tb[i], 0)
@@ -372,10 +372,10 @@ class Table (Object):
             part = SplitIgnor(a, ' As ')
             if len(part) == 1:   args = part[0]
             else:                args = part[1]
-            print (args)
+    #        print (args)
             fn = self.getFieldNum( args)
             con_list.append (fn)
-            print ('arrr', args, fn)
+ #           print ('arrr', args, fn)
         self.con_list = con_list
 
 
@@ -411,10 +411,10 @@ class Table (Object):
                 names.append(name.strip())           # remuve end  blancs
 #            NoC = len (names)
             if SvF.printL :  print ("TablesNames", names)
-            print ("TablesNames", self.fromFile, ":", names)
+ ##           print ("TablesNames", self.fromFile, ":", names)
 
             self.setField_src_num(names)
-            for fld in self.Flds : fld.Mprint()
+##            for fld in self.Flds : fld.Mprint()
 
 #            for fld in self.Flds :
  #               if isnan(fld.src_num) :              # not  ROWNUM
@@ -465,7 +465,7 @@ class Table (Object):
                 NoR += 1
                 if NoR >= maxNoR :                          # resize
                     maxNoR *= 2
-                    print ('resize to',  maxNoR)
+   #                 print ('resize to',  maxNoR)
                     for fld in self.Flds : fld.tb = resize (fld.tb, maxNoR ) 
             for fld in self.Flds : fld.tb = resize (fld.tb, NoR ) 
             
@@ -494,7 +494,7 @@ class Table (Object):
 
             self.setField_src_num ( names )
 
-            for fld in self.Flds : fld.Mprint()
+ ##           for fld in self.Flds : fld.Mprint()
             srcNoR = 1
             for a in srcFun.A: srcNoR *= (a.Ub + 1)
             for fld in self.Flds : fld.tb = zeros ( srcNoR, float64 )
@@ -585,12 +585,12 @@ class Table (Object):
             for line in fi :
                 if line.find('</coordinates>') != -1 : break
                 points = line.split()
-                print (points)
+    #            print (points)
                 for p in points :
                     xyz = p.split(',')
                     srcFlds[0].tb.append ( float(xyz[0]) )       
                     srcFlds[1].tb.append ( float(xyz[1]) )       
-                    print (xyz)
+     #               print (xyz)
             srcNoR = len(srcFlds[0].tb)
 #            source_tb = getTbl ( self.fromFile )
             for fld in self.Flds :
@@ -607,7 +607,7 @@ class Table (Object):
                         print ("No Column for", fld.src_name, "*****************************")
                         exit (-1)    
             self.KillField ('*')
-            for fld in self.Flds : fld.Mprint()
+##            for fld in self.Flds : fld.Mprint()
 
 
             self.NoC = len(self.Flds)
@@ -638,7 +638,7 @@ class Table (Object):
             line1 = fi.readline().strip('\ufeff\n')    # какая-то кодировка после Видоуз
 #            print ('!'+line1+'!')
             names_ver_type = line1.split('#SvFver_')      # Version & Type of File
-            print (names_ver_type)
+  #          print (names_ver_type)
             if len (names_ver_type) ==2 :
                 parts = names_ver_type[1].split('_')
                 self.FileVer  = int(parts[0])
@@ -650,9 +650,8 @@ class Table (Object):
                 names = ['Col'+str(c) for c in range(len(names)) ]
                 fi.seek(0)
 
-            if SvF.printL :
-                print ("TablesNames", names)
-                for fld in self.Flds :  fld.Mprint()
+            if SvF.printL :  print ("TablesNames", names)
+  ##              for fld in self.Flds :  fld.Mprint()
 
             for fld in self.Flds :
                 if fld.src_name == '*' :
@@ -665,7 +664,7 @@ class Table (Object):
                         print ("No Column for", fld.src_name, "*****************************")
                         exit (-1)    
             self.KillField ('*')
-            for fld in self.Flds : fld.Mprint()
+##            for fld in self.Flds : fld.Mprint()
 
             self.NoC = len(self.Flds)
             maxNoR = 50000;
@@ -693,7 +692,7 @@ class Table (Object):
                 NoR += 1
                 if NoR >= maxNoR :                          # resize
                     maxNoR *= 2
-                    print ('resize to',  maxNoR)
+#                    print ('resize to',  maxNoR)
                     for fld in self.Flds : fld.tb = resize (fld.tb, maxNoR ) 
             else :                                                          # == 'matr2'
               XX = fi.readline().split()                      # x1
@@ -728,7 +727,7 @@ class Table (Object):
                     NoR += 1
                     if NoR >= maxNoR :                          # resize
                         maxNoR *= 2
-                        print ('resize to',  maxNoR)
+ #                       print ('resize to',  maxNoR)
                         for fld in self.Flds : fld.tb = resize (fld.tb, maxNoR ) 
             for fld in self.Flds : fld.tb = resize (fld.tb, NoR ) 
 #            print self.Flds[2].tb
@@ -745,7 +744,7 @@ class Table (Object):
                 except :    
                         print ("No Column for", c.src_name, "*****************************")
                         return    
-            for fld in self.Flds : fld.Mprint()
+##            for fld in self.Flds : fld.Mprint()
 
 
             grdX      = int(fi.readline().split()[1])
@@ -781,7 +780,7 @@ class Table (Object):
                   xma = grdX - 1
                   yma = grdY - 1
                   ymi = 0
-                  print ("|||  xmi, xma, ymi, yma", xmi, xma, ymi, yma)
+  #                print ("|||  xmi, xma, ymi, yma", xmi, xma, ymi, yma)
             
             for s in range(ymi) : fi.readline()
             line_num = ymi
@@ -812,7 +811,7 @@ class Table (Object):
                   NoR += 1
                   if NoR >= maxNoR :                          # resize
                     maxNoR *= 2
-                    print ('resize to',  maxNoR)
+   #                 print ('resize to',  maxNoR)
                     tbl = resize (tbl, (maxNoR, self.NoC) )
                 line_num += 1    
 ###            self.tbl = resize (tbl, (NoR, self.NoC) )
@@ -882,7 +881,7 @@ class Table (Object):
                 xma = grdX - 1
                 yma = grdY - 1
                 ymi = 0
-                print ("|||  xmi, xma, ymi, yma", xmi, xma, ymi, yma)
+    #            print ("|||  xmi, xma, ymi, yma", xmi, xma, ymi, yma)
 
             for s in range(ymi): fi.readline()
             line_num = ymi
@@ -910,7 +909,7 @@ class Table (Object):
                     NoR += 1
                     if NoR >= maxNoR:  # resize
                         maxNoR *= 2
-                        print ('resize to', maxNoR)
+     #                   print ('resize to', maxNoR)
                         tbl = resize(tbl, (maxNoR, self.NoC))
                 line_num += 1
             self.tbl = resize(tbl, (NoR, self.NoC))

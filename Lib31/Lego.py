@@ -342,6 +342,18 @@ class Fun (Object) :
         self.sR = range(self.NoR)
 
 
+    def Uppend_dat ( self, V, A0, A1=None) :      #
+        self.NoR += 1
+        self.V.dat    = resize(self.V.dat, self.NoR)
+        self.V.dat[self.NoR-1] = V
+        self.A[0].dat    = resize(self.A[0].dat, self.NoR)
+        self.A[0].dat[self.NoR-1] = A0 - self.A[0].min
+        if not A1 is None :
+            self.A[1].dat    = resize(self.A[1].dat, self.NoR)
+            self.A[1].dat[self.NoR-1] = A1 - self.A[1].min
+        self.sR = range(self.NoR)
+
+
     def grd_to_var (self) :
         if self.var is None:  return
         if self.param : return
@@ -1199,7 +1211,7 @@ class Fun (Object) :
 ######################################################
       if head[0][0:4] == '#SvF' :    #New   бросил, не отладил...
          ver = head[0].split('_')
-         print ('ver', ver)
+ #        print ('ver', ver)
 
          if ver[1] == '64' :
             dim = int (ver[3])
@@ -1210,15 +1222,15 @@ class Fun (Object) :
 #                        Af = []
 #                        for a in A : Af.append ( float(a) ) 
  #                       Arg.append ( Af )
-                        print (self.A[d].Ub)
-                  print ('StepInStep', StepInStep)
+ #                       print (self.A[d].Ub)
+  #                print ('StepInStep', StepInStep)
                   tb = loadtxt ( fi,'double' )
                   if SvF.printL : print ("shape", tb.shape)
                                 
                   if self.dim==0 :
 #                        self.grd.value = float(fi.readline()) 
                         self.grd.value = tb
-                        print ('TTT', self.grd())
+   #                     print ('TTT', self.grd())
                         
                   elif self.dim==1 :
 #                       tb = loadtxt (fi,'double')
@@ -1356,6 +1368,9 @@ class Fun (Object) :
       elif self.dim==1 :
         for m in self.sR :
             if self.V.dat[m] == self.NDT or isnan (self.V.dat[m]): continue
+#            if self.V.name == 'Ste': print (self.A[0].dat)
+#            print ('LPC:', self.V.name, m) ; print ( self.A[0].dat[m]); print ( self.A[0].step ); print( self.V.dat[m])
+ #           if self.V.name == 'Ste': 1/0
             self.grd[int(floor(0.499999999 + self.A[0].dat[m]/self.A[0].step))] = self.V.dat[m]
         for x in self.A[0].NodS:   ####   ??????????????????
             if self.fneNDT(x) == 0:
@@ -1518,10 +1533,10 @@ class Fun (Object) :
 #                dgr = [0.0]
  #               for n in self.A[0].mNodS:  dgr.append ( gr[n] - gr[n - 1] )
   #              ret = gr[0]+0.5*(dgr[1] + dgr[self.A[0].Ub])*X  # gr[0]+0.5*dgr[self.A[0].Ub]*X VVV
-                ret = gr[0]+0.5*(gr[1]-gr[0] + gr[self.A[0].Ub]-gr[self.A[0].Ub-1])*X  # ABC
+                ret = gr[0]+(gr[1]-gr[0] + gr[self.A[0].Ub]-gr[self.A[0].Ub-1])*X  # ABC
                 for n in self.A[0].mNodSm: # for n in self.A[0].NodSm: VVV
-                    ret += 0.5*(gr[n+1] - 2*gr[n] + gr[n-1])*(η(X-n)-n) # (dgr[n+1]-dgr[n])
-                return ret
+                    ret += (gr[n+1] - 2*gr[n] + gr[n-1])*(η(X-n)-n) # (dgr[n+1]-dgr[n])
+                return ret * 0.5
             elif self.type == 'G7':
                 def η(x):
                     return py.sqrt(x ** 2 + SvF.Epsilon)
@@ -1530,20 +1545,22 @@ class Fun (Object) :
   ##              ret = 0.5 * (gr[0] + gr[self.A[0].Ub]) + 0.5*dgr[1]* X + 0.5*dgr[self.A[0].Ub] * (X-self.A[0].Ub)
                 dgr_1 = gr[1] - gr[0]
                 dgr_Ub = gr[self.A[0].Ub] - gr[self.A[0].Ub-1]
-                ret = 0.5 * (gr[0] + gr[self.A[0].Ub]) + 0.5 * dgr_1 * X + 0.5 * dgr_Ub * (X - self.A[0].Ub)
-#                ret = 0.5*(gr[0]+gr[self.A[0].Ub]-1) + 0.5*dgr[1]*(X) + 0.5*dgr[self.A[0].Ub-1]*(X-self.A[0].Ub+1)
+                ret =  (gr[0] + gr[self.A[0].Ub]) + dgr_1 * X + dgr_Ub * (X - self.A[0].Ub)
                 for n in self.A[0].mNodSm:
-                    ret += 0.5 * (gr[n+1] - 2 * gr[n] + gr[n-1]) * η(X - n)
-                return ret
+                    ret += (gr[n+1] - 2 * gr[n] + gr[n-1]) * η(X - n)
+                return ret * 0.5
 
             elif self.type == 'G_ind':
                 def ind_0_1(x):
-                    return 0.5 * x / py.sqrt(SvF.Epsilon + x * x) - 0.5 * (x-1) / py.sqrt(SvF.Epsilon + (x-1) * (x-1))
+                    return 0.5 * x / py.sqrt(SvF.Epsilon + x ** 2) - 0.5 * (x-1) / py.sqrt(SvF.Epsilon + (x-1) ** 2)
                 ret = 0
                 for i in self.A[0].NodSm:
                     dX = X - i
                     ret += (gr[i] * (1 - dX) + gr[i + 1] * dX) * ind_0_1(dX)  # tetta(1 - dX) * tetta(dX)
                 return ret
+
+            elif self.type == 'G_Cycle':
+                if X < 0 : X += 407
 
             Xi = int(floor ( X ))
             if Xi < 0            : Xi = 0 
@@ -1620,6 +1637,22 @@ class Fun (Object) :
     #          print x,y,z
               return self.interpol ( 3, x, y, z )
 
+    def F_or0 ( self, ArS_real0, ArS_real1 = None  ) :
+        if ArS_real0 < self.A[0].min : return 0
+        if ArS_real0 > self.A[0].max : return 0
+        if ArS_real1 is None:
+            return self.F([ArS_real0])
+        else:
+            if ArS_real1 < self.A[0].min: return  0
+            if ArS_real1 > self.A[0].max: return  0
+            return self.F ( [ ArS_real0, ArS_real1 ] )
+#        if ArS_real[0] < self.A[0].min : return 0
+ #       if ArS_real[0] > self.A[0].max : return 0
+  #      if self.dim == 2:
+   #         if ArS_real[1] < self.A[0].min: return  0
+    #        if ArS_real[1] > self.A[0].max: return  0
+     #   return self.F (ArS_real )
+
 
     def sumX ( self ) :                                                                    # self.fneNDT(x) ??
       if self.type == 'g' and self.dim==1 :
@@ -1655,7 +1688,7 @@ class Fun (Object) :
 
     def grdCyc0E (self, x) :
         if self.param or not SvF.Use_var:  gr = self.grd
-        else:                             gr = self.var  # 29
+        else:                              gr = self.var  # 29
         if x==self.A[0].Ub+1 : return gr[1]
         if x==-1             : return gr[self.A[0].Ub]  #  не нужно
         return gr[x]

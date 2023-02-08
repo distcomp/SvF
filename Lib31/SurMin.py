@@ -228,7 +228,7 @@ def Prognose ( opt, pol, point, step ) :
                         CMP.nInc[a].value = - pol.coef[a+1] / norm * step * 1 
                     
 
-                print ('Incr:    ', [ CMP.nInc[a]() for a in range(dim) ], sum ( (CMP.nInc[a]())**2 for a in range(dim))/step**2 )
+                print ('Incr:    ', [ CMP.nInc[a]() for a in range(dim) ], '    step=', step )
                 prognVal = CMP.OBJ()
                 if  sum ( (CMP.nInc[a]())**2 for a in range(dim))/step**2  < 0.94 : Constr = 'Inside'
                 else :   Constr = 'Const'
