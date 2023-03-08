@@ -245,10 +245,12 @@ class Table (Object):
         if   not getTbl(self.fromFile) is None :  self.Read30_TBL ( )
 #        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( where_condition )  # надо переписать
         elif not getFun(self.fromFile) is None :  self.Read28_FUN ( )  # надо переписать
-        elif   '.XLSX' == ext :                   self.Read30_XLSX( )
-        elif   '.KML'  == ext :                   self.Read21_KML ( where_condition )  # надо переписать
-        elif   '.ASC'  == ext :                   self.Read27_ASC ( where_condition )  # надо переписать
-        else :                                    self.Read30_TXT ( )
+        else :
+            self.fromFile = com.DataPath + self.fromFile
+            if     '.XLSX' == ext :                   self.Read30_XLSX( )
+            elif   '.KML'  == ext :                   self.Read21_KML ( where_condition )  # надо переписать
+            elif   '.ASC'  == ext :                   self.Read27_ASC ( where_condition )  # надо переписать
+            else :                                    self.Read30_TXT ( )
 
         print ('NoR =', self.NoR, '\n')
         if SvF.printL :

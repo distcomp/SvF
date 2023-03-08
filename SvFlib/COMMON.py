@@ -86,8 +86,9 @@ UseHomeforPower = False #True   # 29
 printL       = 0
 SavePoints   = False
 
-Version  = 63
-DataPath = ''  
+#Version  = 63
+Version  = 31
+DataPath = ''
 
 mngF = ''
 resF = ''

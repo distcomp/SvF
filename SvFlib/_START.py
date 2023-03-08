@@ -17,7 +17,11 @@ if platform.system() == 'Windows':   SvF.platform = 'Win'       # 2022.05
 print ( SvF.startDir )
 sys.path.append( SvF.startDir )
 
-#from ReadMng import *
+if SvF.startDir.find('/home/vladimirv/mc2/agent') == 0 :       #  опции для       svf-remote   **************
+    SvF.DrawMode         = 'File'
+    SvF.LocalSolverName  = '/opt/scipopt803/bin/ipopt'
+    SvF.SolverName       = '/opt/scipopt803/bin/ipopt'  # 3.14.09
+
 from ReadMng import ReadMng
 
 while (1) :

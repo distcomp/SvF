@@ -24,7 +24,8 @@ def SplitIgnor ( str, delim ) :
         return ret
 
 def addDataPath (InFile) :
-         if com.DataPath != '' : InFile = com.DataPath + '/' + InFile
+#         if com.DataPath != '' : InFile = com.DataPath + '/' + InFile
+         if com.DataPath != '' : InFile = com.DataPath + InFile
          return InFile
 
 def getfloatNaN (st) :
