@@ -1,3 +1,3 @@
 #!/bin/bash
-/mnt/hgst2/ext4/git_work/SvF/runSvF31.sh
+/home/vladimirv/git_work/SvF/SvFlib/runSvFYC.sh
 zip results.zip *.sol *.png *.res
