@@ -87,7 +87,7 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
             SvF_resources = []                                                  #####   ABC   28/01/2023
             for r in co.Resources:
                 SvF_resources.append(ssop_config.SSOP_RESOURCES[r])
-            theSession = SsopSession(name      = co.TaskName,
+            theSession = SsopSession(name      = co.TaskName + str(co.CV_Iter),
                                      token     = co.token,
                                      resources = SvF_resources,
 

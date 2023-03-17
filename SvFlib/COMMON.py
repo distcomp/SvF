@@ -102,6 +102,7 @@ mngPenalty   = []
 
 #CVproc       = ''
 CVNumOfIter  =   20
+CV_Iter  =   0
 CVparam      = ''
 #CVmargin     = 0
 CVpartSize   = 0

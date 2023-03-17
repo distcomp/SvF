@@ -694,8 +694,12 @@ def WriteString31(buf):
     if buf == '': return
     print ('WriteString31________________', buf, SvF.Substitude, (not SvF.Substitude) )
     if SvF.Substitude == False :
-        Swr( buf );
+        Swr( buf )
         return
+    if buf[0] == ':' :
+        Swr( buf[1:] )
+        return
+
 
     for i, s in enumerate (buf) :                                   # НЕ ТИПИЧНЫЕ СТРОКИ
         if s!=' ' : break

@@ -822,7 +822,8 @@ class Fun (Object) :
 
 
     def delta( self, n ) :
-        return	 self.V.dat[n] - self.Ftbl ( n )
+        return	 self.Ftbl ( n ) - self.V.dat[n]   #  13.03.2023
+ #       return	 self.V.dat[n] - self.Ftbl ( n )
 
     def delta_rel ( self, n ) :
         return	 (self.delta(n)/ max(self.V.dat[n],self.measurement_accur))

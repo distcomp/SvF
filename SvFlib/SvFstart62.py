@@ -241,6 +241,7 @@ def printMSD () :
 
 
 def get_sigCV( Penal, itera ):
+    co.CV_Iter = itera
     Task = co.Task
 #    reload (Model)
     co.Use_var = True       # 29

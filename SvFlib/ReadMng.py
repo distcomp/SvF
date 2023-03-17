@@ -485,6 +485,7 @@ def ReadMng ( ) :
      #       raw_line = Treat_FieldNames(raw_line)
             raw_upp = raw_line.upper()
             if raw_upp.find('SELECT ') >= 0:
+                #         print (raw_line)
                 WriteSelect30(Treat_FieldNames(raw_line))
             elif raw_upp.find('TABLEWHERE') >= 0:
                 WriteTable30(Treat_FieldNames(raw_line))

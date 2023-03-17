@@ -21,7 +21,7 @@ def ParseSelect30(buf):  ##  разбор  Select
     #      print (part)
     leftName = part[0][:-1]
     part = SplitIgnor(part[1], ' from ')
-    #        print (part)
+    #       print ('part_from',part)
     Fields = part[0]
     part = SplitIgnor(part[1], ' where ')
     if len(part) == 1:
