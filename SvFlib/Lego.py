@@ -865,6 +865,19 @@ class Fun (Object) :
             ret = ret  / num
             return ret
 
+    def MSDrel_no_mu (self, measurement_accur = 0) :
+        self.MSDmode = 'MSDrel'
+        self.measurement_accur = measurement_accur
+        ret = 0
+        num = 0
+        for n in self.sR:
+                if not isnan(self.V.dat[n]):
+                    #                        ret += self.mu[n] * (self.delta(n)/ max(self.V.dat[n],measurement_accur))**2
+                    ret += self.delta_rel(n) ** 2
+                    num += 1
+        ret = ret / num
+        return ret
+
     def MSDnan (self, valid_f = None) :        # valid_f  - for verification - validation
             self.MSDmode = 'MSD'
             ret = 0
@@ -899,7 +912,7 @@ class Fun (Object) :
             return ret
 
     def MSDno_mu ( self ) :
-        return MSDnan_no_mu()
+        return self.MSDnan_no_mu()
  #       return  1./self.V.sigma2 /self.NoR * sum ( self.delta(n)**2  for n in self.sR )
 
     def MSDnan_no_mu (self, valid_f = None) :

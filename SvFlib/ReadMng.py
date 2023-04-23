@@ -414,7 +414,7 @@ def ReadMng ( ) :
          Is(Q, "EoTask") ):
 #                        if objective == 'N':  buf = 'OBJ: N';
                         print ('EoF ************', Q, ' in READ MNG ********************* EoF')
-                        SvF.SModelFile.close()
+                        if not SvF.SModelFile is None:  SvF.SModelFile.close()
                         if Q == 'EOTASK' :  SvF.EofTask = True
                         else:               SvF.EofTask = False
  #                       SvF.Compile = False

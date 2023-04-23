@@ -285,7 +285,7 @@ class  parser:
             dt = dt.replace ( '(', '' ).replace ( ')', '' )             #  (t)  -> t
             body = args[-1][p_mult+1 : ]
             dt_grid = findGridByName ( all_grids, dt )
- #           print ('dt_grid', dt_grid)
+            print ('dt_grid', dt_grid, dt)
             integral_grids.append ( dt_grid )                      #  ГРИДЫ ПО КОТОРЫМ ИДЕТ ИНТЕГРИРОВАНИЕ 
             step = dt+'.step'       #  str(dt_grid.step)
  #           print ('STEP dt_grid.step=',step, dt_grid.min)
