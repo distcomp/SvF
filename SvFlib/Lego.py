@@ -280,7 +280,7 @@ class Fun (Object) :
         self.grd   = None
         self.var   = None           # 29
         self.mu    = None
-        self.CVval = None
+        self.CVerr = None           # 04.23
         self.testSet  = []
         self.teachSet = []
         self.domain = None

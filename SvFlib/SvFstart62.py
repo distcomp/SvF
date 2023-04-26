@@ -167,20 +167,18 @@ def testEstim (Gr, k) :  # k - testSet
         if fu.NoR > co.CV_NoR : continue               # 25/04
         spart = 0
         npart = 0
-        if fu.CVval is None: fu.CVval = zeros(fu.NoR, float64)   # 2021/11  from MakeModel
+        if fu.CVerr is None: fu.CVerr = zeros(fu.NoR, float64)   # 04.2023
 
         for s in fu.testSet[k]:
             if s >= fu.NoR        : continue                    #  25/04
             if isnan(fu.V.dat[s]) : continue
 
-            fu.CVval[s] = fu.Ftbl(s)
-            if not co.Task.DeltaVal is None: spart += Task.DeltaVal(Gr, ifu, fu.V.dat, s) ** 2
-            else:
-                if fu.MSDmode == 'MSDrel':  spart += fu.delta_rel(s) ** 2          # 21.02.2023
-                else :                      spart += fu.delta(s) ** 2
-#                spart += (fu.V.dat[s]-fu.CVval[s])**2   #fu.delta(s) ** 2          # 29
+            if not co.Task.DeltaVal is None: err = Task.DeltaVal(Gr, ifu, fu.V.dat, s) ** 2
+            elif  fu.MSDmode == 'MSDrel':    err = fu.delta_rel(s) ** 2          # 21.02.2023
+            else:                            err = fu.delta(s) ** 2
+            spart += err
             npart += 1
-#            if k <= 1:  print ('=',k,s, spart,npart,  fu.V.dat[s], fu.CVval[s], (fu.V.dat[s]-fu.CVval[s])**2)
+            fu.CVerr[s] = err                                   # 04.2023
 
         if npart == 0:  print (spart, npart, 'NoVal', 'NoVal',)
         else:
