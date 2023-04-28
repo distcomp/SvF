@@ -9,11 +9,15 @@ from Task import *
 
 
 class Polyline (Object):
-    def __init__( self, X, Y, Z=None, name='' ):         #  Polyline([1,2,3],..)    Polyline("X","Y",..)    Polyline(fun1,fun2,..)
+    def __init__( self, X, Y, Z=None, name='' ):     #  Polyline([1,2,3],..)    Polyline("X","Y",..)    Polyline(fun1,fun2,..)
             Object.__init__(self, name, 'Polyline')
 #            self.name = name
 ## 30            if name != '' :  addObject ( name, 'Polyline', self )
-            if type(X) == type ([]) :
+   #         print (type(X))
+            if ( type(X) == type ([])
+                or str(type(X)) == '<class \'range\'>'
+                or str(type(X)) == '<class \'numpy.ndarray\'>'
+               ) :
                 self.X = X
                 self.Y = Y
                 self.Z = Z
@@ -22,10 +26,14 @@ class Polyline (Object):
                 self.Y = deepcopy ( SvF.curentTabl.getField_tb(Y) )
                 if not (Z is None) :
                     self.Z = deepcopy(SvF.curentTabl.getField_tb(Z))
-            elif str(type(X)) == '<class \'numpy.ndarray\'>' :
-                self.X = X
-                self.Y = Y
-                self.Z = Z
+#            elif str(type(X)) == '<class \'range\'>' :
+ #               self.X = X
+  #              self.Y = Y
+   #             self.Z = Z
+    #        elif str(type(X)) == '<class \'numpy.ndarray\'>' :
+     #           self.X = X
+      #          self.Y = Y
+       #         self.Z = Z
             else :              # Fun
                 print (type(X))
                 self.X = []
