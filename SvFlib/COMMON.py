@@ -2,6 +2,9 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
+jobId_s = []
+maxJobs = 0
+
 DrawMode = 'Screen&File'
 Resources = [ "pool-scip-ipopt" ]
 

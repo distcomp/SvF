@@ -105,11 +105,16 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
  #           makeIpoptOptionsFile(co.tmpFileDir,  optFile)
             print (__peProblems )
             print ( co.optFile )
+            if co.maxJobs > 0 :
+                while ( len (co.jobId_s) > co.maxJobs ) :
+                    theSession.session.deleteJob( co.jobId_s[0] )
+                    print ('Job  ', co.jobId_s[0], '  was killed' )
+                    co.jobId_s.pop(0)
             solved, unsolved, jobId = theSession.runJob(__peProblems, co.optFile)  # by default solver = "ipopt"
 #            print("solved:   ", solved)
             print("unsolved: ", unsolved)
             print("Job %s is finished" % (jobId))
-
+            co.jobId_s.append(jobId)
 #            theSession.deleteWorkFiles([".nl", ".sol", ".zip", ".plan"])
 
         # Delete jobs created to save disk space at Everest server , MAY BE
