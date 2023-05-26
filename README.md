@@ -1,7 +1,7 @@
 # SvF
 **SvF** stands for "Simplicity vs Fitting" and is a short title of a method of balanced regularized identification of mathematical models by experimental data.
 
-The SvF-technology proposes a promising area of applied mathematics, combining methods of structural mathematical modeling, optimization, adaptive regularization and distributed computing.
+The SvF-technology proposes a promising area of applied mathematics, combining methods of structural mathematical modeling, cross-validation by subsets of experimental data, adaptive Tykhonov regularization, optimization and distributed computing.
 
 The author of the SvF-technology is [Alexander Sokolov](https://scholar.google.ru/citations?user=mtE_u_YAAAAJ&hl=en&oi=sra), [sashasok](https://gitlab.com/sashasok). 
 
@@ -14,6 +14,9 @@ Technologies, 2018, 6(9) C. 33-41, [PDF](http://injoit.org/index.php/j1/article/
 
 # How to cite
 **Please, cite the first of the above articles if you'll use the technology.**
+
+# References
+This mathematical technology has been successfully used in various fields of applied research. [Here you can find a list of references to publications concerning application of SvF-technology](https://github.com/distcomp/SvF/blob/main/svf-reference.md).
 
 # How to install
 Current implementation of the SvF-technolosy is based on [Everest Python API](https://gitlab.com/everest/python-api) and [SSOP Everest Application](https://optmod.distcomp.org/apps/vladimirv/solve-set-opt-probs), which have to be cloned from their Git-repos. **So, use the following command for correct cloning**
