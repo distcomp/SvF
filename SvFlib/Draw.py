@@ -49,7 +49,7 @@ def DrawComb( param ):
     MarkerSize = SvF.MarkerSize
     MarkerColor = SvF.MarkerColor
     MarkerEdgeColor = 'r'
-    MarkerEdgeWidth = 0
+    MarkerEdgeWidth = 0   # - размер канта (краёв)
     Marker = 'o'
     DataMarker = 'o'
     DataMarkerSize = SvF.DataMarkerSize
@@ -121,11 +121,10 @@ def DrawComb( param ):
             elif par.split(':')[0] == 'MC':  MarkerColor = par.split(':')[1]   #  MarkerCol
             elif par.split(':')[0] == 'MS':  MarkerSize = float(par.split(':')[1])   #  MarkerSize
             elif par.split(':')[0] == 'MEC': MarkerEdgeColor = par.split(':')[1]     #  MarkerEdgeColor
-            elif par.split(':')[0] == 'MEW': MarkerEdgeWidth = float(par.split(':')[1]) # MarkerEdgeWidth
+            elif par.split(':')[0] == 'MEW': MarkerEdgeWidth = float(par.split(':')[1]) # MarkerEdgeWidth - размер краёв
             elif par.upper() == 'TRANSP'  :  Transp = True
             elif par == 'DrawErr'         :  DrawErr = True
             elif par == 'Flow'            :  Flow = True
-#            elif par.split(':')[0] == 'MEW': MarkerEdgeWidth = float(par.split(':')[1])  # MarkerEdgeWidth
 #            elif par.split(':')[0] == 'Xstep':
  #               Xstep = float(par.split(':')[1])
   #              ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator (base=Xstep))
@@ -194,8 +193,12 @@ def DrawComb( param ):
                     ax.plot(tb_y, tb_x, LineColor, label=label_name, linestyle=LineStyle, linewidth=LineWidth,
                             markersize=MarkerSize, marker='o', markerfacecolor='#FFFFFF')
                 else :
+                    print('ABC', MarkerSize, MarkerColor, MarkerEdgeColor)
+
                     ax.plot(tb_x, tb_y, LineColor, label=label_name, linestyle=LineStyle, linewidth=LineWidth,   # function
-                            markersize=MarkerSize, marker='o', markerfacecolor='#FFFFFF')
+                            markersize=MarkerSize, marker='o', #markerfacecolor='#FFFFFF',
+                            markerfacecolor = MarkerColor, markeredgecolor=MarkerEdgeColor,
+                            markeredgewidth=MarkerEdgeWidth)
             if DrawErr:
               tb_err = deepcopy(V.dat)
               for n in fun.sR:

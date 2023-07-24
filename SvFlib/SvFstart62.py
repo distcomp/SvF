@@ -113,7 +113,6 @@ def SvFstart19 ( Task ) :
             steps.append(Penal[ip]*float(co.OptStep))
         co.OptStep = steps
 
-
 #    def get_sigCV(Penal, itera):                   #   test
  #       return (Penal[0] - 1) ** 2
   #  SurMin(30, [0.0001], 1e-5, [0.5], get_sigCV)
@@ -173,10 +172,10 @@ def testEstim (Gr, k) :  # k - testSet
             if s >= fu.NoR        : continue                    #  25/04
             if isnan(fu.V.dat[s]) : continue
 
-            if not co.Task.DeltaVal is None: err = Task.DeltaVal(Gr, ifu, fu.V.dat, s) ** 2
-            elif  fu.MSDmode == 'MSDrel':    err = fu.delta_rel(s) ** 2          # 21.02.2023
-            else:                            err = fu.delta(s) ** 2
-            spart += err
+            if not co.Task.DeltaVal is None: err = Task.DeltaVal(Gr, ifu, fu.V.dat, s) #** 2
+            elif  fu.MSDmode == 'MSDrel':    err = fu.delta_rel(s) #** 2          # 21.02.2023
+            else:                            err = fu.delta(s) #** 2
+            spart += err ** 2
             npart += 1
             fu.CVerr[s] = err                                   # 04.2023
 

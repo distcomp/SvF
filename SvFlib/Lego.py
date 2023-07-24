@@ -628,12 +628,14 @@ class Fun (Object) :
             return self.neNDT[ix,iy]
 
     def GetData ( self, tabl ) :
+ #       print ('GetData', self.name)
 #        if SvF.printL >0 : printS ('GetData: |'); self.printM()
         if tabl is None :  return False
         haveAll = True
         haveAny = False
 
         V_tb = tabl.getField_tb (self.V.name)
+#        if print ('V', V_tb[:])
         if V_tb is None :
 #            print ("GetData ****************************** No Field in ", tabl.name,  "For Var", self.V.name, "****")
             haveAll = False
@@ -678,6 +680,9 @@ class Fun (Object) :
                   arg.dat = delete (arg.dat, range(self.NoR,arg.dat.shape[0]) )
         
         self.sR = range (self.NoR)
+#        if not self.V.dat is None :
+ #           for i in range (len(self.V.dat) ) : print (i, self.V.dat[i])
+        print (self.name, '->self.NoR =', self.NoR)
         if SvF.printL : print ("GetData numNaN", numNaN,"NoR", self.NoR)  #, "mins", tbl.min(0), "maxs", tbl.max(0)
         return haveAll
 
@@ -1561,6 +1566,23 @@ class Fun (Object) :
             if abs(dZ-1) < 1e-10 :  return  self.interpol ( lev-1, X,Y,Zi+1 )     
             else                 :  return  self.interpol ( lev-1, X,Y,Zi ) * (1-dZ) + self.interpol ( lev-1, X,Y,Zi+1 ) * dZ       
         if lev == 2 :
+#            print('lev 2 VarType = G_ind')
+ #           1/0
+            if self.type == 'G_ind':
+   #             return 0
+                def ind_0_1(x):
+                    return 0.5 * x / py.sqrt(SvF.Epsilon + x ** 2) - 0.5 * (x-1) / py.sqrt(SvF.Epsilon + (x-1) ** 2)
+                ret = 0             # tetta(1 - dX) * tetta(dX)
+ #               print ('VarType = G_ind')
+                for i in self.A[0].NodSm:
+                    dX = X - i
+                    for j in self.A[1].NodSm:
+                        dY = Y - j
+                        ret += ( (gr[i,j]   * (1 - dX) + gr[i+1,j]   * dX) * ( 1-dY )
+                               + (gr[i,j+1] * (1 - dX) + gr[i+1,j+1] * dX) * dY
+                               ) * ind_0_1(dX) * ind_0_1(dY)
+                return ret
+
             Yi = int(floor ( Y ))
             if Yi < 0            : Yi = 0 
             if Yi==self.A[1].Ub  : Yi=self.A[1].Ub-1
@@ -1668,7 +1690,7 @@ class Fun (Object) :
             x = (ArS_real[0]-self.A[0].min)/self.A[0].step
     #        print ('F (ArS_real) ', ArS_real, x)
             return self.interpol ( 1, x )
-          elif self.type == 'g' and self.dim==2 :
+          elif ( self.type == 'g' or self.type[0] == 'G' ) and self.dim==2 :
             x = (ArS_real[0]-self.A[0].min)/self.A[0].step
             y = (ArS_real[1]-self.A[1].min)/self.A[1].step
             return self.interpol ( 2, x, y )

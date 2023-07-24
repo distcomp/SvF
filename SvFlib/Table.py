@@ -252,7 +252,7 @@ class Table (Object):
             elif   '.ASC'  == ext :                   self.Read27_ASC ( where_condition )  # надо переписать
             else :                                    self.Read30_TXT ( )
 
-        print ('NoR =', self.NoR, '\n')
+        print (self.name, ' NoR =', self.NoR, '\n')
         if SvF.printL :
             for ifld, fld in enumerate (self.Flds) :
                 print ('Field :', fld.name, fld.src_name, fld.src_num, fld.tb.min(0), fld.tb.max(0))
