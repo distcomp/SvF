@@ -50,86 +50,7 @@ def cnstrFun2 (args, V_name, NDT) :   #
 
 
 #def Read_gFun1 ( ReadFrom ) :      #  outofdate  27
- #     try:
-  #          fi = open ( ReadFrom, "r")
-   #   except IOError as e:
-    #        print ("*********************не удалось открыть файл  !"+ReadFrom+'!')
-     #       return  None;
-      #else:
-       # fnames = fi.readline().split()
-        #print ("Read_gFun1 from", ReadFrom,  fnames,)
-#        tb = loadtxt (fi,'double')
- #       fi.close()
-# #       print "shape", tb.shape
-
-   #     V = Vari ( fnames[1] )
-#   #     A1 = Arg ( fnames[0] )
-     #   A1 = Grid ( fnames[0] )
-      #  A1.Ub = tb.shape[0] - 1
-       # A1.min = tb[ 0][0]
-        #A1.max = tb[-1][0]
-#        A1.step = (A1.max-A1.min)/(A1.Ub)
- #       A1.Aprint()
-
-  #      A1.Normalization_UbSets(0)
-
-   #     tb1 = zeros( A1.Ub+1, float64 )
-    #    for x in range(A1.Ub+1) : tb1[x] = tb[x][1]
-
-     #   fun1     = Func()
-      #  fun1.grd = tb1
-       # fun1.V   = V
-        #fun1.A   = [A1]
-#        fun1.dim = 1
- #       return gFun1( fun1 )
-
-
 #def Read_gFun2 ( ReadFrom ) :      #  outofdate  27
- #     try:
-  #          fi = open ( ReadFrom, "r")
-   #   except IOError as e:
-    #        print ("не удалось открыть файл  !"+ReadFrom+'!')
-     #       return None;
-      #else:
-#        fnames = fi.readline().split()
- #       print ("Read_gFun2 from", ReadFrom,  fnames,)
-  #      x_gr = fi.readline().split()
-   #     tb = loadtxt (fi,'double')
-    #    fi.close()
-#    #    print "shape", tb.shape
-
-      #  V = Vari ( fnames[2] )
-
-       # A1 = Grid ( fnames[0] )
-#       # A1 = Arg ( fnames[0] )
-#        A1.Ub = len (x_gr) - 1
- #       A1.min = float(x_gr[0])
-  #      A1.max = float(x_gr[-1])
-   #     A1.step = (A1.max-A1.min)/(A1.Ub)
-    #    A1.Aprint()
-
-     #   A2 = Grid ( fnames[1] )
-#     #   A2 = Arg ( fnames[1] )
-       # A2.Ub = tb.shape[0] - 1
-        #A2.min = tb[ 0][0]
-#        A2.max = tb[-1][0]
- #       A2.step = (A2.max-A2.min)/(A2.Ub)
-  #      A2.Aprint()
-
-   #     A1.Normalization_UbSets()
-    #    A2.Normalization_UbSets()
-
-#    #    tb = tb[:][5:-1]
-#     #   print "shape", tb.shape
-       # tb = delete (tb, range(0,1), 1 ).transpose()
-        #fun1 = Func()
-#        fun1.grd = tb
- #       fun1.V = V
-  #      fun1.A = [A1, A2]
-   #     fun1.dim = 2
-    #    return gFun2( fun1 )
-  
-
 
 def oFunFromSolFile(ReadFrom, Vnum=1):  # для tbl   нулевая  колонка - аргумент. по умолчанию первая функция
     if SvF.printL: print ('FunFromFile', ReadFrom)
@@ -366,17 +287,20 @@ class Fun (Object) :
                 self.var.value = self.grd
 #                print('*************************************var', self.var.value, self.grd)
             elif self.dim == 1:
-                for i in self.A[0].NodS:  self.var[i].value = self.grd[i]
+                for i in self.A[0].NodS:
+#                    self.var[i].value = self.grd[i]
+                    self.var[i].set_value(self.grd[i], skip_validation=True)
             elif self.dim == 2:
                 for i in self.A[0].NodS:
-                    for j in self.A[1].NodS:  self.var[i,j].value = self.grd[i,j]
+#                    for j in self.A[1].NodS:  self.var[i,j].value = self.grd[i,j]
+                    for j in self.A[1].NodS:  self.var[i,j].set_value(self.grd[i,j], skip_validation=True)
+
             elif self.dim == 3:
                 for i in self.A[0].NodS:
                     for j in self.A[1].NodS:
                         for k in self.A[2].NodS:
-                            self.var[i,j,k].value = self.grd[i,j,k]
-
-
+#                            self.var[i,j,k].value = self.grd[i,j,k]
+                            self.var[i,j,k].set_value(self.grd[i,j,k], skip_validation=True)
 
     def var_to_grd (self) :
         if self.var is None:  return
@@ -834,16 +758,11 @@ class Fun (Object) :
         return	 (self.delta(n)/ max(self.V.dat[n],self.measurement_accur))
 
     def MSD ( self ) :
-        if not SvF.Hack_Stab :
-            return self.MSDnan()
-#          if SvF.Use_var :
- #           return  1. /self.V.sigma2 /sum ( self.mu[n] for n in self.sR )  \
-  #                                  * sum (  self.mu[n] * self.delta(n)**2 for n in self.sR )
-   #       else:
-    #        return  1. /self.V.sigma2 /sum ( self.mu[n]() for n in self.sR )  \
-     #                               * sum (  self.mu[n]() * self.delta(n)**2 for n in self.sR )    # 29
-        else :
-            return  1. /self.V.sigma2  /self.NoR * sum (  self.mu[n] * self.delta(n)**2  for n in self.sR )
+        return self.MSDnan()
+#        if not SvF.Hack_Stab :
+ #           return self.MSDnan()
+  #      else :
+   #         return  1. /self.V.sigma2  /self.NoR * sum (  self.mu[n] * self.delta(n)**2  for n in self.sR )
 
     def MSDcheck(self) :
             self.MSDmode = 'MSD'
@@ -888,18 +807,60 @@ class Fun (Object) :
             ret = 0
             num = 0
 #            print ('SvF.Use_var', SvF.Use_var)
-            if SvF.Use_var:                                      #  mu[n]  <->  mu[n]()
-                for n in self.sR :
-                    if not isnan(self.V.dat[n])  :
-                        ret += self.mu[n] * self.delta(n)**2
-                        num += self.mu[n]
-            else :
+            if not SvF.Use_var:                                      #  mu[n]  <->  mu[n]()
                 for n in self.sR:
                     if not isnan(self.V.dat[n]):
                         ret += self.mu[n]() * self.delta(n) ** 2
                         num += self.mu[n]()
-            ret = ret  / self.V.sigma2 / num
+                return ret / self.V.sigma2 / num
+            else:
+                for n in self.sR:
+                    if not isnan(self.V.dat[n])  :
+                        ret += self.mu[n] * self.delta(n)**2
+                        num += self.mu[n]
+                ret = ret / self.V.sigma2 / num
+            if SvF.Hack_Stab:
+                num = 0
+                for n in self.sR:
+                    if not isnan(self.V.dat[n]): num += 1
+#                print('Val', 1 /self.V.sigma2 /num, num)
+                for n in self.sR:
+                    if not isnan(self.V.dat[n]):
+                        co.stab_val_sub.append( 1 /self.V.sigma2 /num)
+
+                for cv_set in co.teachSet :
+                    mu = [1] * len(self.sR)
+                    for s in cv_set: mu[s] = 0
+                    num = 0
+                    for nmu, emu in enumerate (mu):
+ #                       print (cv)
+                        if (not isnan(self.V.dat[nmu])) and emu==1 : num += 1
+#                    print('CV num', num  )
+
+                    stab_val = []
+#                    print('CVVal', 1 /self.V.sigma2 /num, num )
+                    for nmu, emu in enumerate (mu):
+                        if (not isnan(self.V.dat[nmu])):
+                            if emu==1 : stab_val.append( 1 /self.V.sigma2 /num)
+                            else:       stab_val.append( 0 )
+                    co.stab_val_by_cv.append (stab_val)
             return ret
+
+
+#                ret = ret  / self.V.sigma2 / self.NoR #num
+#                ret = ret  / self.V.sigma2 / num
+ #           else :
+#                print ('1/ self.V.sigma2 / num()', num)
+ #               print ('1/ self.V.sigma2 / num()', 1/ self.V.sigma2 / num)
+
+  #              pass
+  #              ret = ret # / self.V.sigma2 / self.NoR
+  #          print( '********************' ,0.0006114684100262* self.V.sigma2 * num   )
+   #         return ret
+#        if not SvF.Hack_Stab :
+ #           return self.MSDnan()
+  #      else :
+   #         return  1. /self.V.sigma2  /self.NoR * sum (  self.mu[n] * self.delta(n)**2  for n in self.sR )
 
 
     def MSDverif(self, verif_f):  # verif_f  - for verification - validation
@@ -976,7 +937,7 @@ class Fun (Object) :
 
     def Mean ( self ) :                                         #  А как же кол-во дырок   NDT
             if self.param or not SvF.Use_var:    gr = self.grd
-            else:                               gr = self.var  # 29
+            else:                                gr = self.var  # 29
             if self.dim == 1 :
                     return   1./(self.A[0].Ub+1)* sum ( gr[x] * self.fneNDT(x)  for x in self.A[0].NodS )
             else:
@@ -988,7 +949,7 @@ class Fun (Object) :
 
     def Norma_L2mL2 ( self ) : 
             if self.param or not SvF.Use_var:    gr = self.grd
-            else:                               gr = self.var  # 29
+            else:                                gr = self.var  # 29
             if   self.dim == 1 :
                     return   1./(self.A[0].Ub+1)    \
                              * sum ( gr[x]**2      for x in self.A[0].NodS )
@@ -1566,14 +1527,10 @@ class Fun (Object) :
             if abs(dZ-1) < 1e-10 :  return  self.interpol ( lev-1, X,Y,Zi+1 )     
             else                 :  return  self.interpol ( lev-1, X,Y,Zi ) * (1-dZ) + self.interpol ( lev-1, X,Y,Zi+1 ) * dZ       
         if lev == 2 :
-#            print('lev 2 VarType = G_ind')
- #           1/0
             if self.type == 'G_ind':
-   #             return 0
                 def ind_0_1(x):
                     return 0.5 * x / py.sqrt(SvF.Epsilon + x ** 2) - 0.5 * (x-1) / py.sqrt(SvF.Epsilon + (x-1) ** 2)
                 ret = 0             # tetta(1 - dX) * tetta(dX)
- #               print ('VarType = G_ind')
                 for i in self.A[0].NodSm:
                     dX = X - i
                     for j in self.A[1].NodSm:
@@ -1645,11 +1602,8 @@ class Fun (Object) :
 #                if self.dim == 3 :  return  self.grd[Xi+1 ,Y , Z]
                 if self.dim == 3 :  return  gr[Xi+1 ,Y , Z]
             else                 :
-#                if self.dim == 1 :  return  self.grd[Xi       ] * (1-dX) + self.grd[Xi+1       ] * dX
                 if self.dim == 1 :  return  gr[Xi       ] * (1-dX) + gr[Xi+1       ] * dX
-#                if self.dim == 2 :  return  self.grd[Xi ,Y    ] * (1-dX) + self.grd[Xi+1 ,Y    ] * dX
                 if self.dim == 2 :  return  gr[Xi ,Y    ] * (1-dX) + gr[Xi+1 ,Y    ] * dX
-#                if self.dim == 3 :  return  self.grd[Xi ,Y , Z] * (1-dX) + self.grd[Xi+1 ,Y , Z] * dX
                 if self.dim == 3 :  return  gr[Xi ,Y , Z] * (1-dX) + gr[Xi+1 ,Y , Z] * dX
 
 
@@ -1730,7 +1684,7 @@ class Fun (Object) :
 
     def grdCycle (self, x) :
         if self.param or not SvF.Use_var:  gr = self.grd
-        else:                             gr = self.var  # 29
+        else:                              gr = self.var  # 29
         if x==-1             : return gr[self.A[0].Ub]
         if x==self.A[0].Ub+1 : return gr[0]
         return gr[x]
@@ -1776,7 +1730,7 @@ class Fun (Object) :
 #      print ('gG sumXX', self.type)
       if self.type == 'g' or self.type[0] == 'G' :
           if self.param or not SvF.Use_var:     gr = self.grd
-          else:                                gr = self.var  # 29
+          else:                                 gr = self.var  # 29
 #          print ("Use", SvF.Use_var)
           if   self.dim==1 :
 #              (self.grd[x - 1] - 2 * self.grd[x] + self.grd[x + 1]) ** 2
@@ -2032,7 +1986,7 @@ class Fun (Object) :
 
     def sumYY ( self ) :
         if self.param or not SvF.Use_var:   gr = self.grd
-        else:                              gr = self.var  # 29
+        else:                               gr = self.var  # 29
 
         if   self.dim==2 :
             if self.param or not SvF.Use_var:
@@ -2058,7 +2012,7 @@ class Fun (Object) :
     
     def sumXY ( self ) :
         if self.param or not SvF.Use_var:  gr = self.grd
-        else:                             gr = self.var  # 29
+        else:                              gr = self.var  # 29
 
         if   self.dim==2 :
             if self.param or not SvF.Use_var:

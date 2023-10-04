@@ -35,7 +35,7 @@ from pyomo.opt import SolverFactory
 #==========================
 
 
-MU_LABAL = 2147483647
+#MU_LABAL = 2147483647
 
 buf = ""
 
@@ -48,17 +48,7 @@ def SvFstart19 ( Task ) :
     full_start = time.time()
 #    print 'full_start',  full_start
 
-#    if co.Preproc :  return
     print ('\n\n\nStart SvFsrat')
-
-#    if Task.createGr is None:
- #       Task.createGr  = Model.createGr
-  #      Task.Delta     = None #Mo.Delta
-   #     Task.DeltaVal  = None #Mo.DeltaVal
-    #    Task.defMSD    = None #Mo.defMSD
-     #   Task.defMSDVal = None #Mo.defMSDVal
-      #  Task.print_res = Model.print_res
-
 
     if co.resF == '' :
         co.resF = co.mngF[:co.mngF.rfind('.')]+'.res'   #  RES file read
@@ -161,6 +151,7 @@ def SvFstart19 ( Task ) :
 
 
 def testEstim (Gr, k) :  # k - testSet
+    Var_to_Grd()
     for ifu, fu in enumerate(co.Task.Funs):
         if fu.mu is None: continue
         if fu.NoR > co.CV_NoR : continue               # 25/04
@@ -254,7 +245,7 @@ def get_sigCV( Penal, itera ):
     resultss = solveProblemsNl(Gr, [[]], co.RunMode[0])
     Gr.solutions.load_from(resultss[0])
     Var_to_Grd()
-    Task.SaveSols('.tmp')#,0)
+    Task.SaveSols('.tmp')
 
     print ('OBJ',Gr.OBJ())
     printMSD()
@@ -266,29 +257,24 @@ def get_sigCV( Penal, itera ):
     elif co.CVNumOfIter != 0 :
         star = time.time()
 
-        if co.RunMode[2] != 'L' :   resultss = solveProblemsNl ( Gr, co.teachSet, co.RunMode[2] )
-
-        res_num = 0
-        for k in range(co.CV_NoSets):                                  # LOAD RES,  culculation
-            if co.NotCulcBorder :  #  границ не считаем
-                if k == 0 or k == len(testSet) - 1:   1/0;  continue
-            printS (str(k)+' |')
-
-            if co.RunMode[2] == 'L' :
-                results = solveProblemsNl(Gr, [co.teachSet[k]], co.RunMode[2])[0]  # !!  ТОЛЬКО ДЛЯ ОДНОГО resultss
-            else :
-                results = resultss[res_num]
-            res_num += 1
-
-            Gr.solutions.load_from(results)
-
-            Var_to_Grd()
-            testEstim(Gr, k)
+        if co.RunMode[2] != 'L':
+            resultss = solveProblemsNl ( Gr, co.teachSet, co.RunMode[2] )
+            for nres, res in enumerate (resultss) :
+                Gr.solutions.load_from(res)
+                testEstim(Gr, nres)
+        else:       ## co.RunMode[2] == 'L' :
+            res_num = 0
+            for k in range(co.CV_NoSets):                                  # LOAD RES,  culculation
+#               if co.NotCulcBorder :  #  границ не считаем
+ #                  if k == 0 or k == len(testSet) - 1:   1/0;  continue  #########  ???????????????????
+  #             printS (str(k)+' |')
+                results = solveProblemsNl(Gr, [co.teachSet[k]], co.RunMode[2])[0]  #!! РАБОТАЕТ ТОЛЬКО ДЛЯ ОДНОГО resultss
+                res_num += 1
+                Gr.solutions.load_from(results)
+                testEstim(Gr, k)
 
         Estim = getEstimCV(Gr)
         print ('\tEstim% '+str(Estim)+"\tTime  "+ str(time.time() - star))
-#        Mng.MSD   = MSD
- ###       Mng.sCrVa = sCrVa
     else : Estim = -1
 
 #    co.Use_var = False       # 29

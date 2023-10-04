@@ -2,6 +2,8 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
+max_workers = 3
+
 jobId_s = []
 maxJobs = 0
 
@@ -60,6 +62,7 @@ X_lim           = []
 Y_lim           = []
 locator         = None
 FONT_SIZE       = 16
+axisNUM_FONT_SIZE = 12
 title_x        = 0.7
 Ylabel_x       = 0.03
 Xlabel_x        = 1
@@ -140,7 +143,7 @@ SolverName       = '/opt/solvers/bin/ipopt'  # 3.14.09
 
 solverOptVal =  {  "linear_solver"              : 'ma57'\
                  , 'max_iter'                   : 50000 \
-                 , "print_level"                : 4     \
+                 , "print_level"                : 0     \
                  , 'warm_start_init_point'      : 'yes' \
                  , 'warm_start_bound_push'      : 1e-6 \
                  , 'warm_start_mult_bound_push' : 1e-6 \
@@ -151,9 +154,14 @@ solverOptVal =  {  "linear_solver"              : 'ma57'\
                 }
 #    opt.options['acceptable_tol']       = 1e-10
 
-RunMode     = 'L&L'
-#RunMode     = 'P+P'
-Hack_Stab   = False
+RunMode     = 'L&L'         #  S&P&O
+
+Hack_Stab    = False    #        Hack_Stab
+stab_file = 'tmp_stab_file.nl'
+#stabMU_LABAL = 19541117
+stab_val_sub   = []
+stab_val_by_cv   = []
+
 py_max_iter = 50000    #
 py_tol = 1e-9  #  -11
 #acceptable_tol

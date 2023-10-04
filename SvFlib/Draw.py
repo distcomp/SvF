@@ -21,7 +21,7 @@ def DrawComb( param ):
     Transp = SvF.DrawTransp
     FONT_SIZE = SvF.FONT_SIZE  #16 #24  # 16 # 7
     NUM_FONT_SIZE = 14
-    axisNUM_FONT_SIZE = 15 #20
+#    axisNUM_FONT_SIZE = 12 #20
     yRotation = 0
     FONTstyle = 'italic'
     fig, ax = plt.subplots(figsize=(SvF.Xsize, SvF.Ysize), dpi=SvF.DPI)
@@ -29,8 +29,8 @@ def DrawComb( param ):
     plt.subplots_adjust(left=SvF.subplots_left, right=SvF.subplots_right,
                         top=SvF.subplots_top, bottom=SvF.subplots_bottom)
 
-    plt.yticks(fontsize=axisNUM_FONT_SIZE, rotation=0)
-    plt.xticks(fontsize=axisNUM_FONT_SIZE, rotation=0)
+    plt.yticks(fontsize=SvF.axisNUM_FONT_SIZE, rotation=0)
+    plt.xticks(fontsize=SvF.axisNUM_FONT_SIZE, rotation=0)
     if SvF.xaxis_step != 0:
         ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=SvF.xaxis_step))
     if SvF.yaxis_step != 0:
@@ -59,7 +59,7 @@ def DrawComb( param ):
 #    print ("LLL", LineColor )
     LineStyle = '-'
     DataColor = SvF.DataColor
-    name = ''
+#    name = ''
     file_name = ''
 
     parts = param.split(' ')
@@ -82,25 +82,49 @@ def DrawComb( param ):
             if ipar == 0 :                          # FUN OR PPolyline NAME  or File
                 ob = getObjectNotGrid(par)   #  Для  drawSvF
 #                print ("OOOOOOOOOOOOOOOO")
-                ob.Oprint()
+#                ob.Oprint()
+                name = ''
                 if ob is None:
 #                    print ( 'PP', par )
                     if par.find('.sol') >=0 :
                         fun = FunFromSolFile(par)             # FROM Sol FILE
 #                        print ("F", fun.grd)
-                    else:
-                        print ('par222', par)
-  #                      fun = FunFromSolFile(par)
-                        tb = Select ( '* from ' + par )
-                        polyline = Polyline(tb.dat('X'), tb.dat('Y'), None, par)
+                    elif len (par.split ('.')) > 1:  #  Draw DB.HY   Draw DB.CO2i,DB.Date[:],CO2in Draw E.grd,DB.Date,Emod
+                        tabs =  par.split (',')
+     #                   print (tabs)
+                        p_name = ''
+                        x = []; y=[]
+                        for nta, ta in enumerate (tabs):
+                            print ('part of prs', ta)
+                            p_tabs = ta.split('.')
+                            if len(p_tabs) ==1:
+                                p_name = ta
+                            else:
+                                ob = getObjectNotGrid(p_tabs[0])
+                                if ob.Otype == 'Table':
+                                    if nta ==0: y = ob.dat(p_tabs[1])
+                                    else:       x = ob.dat(p_tabs[1])
+                                elif ob.Otype == 'Fun':                     #  Fun array
+                                    if nta ==0:  y = ob.grd
+                                    else:        x = ob.grd
+#                                    print('par22222', par, p_tabs,y,x)
+                                else:                                   #  из файла  old
+#                                    print('par222', par, p_tabs)
+                                    #                      fun = FunFromSolFile(par)
+                                    tb = Select('* from ' + par)
+ #                                   polyline = Polyline(tb.dat('X'), tb.dat('Y'), None, par)
+                        if len(y) > 0:
+                            if len(x) == 0:  x = [i for i in range(len(y))]
+                            polyline = Polyline(x, y, None, p_name)
+  #                          print ('polXY',polyline.Y, polyline.X, p_name)
+ #                           ob = polyline
                 elif ob.Otype == 'Fun': # 'Fun'
                         fun = ob
-                elif ob.Otype == 'Table':  # 'Tab'
-                    print('NNNNNNNN')
-                    1/0
                 else :                  # ob.o_type == 'Polyline':
 #                    polyline = ob.object
-                    polyline = ob
+                    polyline = ob   #&&&&  ???????????
+
+                if not ob is None:  ob.Oprint()
 
                 if fun is None:
                     to_draw = 'Polyline'

@@ -277,6 +277,18 @@ class Table (Object):
             self.Flds[pos].tb = zeros ( (self.NoR), float64 )
 
 
+    def Evaluate ( self, evalFld, byFld, byVal ) :   # оесортировано
+        evalFldPoi = self.getField (evalFld)
+        byFldPoi   = self.getField (byFld)
+        search_beg = 0
+        search_end = self.NoR-1
+        if byVal <= byFldPoi.tb[search_beg]: return evalFldPoi.tb[search_beg]
+        if byVal >= byFldPoi.tb[search_end]: return evalFldPoi.tb[search_end]
+        i = searchsorted( byFldPoi.tb, byVal, side='left' )      # number
+        prop = ( byVal - byFldPoi.tb[i-1] ) / ( byFldPoi.tb[i] - byFldPoi.tb[i-1] )
+#        print ("iiiiiii", i, prop)
+        value = evalFldPoi.tb[i-1] * (1-prop) + evalFldPoi.tb[i] * prop
+        return value
 
     def IndexCol( self, Name ) :
         return self.getFieldNum(Name)
@@ -345,24 +357,13 @@ class Table (Object):
         self.sR = range(self.NoR)
 
     def Operation ( self, buf ) :
-##30        buf = SvF.Task.substitudeDef(buf)
         part = buf.replace ( ' ', '').split ( '=' )
- #       print ('Operation', part)
         rightPart = part[1]
         leftCol = part[0].split('.')[1]
-###        leftInd = self.cols.index (leftCol)
         leftInd = self.getFieldNum(leftCol)
-#        print 'leftPart', leftCol, leftInd
-###        for ic, c in enumerate(self.cols) :
-   ###         rightPart = rightPart.replace('curentTabl.'+c, 'self.tbl[:,'+str(ic)+']')
         for ic, c in enumerate(self.Flds) :
             rightPart = rightPart.replace('curentTabl.'+c.name, 'c.tb[:]')
-  #      print (rightPart)
-#        print self.tbl[:,1]
-###        self.tbl[:,leftInd] = eval (rightPart)
         self.Flds[leftInd].tb[:] = eval(rightPart)
-#        print self.tbl[:,1]
-#        1/0
 
     def TblLonLatToGaussKruger ( self ) :
    #         print ('col 0 and 1 convert To GaussKruger')
