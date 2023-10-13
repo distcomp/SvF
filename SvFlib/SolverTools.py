@@ -2,7 +2,7 @@
 from __future__ import division
 import subprocess
 
-import COMMON as co
+import COMMON as SvF
 
 from Task    import Grd_to_Var
 
@@ -19,20 +19,20 @@ from ssop_session import *
 
 def Factory (optFile , py_max_iter, py_tol ):
     opt = None
-    if optFile is None or co.RunMode[0] == 'L' or co.RunMode[2] == 'L' :
-        opt = SolverFactory(co.LocalSolverName)  #'server' :  co.LocalSolverName
-        opt.options.update( co.solverOptVal )
+    if optFile is None or SvF.RunMode[0] == 'L' or SvF.RunMode[2] == 'L' :
+        opt = SolverFactory(SvF.LocalSolverName)  #'server' :  SvF.LocalSolverName
+        opt.options.update( SvF.solverOptVal )
     if (not optFile is None) and \
-        (co.RunMode[0] != 'L' or co.RunMode[2] != 'L'):
-        makeSolverOptionsFile(co.tmpFileDir + '/' + optFile, "ipopt", co.solverOptVal)
+        (SvF.RunMode[0] != 'L' or SvF.RunMode[2] != 'L'):
+        makeSolverOptionsFile(SvF.tmpFileDir + '/' + optFile, "ipopt", SvF.solverOptVal)
     return opt
 
 
 #    opt.options["print_level"] = 4 #4 #6
  #   opt.options['warm_start_init_point']      = 'yes'
-  #  opt.options['warm_start_bound_push']      = co.py_warm_start_bound_push
-   # opt.options['warm_start_mult_bound_push'] = co.py_warm_start_mult_bound_push
-    #opt.options['constr_viol_tol']            = co.py_constr_viol_tol
+  #  opt.options['warm_start_bound_push']      = SvF.py_warm_start_bound_push
+   # opt.options['warm_start_mult_bound_push'] = SvF.py_warm_start_mult_bound_push
+    #opt.options['constr_viol_tol']            = SvF.py_constr_viol_tol
 #    opt.options['mu_init']                    = 1e-6
  #   opt.options['max_iter']             = py_max_iter
   #  opt.options["tol"]                  = py_tol
@@ -44,22 +44,22 @@ def Factory (optFile , py_max_iter, py_tol ):
  #           opt.options["linear_solver"] = 'ma86'
 
 def makeNlFile ( Gr, stab_file ) :
-#        if co.Hack_Stab:
+#        if SvF.Hack_Stab:
  #           make_hackStab( stab_file, Gr )
-  #          return co.stab_symbol_map
+  #          return SvF.stab_symbol_map
    #     else:
             _, smap_id = Gr.write( stab_file, format=ProblemFormat.nl )#,  io_options={'symbolic_solver_labels': True})  # создаем стаб
             symbol_map = Gr.solutions.symbol_map[smap_id]
             return symbol_map
 
 def setMuToTeach (Gr, teachSet = [] ) :                 #  teachSet 1 - выбрасываем, 0 - берем
-        if co.CV_NoR > 0:
+        if SvF.CV_NoR > 0:
             Gr.mu[:] = 1
             for s in teachSet: Gr.mu[s] = 0
 
 def makeNlFileTeach ( Gr, stab_file, teachSet_k ) :
             setMuToTeach(Gr, teachSet_k )
-            return makeNlFile(Gr, co.tmpFileDir + "/" + stab_file + ".nl")
+            return makeNlFile(Gr, SvF.tmpFileDir + "/" + stab_file + ".nl")
 
 #def makeNlFileTeach_it ( stab_file_teachSet_k ) :
  #   return  makeNlFileTeach(stab_file_teachSet_k[0], stab_file_teachSet_k[1], stab_file_teachSet_k[2])
@@ -67,72 +67,40 @@ def makeNlFileTeach ( Gr, stab_file, teachSet_k ) :
 #from multiprocessing import Pool
 
 def makeNlFileS ( Gr, teachSet ) : #, symbol_map, nls ) :
-        __peProblems = [co.TaskName + "0000"+str(k)    for k in range(len(teachSet))]     # __pe - prefix for Pyomo&Everest stuff
+        __peProblems = [SvF.TaskName + "0000"+str(k)    for k in range(len(teachSet))]     # __pe - prefix for Pyomo&Everest stuff
 
-        co.stab_NoTeach = len(teachSet)       #  передаем в Lego, чтобы не стабать 1 teach
-        print('AAA SvF.Use_var', co.Use_var, co.stab_NoTeach)
+        SvF.stab_NoTeach = len(teachSet)       #  передаем в Lego, чтобы не стабать 1 teach
+        print('AAA SvF.Use_var', SvF.Use_var, SvF.stab_NoTeach)
 
-        if len(teachSet) >= 2 and co.Hack_Stab:
-#        if co.Hack_Stab:
+        if len(teachSet) >= 2 and SvF.Hack_Stab:
             sym_maps = prep_hackStab(Gr, __peProblems, teachSet)
         else :
             sym_maps = [makeNlFileTeach ( Gr, __peProblems[k], teachSet[k] )  for k in range(len(teachSet))]
 
- #       print (Gr.mu[:]())
-    #    print (.00061146841002*)
-  #      1/0
-#        return  sym_maps, __peProblems
-
-#        name_teach = [[Gr, __peProblems[k], teachSet[k]] for k in range(len(teachSet))]                                             # __pe - prefix for Pyomo&Everest stuff
- #       sym_maps = [makeNlFileTeach_it ( name_teach[k] ) for k in range(len(teachSet))]
-  #      return  sym_maps, __peProblems
-
-#        sym_maps = []
- #       with Pool(5) as p:
-  #        sym_maps.append(p.map(makeNlFileTeach_it, name_teach))
-   #     print ('***************')
-    #    return  sym_maps, __peProblems
-
-#        sym_maps = [0 for k in range(len(teachSet))]
- #       with concurrent.futures.ThreadPoolExecutor(max_workers=co.max_workers) as executor:
-            # Start the load operations and mark each future with its pName
-  #          NL_Task = { executor.submit ( makeNlFileTeach, Gr, __peProblems[k], teachSet[k] ): k
-   #                         for k in range(len(teachSet)) }
-    #        for future in concurrent.futures.as_completed(NL_Task):
-     #           print (future)
-      #          print (NL_Task[future])
-       #         k = NL_Task[future]
-        #        try:
-         #           s_map = future.result()
-          #      except Exception as exc:
-           #         print('Generated an exception: %s' )#,exc, 'solving', pNam)
-            #    else:
-             #       sym_maps[k] = s_map
-              #      print('Solved')#, pNam )
-        print ('for  '+co.TaskName, len(__peProblems), '   files')
+        print ('for  '+SvF.TaskName, len(__peProblems), '   files')
         return  sym_maps, __peProblems
 
 import concurrent.futures  ###################
 
 def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
         def run_subTask(pName):
-            if co.SolverName.find('ipopt') >= 0:    pName_nl = pName + ".nl"
-            elif co.SolverName.find('scip') >= 0:   pName_nl = pName
+            if SvF.SolverName.find('ipopt') >= 0:    pName_nl = pName + ".nl"
+            elif SvF.SolverName.find('scip') >= 0:   pName_nl = pName
             else:
                 print("Solver Name ?")
                 exit(-17)
 
             print('Start', pName )
-            subprocess.check_call(co.SolverName + ' ' + tmpFileDir + pName_nl + " -AMPL" +
+            subprocess.check_call(SvF.SolverName + ' ' + tmpFileDir + pName_nl + " -AMPL" +
                               " \"option_file_name=" + tmpFileDir + "peipopt.opt\"", shell=True)
             return pName
 
         if RunMo == 'S':                                        # RUN dist    #===== solve in parallel ===========
             SvF_resources = []                                                  #####   ABC   28/01/2023
-            for r in co.Resources:
+            for r in SvF.Resources:
                 SvF_resources.append(ssop_config.SSOP_RESOURCES[r])
-            theSession = SsopSession(name      = co.TaskName + str(co.CV_Iter),
-                                     token     = co.token,
+            theSession = SsopSession(name      = SvF.TaskName + str(SvF.CV_Iter),
+                                     token     = SvF.token,
                                      resources = SvF_resources,
 
 ##                                     resources=[
@@ -146,17 +114,17 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
     ##                                           ],
                                      workdir=tmpFileDir, debug=False)
             print (__peProblems )
-            print ( co.optFile )
-            if co.maxJobs > 0 :
-                while ( len (co.jobId_s) > co.maxJobs ) :
-                    theSession.session.deleteJob( co.jobId_s[0] )
-                    print ('Job  ', co.jobId_s[0], '  was killed' )
-                    co.jobId_s.pop(0)
-            solved, unsolved, jobId = theSession.runJob(__peProblems, co.optFile)  # by default solver = "ipopt"
+            print ( SvF.optFile )
+            if SvF.maxJobs > 0 :
+                while ( len (SvF.jobId_s) > SvF.maxJobs ) :
+                    theSession.session.deleteJob( SvF.jobId_s[0] )
+                    print ('Job  ', SvF.jobId_s[0], '  was killed' )
+                    SvF.jobId_s.pop(0)
+            solved, unsolved, jobId = theSession.runJob(__peProblems, SvF.optFile)  # by default solver = "ipopt"
 #            print("solved:   ", solved)
             print("unsolved: ", unsolved)
             print("Job %s is finished" % (jobId))
-            co.jobId_s.append(jobId)
+            SvF.jobId_s.append(jobId)
 #            theSession.deleteWorkFiles([".nl", ".sol", ".zip", ".plan"])
 
         # Delete jobs created to save disk space at Everest server , MAY BE
@@ -166,7 +134,7 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
         # CLOSE THE SESSION !!! MUST BE
             theSession.session.close()
         elif RunMo == 'P':  ###################################
-            with concurrent.futures.ThreadPoolExecutor(max_workers=co.max_workers) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=SvF.max_workers) as executor:
             # Start the load operations and mark each future with its pName
               PNameTask = {executor.submit(run_subTask, pName): pName for pName in __peProblems}
               for future in concurrent.futures.as_completed(PNameTask):
@@ -199,64 +167,64 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
         if RunMo == 'S':  theSession.deleteWorkFiles([".nl", ".sol", ".zip", ".plan"])
         return resultss
 
-from   copy   import *
+#from   copy   import *
 
 def  solveProblemsNl( Gr, teachSet, RunMo = 'L' ):   #  'L' - Local, 'N'- Nl local, 'S' - Server
         if RunMo == 'L' :
             resultss = []                                   #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
-            for k in range(len(teachSet)):  # co.CV_NoSets):                                  # make   STABs
-                if k > 0: co.Task.ReadSols('.tmp')
+            for k in range(len(teachSet)):  # SvF.CV_NoSets):                                  # make   STABs
+                if k > 0: SvF.Task.ReadSols('.tmp')
                 setMuToTeach(Gr, teachSet[k])
-                results = co.optFact.solve(Gr, tee=False)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
+                results = SvF.optFact.solve(Gr, tee=False)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
                 get_termination_condition(results)
                 resultss.append(results)                    #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
 ##                resultss.append(deepcopy(results))  # НЕ ПОМОГЛО !!!!      #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
         else :
             sym_maps, __peProblems = makeNlFileS ( Gr, teachSet )
-            resultss = solveNlFileS ( sym_maps, __peProblems, co.tmpFileDir, RunMo )
+            resultss = solveNlFileS ( sym_maps, __peProblems, SvF.tmpFileDir, RunMo )
         return resultss
 
-#MU_LABAL = 19541117
-
-#def splitStab ( stab_file ) :
- #   with open( stab_file ) as f :                        # считываем и разбираем структуру
-  #      nls = f.read().split('n'+str( co.stabMU_LABAL ))
-   # print ('SplitStab', len(nls))
-    #return  nls
-
 def prep_hackStab (Gr, __peProblems, teachSet):
-#        print('SSSS SvF.Use_var', co.Use_var, co.stab_NoTeach)
-    ######        co.stab_symbol_map = makeNlFile ( Gr, stab_file + ".nl" )
-        _, smap_id = Gr.write(co.stab_file, format=ProblemFormat.nl ) #,  io_options={'symbolic_solver_labels': True})  # создаем стаб
+#        SvF.stab_val_sub = []    #  нельзя:  массив уже сформирован
+        _, smap_id = Gr.write(SvF.stab_file, format=ProblemFormat.nl ) #,  io_options={'symbolic_solver_labels': True})  # создаем стаб
  #       _, smap_id = Gr.write(stab_file + ".nl", format=ProblemFormat.nl)  # ,  io_options={'symbolic_solver_labels': True})  # создаем стаб
         stab_symbol_map = Gr.solutions.symbol_map[smap_id]
-        with open(co.stab_file) as f:  # считываем и разбираем структуру по ка для одного co.stab_val_sub[0]
-            txt = f.read()
-            st_val = ''
-            ind = txt.find ('\nn')
-            while (ind >= 0):
-                end = txt.find ('\n',ind+1)
-#                print(txt[ind + 2:end])
+        with open(SvF.stab_file) as f:  # считываем и разбираем структуру по ка для одного SvF.stab_val_sub[0]
+          tfile = f.read()
+          nls = [tfile]
+          old_val = -1
+          for val_sub in SvF.stab_val_sub :
+#            print (val_sub, old_val)
+            if val_sub == old_val : continue
+            txt = nls[-1]
+            beg = txt.find ('\nn')
+            while (beg >= 0):
+                end = txt.find ('\n',beg+1)
                 try:
-                    val = float(txt[ind+2:end])
-#                    print (txt[ind+2:end],val)
-                    if abs (val-co.stab_val_sub[0])/co.stab_val_sub[0] < 1e-9:  # значение строки близко к co.stab_val_sub[0]
-                        st_val = txt[ind + 2:end]
+                    val = float(txt[beg+2:end])
+                    if abs (val-val_sub)/val_sub < 1e-9:  # значение строки близко к SvF.stab_val_sub[0]
+                        str_val = txt[beg + 2:end]
+                        print('st_val = ', str_val)
+                        nls.pop()
+                        nls = nls+ txt.split('n' + str_val)
+                        old_val = val_sub
                         break
                 except ValueError:
                     pass
-                ind = txt.find('\nn', ind + 1)
-            print ('st_val = ', st_val)
-            nls = txt.split('n'+st_val)
-        print('SplitStab', len(nls), co.stab_val_sub[0], st_val)
+                beg = txt.find('\nn', beg + 1)
+#            print ('st_val = ', str_val)
+ #           nls.append( txt.split('n'+str_val) )
+        if len (nls) != len (SvF.stab_val_sub)+1 :
+            print ('len (nls) != len (SvF.stab_val_sub)+1', len (nls), len (SvF.stab_val_sub)+1 )
+            exit (-333)
+        print('SplitStab OK', len(nls), len (SvF.stab_val_sub))
         sym_maps = []
-        for n_f, stab_val in enumerate (co.stab_val_by_cv):
-            make_hackStab ( co.tmpFileDir + "/" + __peProblems[n_f] + ".nl", stab_val, nls )
-#            print ('make_hackStab ( ', co.tmpFileDir + "/" + __peProblems[n_f] + ".nl" )
+        for n_f, stab_val in enumerate (SvF.stab_val_by_cv):
+            make_hackStab ( SvF.tmpFileDir + "/" + __peProblems[n_f] + ".nl", stab_val, nls )
+#            print ('make_hackStab ( ', SvF.tmpFileDir + "/" + __peProblems[n_f] + ".nl" )
             sym_maps.append (stab_symbol_map)
-
-        co.stab_val_sub = []
-        co.stab_val_by_cv = []
+        SvF.stab_val_sub = []
+        SvF.stab_val_by_cv = []
 
         for s in range(len(Gr.mu)):  Gr.mu[s] = 1
         return sym_maps
@@ -268,32 +236,6 @@ def make_hackStab ( stab_file, stab_val, nls ) :              #  Мастери�
             if i==0 :  f.write ( part )  # до первого mu
             else    :  f.write('n' + str(stab_val[i - 1]) + part)
     return
-
-def make_hackStab_old ( stab_file, Gr ) :              #  Мастерим стаб заменяя метку на 0 или NoR / sum!=0
-    with open ( stab_file, "w" ) as f :
-        print ('len(co.stab_nls)', len(co.stab_nls))
-        for i, part in enumerate ( co.stab_nls ):
-            if i==0 :  f.write ( part )  # до первого mu
-            else    :
-                mu_num = int(part[:5])
-                print ('MMMMMMMM', i,mu_num,Gr.mu[mu_num]() ) #, part[6:])
-                if Gr.mu[mu_num]() == 1 :
-                    f.write ( 'n' +str(co.stab_value[i-1]) + part[5:] )
-                else :
-                    f.write ( 'n0'             + part[5:] )
-#                print i, mu_num
-        return
-
-
-#def hack_Solve ( stab_file, Gr, symbol_map, nls ) :
- #       make_hackStab ( stab_file+'.nl' , Gr, nls )
-  #      subprocess.check_call(co.SolverName+' ' + stab_file + ".nl -AMPL"+
-   #                               " \"option_file_name=" +tmpFileDir+ "peipopt.opt\"", shell=True)
-    #    with ReaderFactory(ResultsFormat.sol) as reader:
-     #       results = reader( stab_file + ".sol" )
-      #  results._smap = symbol_map
-       # return results
-
 
 def get_termination_condition(results):
     if results.solver.termination_condition != TerminationCondition.optimal:

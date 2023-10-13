@@ -820,32 +820,25 @@ class Fun (Object) :
                         num += self.mu[n]
                 ret = ret / self.V.sigma2 / num
             if SvF.Hack_Stab:
-                num = 0
-                for n in self.sR:
-                    if not isnan(self.V.dat[n]): num += 1
-#                print('Val', 1 /self.V.sigma2 /num, num)
+                num = sum ( int(not isnan(self.V.dat[n])) for n in self.sR ) # подсчет num
                 for n in self.sR:
                     if not isnan(self.V.dat[n]):
                         co.stab_val_sub.append( 1 /self.V.sigma2 /num)
 
-                for cv_set in co.teachSet :
+                if len(co.stab_val_by_cv) == 0:  co.stab_val_by_cv = [ [] for _ in range(len(co.teachSet))]
+#                print ('len(co.stab_val_by_cv)',len(co.stab_val_by_cv))
+                for cv_n, cv_set in enumerate (co.teachSet) :
                     mu = [1] * len(self.sR)
                     for s in cv_set: mu[s] = 0
-                    num = 0
-                    for nmu, emu in enumerate (mu):
- #                       print (cv)
-                        if (not isnan(self.V.dat[nmu])) and emu==1 : num += 1
-#                    print('CV num', num  )
+                    num = sum(int((not isnan(self.V.dat[nmu])) and emu==1) for nmu, emu in enumerate (mu))  # подсчет num
 
-                    stab_val = []
-#                    print('CVVal', 1 /self.V.sigma2 /num, num )
                     for nmu, emu in enumerate (mu):
                         if (not isnan(self.V.dat[nmu])):
-                            if emu==1 : stab_val.append( 1 /self.V.sigma2 /num)
-                            else:       stab_val.append( 0 )
-                    co.stab_val_by_cv.append (stab_val)
-            return ret
+                            if emu==1 : co.stab_val_by_cv[cv_n].append( 1 /self.V.sigma2 /num)
+                            else:       co.stab_val_by_cv[cv_n].append( 0 )
+#                for cv_n in range (len(co.teachSet)): print('LLLLLLLLLLLLLLLLLLLLLLLLL', cv_n, len(co.stab_val_by_cv[cv_n]))
 
+            return ret
 
 #                ret = ret  / self.V.sigma2 / self.NoR #num
 #                ret = ret  / self.V.sigma2 / num
