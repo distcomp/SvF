@@ -44,10 +44,6 @@ def Factory (optFile , py_max_iter, py_tol ):
  #           opt.options["linear_solver"] = 'ma86'
 
 def makeNlFile ( Gr, stab_file ) :
-#        if SvF.Hack_Stab:
- #           make_hackStab( stab_file, Gr )
-  #          return SvF.stab_symbol_map
-   #     else:
             _, smap_id = Gr.write( stab_file, format=ProblemFormat.nl )#,  io_options={'symbolic_solver_labels': True})  # создаем стаб
             symbol_map = Gr.solutions.symbol_map[smap_id]
             return symbol_map
@@ -61,16 +57,11 @@ def makeNlFileTeach ( Gr, stab_file, teachSet_k ) :
             setMuToTeach(Gr, teachSet_k )
             return makeNlFile(Gr, SvF.tmpFileDir + "/" + stab_file + ".nl")
 
-#def makeNlFileTeach_it ( stab_file_teachSet_k ) :
- #   return  makeNlFileTeach(stab_file_teachSet_k[0], stab_file_teachSet_k[1], stab_file_teachSet_k[2])
-
-#from multiprocessing import Pool
-
 def makeNlFileS ( Gr, teachSet ) : #, symbol_map, nls ) :
         __peProblems = [SvF.TaskName + "0000"+str(k)    for k in range(len(teachSet))]     # __pe - prefix for Pyomo&Everest stuff
 
-        SvF.stab_NoTeach = len(teachSet)       #  передаем в Lego, чтобы не стабать 1 teach
-        print('AAA SvF.Use_var', SvF.Use_var, SvF.stab_NoTeach)
+ #       SvF.stab_NoTeach = len(teachSet)       #  передаем в Lego, чтобы не стабать 1 teach
+  #      print('AAA SvF.Use_var', SvF.Use_var, SvF.stab_NoTeach)
 
         if len(teachSet) >= 2 and SvF.Hack_Stab:
             sym_maps = prep_hackStab(Gr, __peProblems, teachSet)
@@ -167,8 +158,6 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
         if RunMo == 'S':  theSession.deleteWorkFiles([".nl", ".sol", ".zip", ".plan"])
         return resultss
 
-#from   copy   import *
-
 def  solveProblemsNl( Gr, teachSet, RunMo = 'L' ):   #  'L' - Local, 'N'- Nl local, 'S' - Server
         if RunMo == 'L' :
             resultss = []                                   #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
@@ -187,7 +176,6 @@ def  solveProblemsNl( Gr, teachSet, RunMo = 'L' ):   #  'L' - Local, 'N'- Nl loc
 def prep_hackStab (Gr, __peProblems, teachSet):
 #        SvF.stab_val_sub = []    #  нельзя:  массив уже сформирован
         _, smap_id = Gr.write(SvF.stab_file, format=ProblemFormat.nl ) #,  io_options={'symbolic_solver_labels': True})  # создаем стаб
- #       _, smap_id = Gr.write(stab_file + ".nl", format=ProblemFormat.nl)  # ,  io_options={'symbolic_solver_labels': True})  # создаем стаб
         stab_symbol_map = Gr.solutions.symbol_map[smap_id]
         with open(SvF.stab_file) as f:  # считываем и разбираем структуру по ка для одного SvF.stab_val_sub[0]
           tfile = f.read()
