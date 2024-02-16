@@ -366,7 +366,9 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
     dim = len (Arg)
 
     curvPenal = 0.001
-    farWieght = 2/dim/abs(steps[0])
+    print ("len", len (steps) )
+    if len (steps)==0 : farWieght = 1   #  нет переменных
+    else:               farWieght = 2/dim/abs(steps[0])
     #  exp ( - farWieght * dist...
     print ('\nstart  farWieght', farWieght)
     step = 1e37

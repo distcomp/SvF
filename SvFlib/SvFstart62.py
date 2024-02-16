@@ -42,13 +42,9 @@ buf = ""
 #Mng = ''
 
 def SvFstart19 ( Task ) :
- #   global Mng
-
-
     full_start = time.time()
 #    print 'full_start',  full_start
-
-    print ('\n\n\nStart SvFsrat')
+    print ('\n\n\nStart SvFstart')
 
     if co.resF == '' :
         co.resF = co.mngF[:co.mngF.rfind('.')]+'.res'   #  RES file read
@@ -83,14 +79,11 @@ def SvFstart19 ( Task ) :
     co.optFact = Factory(co.optFile, co.py_max_iter, co.py_tol)
     print('co.optFactST', co.optFact)
 
-    for ifu, fu in enumerate(Task.Funs) :           # v21
-        if (fu.V.dat is None) or fu.param:  continue
-#        if len (fu.testSet) == 0 :
-        if len(co.testSet) == 0:
-                co.testSet, co.teachSet = MakeSets_byParts ( fu.NoR, co.CVstep )  #CV_Sets (fu )
-                print ('for FUNC', fu.V.name)
-  #          fu.testSet, fu.teachSet = MakeSets_byParts ( fu.NoR, co.CVstep )  #CV_Sets (fu )
-#            fu.mu = Gr.mu
+#    for ifu, fu in enumerate(Task.Funs) :           # v21
+ #       if (fu.V.dat is None) or fu.param:  continue
+  #      if len(co.testSet) == 0:
+   #             co.testSet, co.teachSet = MakeSets_byParts ( fu.NoR, co.CVstep )  #CV_Sets (fu )
+    #            print ('for FUNC', fu.V.name)
 
 
     print ('')
@@ -124,12 +117,12 @@ def SvFstart19 ( Task ) :
 
     if co.CVNumOfIter > 0 :
       if  co.CVNoBorder  :   #  на границах не учитываем
-        for s in co.teachSet[ 0] : Gr.mu[s]=0
-        for s in co.teachSet[-1] : Gr.mu[s]=0
-        NoRnoB = sum ( Gr.mu[s]() for s in Gr.F[0].sR )
+        for s in co.teachSet[ 0] : Gr.mu0[s]=0
+        for s in co.teachSet[-1] : Gr.mu0[s]=0
+        NoRnoB = sum ( Gr.mu0[s]() for s in Gr.F[0].sR )
         print ('***** MSD_NoBorder', sqrt(Gr.F[0].NoR* Task.defMSDVal ( Gr, 0 ) /NoRnoB)*Gr.F[0].V.sigma)
 #        print '***** MSD_NoBorder', sqrt(Gr.F[0].NoR*Gr.F[0].MSD()()/NoRnoB)*Gr.F[0].V.sigma
-        for s in Gr.F[0].sR : Gr.mu[s]=1
+        for s in Gr.F[0].sR : Gr.mu0[s]=1
 
 
 
@@ -153,8 +146,11 @@ def SvFstart19 ( Task ) :
 def testEstim (Gr, k) :  # k - testSet
     Var_to_Grd()
     for ifu, fu in enumerate(co.Task.Funs):
-        if fu.mu is None: continue
-        if fu.NoR > co.CV_NoR : continue               # 25/04
+#        print ("BBBMMMMMMMMMMMMMMMMMMMMMMMMMMMMM", ifu, fu.name)
+        if fu.mu is None: continue                     #  2024.01
+        if fu.V.dat is None or fu.param: continue       #  23.11
+ #       print ("MMMMMMMMMMMMMMMMMMMMMMMMMMMMM", fu.name)
+#        if fu.NoR > co.CV_NoRs[0] : continue               # 25/04
         spart = 0
         npart = 0
         if fu.CVerr is None: fu.CVerr = zeros(fu.NoR, float64)   # 04.2023
@@ -173,9 +169,9 @@ def testEstim (Gr, k) :  # k - testSet
         if npart == 0:  print (spart, npart, 'NoVal', 'NoVal',)
         else:
             if fu.MSDmode == 'MSDrel':
-                print ('  ', spart, npart, sqrt(spart / npart), sqrt(spart / npart) * 100.,)
+                print ('  ', k, fu.name, spart, npart, sqrt(spart / npart), sqrt(spart / npart) * 100.,)
             else :
-                print ('  ', spart, npart, sqrt(spart / npart), sqrt(spart / npart) / fu.V.sigma * 100.,)
+                print ('  ', k, fu.name, spart, npart, sqrt(spart / npart), sqrt(spart / npart) / fu.V.sigma * 100.,)
     # OLTCHEV
     #                NDT = Gr.F[d].NDT
     #                sumTbl  = sum((Gr.F[d].tbl[s, Gr.F[d].V.num] != NDT) * Gr.F[d].tbl[s,Gr.F[d].V.num] for s in testSet[k])
@@ -193,6 +189,7 @@ def getEstimCV(Gr) :
         Estim = 0
         NumOfFuns = 0
         for ifu, fu in enumerate (co.Task.Funs ):
+            if fu.mu is None : continue             #  20.01
             if (fu.V.dat is None) or fu.param:  continue
             sCrVa = 0;  nCrVa = 0
             for CVr in fu.CVresult :
@@ -213,10 +210,8 @@ def getEstimCV(Gr) :
 def printMSD () :
     printS ("sol MSD%: |")
     for ifu, fu in enumerate(co.Task.Funs) :
-#        if (not fu.V.dat is None) and not fu.param:
-       #     fu.myprint()
-        #    print (fu.mu)
-            if fu.mu is None:  continue
+            if fu.V.dat is None or fu.param: continue       #  23.11
+#            if fu.mu is None:  continue                    #  23.11
             if not co.Task.DeltaVal is None: fu.MSDv = co.Task.defMSDVal ( Gr, ifu )
             else:
                 if fu.MSDmode == 'MSDrel':  fu.MSDv = fu.MSDrel(fu.measurement_accur)          # 21.02.2023
@@ -242,7 +237,8 @@ def get_sigCV( Penal, itera ):
  #   Grd_to_Var()
     if itera <= 0 : printS (' Load on Start ');   printMSD()
 
-    resultss = solveProblemsNl(Gr, [[]], co.RunMode[0])
+#    resultss = solveProblemsNl(Gr, [[]], co.RunMode[0])
+    resultss = solveProblemsNl(Gr, '', co.RunMode[0])               #  tmp
     Gr.solutions.load_from(resultss[0])
     Var_to_Grd()
     Task.SaveSols('.tmp')
@@ -258,17 +254,20 @@ def get_sigCV( Penal, itera ):
         star = time.time()
 
         if co.RunMode[2] != 'L':
-            resultss = solveProblemsNl ( Gr, co.teachSet, co.RunMode[2] )
+#            resultss = solveProblemsNl ( Gr, co.teachSet, co.RunMode[2] )
+            resultss = solveProblemsNl ( Gr, '*', co.RunMode[2] )              # All tests
             for nres, res in enumerate (resultss) :
                 Gr.solutions.load_from(res)
                 testEstim(Gr, nres)
         else:       ## co.RunMode[2] == 'L' :
             res_num = 0
+            print(co.CV_NoSets, "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
             for k in range(co.CV_NoSets):                                  # LOAD RES,  culculation
-#               if co.NotCulcBorder :  #  границ не считаем
- #                  if k == 0 or k == len(testSet) - 1:   1/0;  continue  #########  ???????????????????
-  #             printS (str(k)+' |')
-                results = solveProblemsNl(Gr, [co.teachSet[k]], co.RunMode[2])[0]  #!! РАБОТАЕТ ТОЛЬКО ДЛЯ ОДНОГО resultss
+                #               if co.NotCulcBorder :  #  границ не считаем
+                #                  if k == 0 or k == len(testSet) - 1:   1/0;  continue  #########  ???????????????????
+                #             printS (str(k)+' |')
+                #                results = solveProblemsNl(Gr, [co.teachSet[k]], co.RunMode[2])[0]  #!! РАБОТАЕТ ТОЛЬКО ДЛЯ ОДНОГО resultss
+                results = solveProblemsNl(Gr, k, co.RunMode[2])[0]  #!! РАБОТАЕТ ТОЛЬКО ДЛЯ ОДНОГО resultss
                 res_num += 1
                 Gr.solutions.load_from(results)
                 testEstim(Gr, k)
@@ -286,8 +285,8 @@ def get_sigCV( Penal, itera ):
 #                print >> f, [p for  p in Penal]
                 f.write (str(Penal))
                 for fu in Task.Funs :           # v21
-               #     if ( not fu.V.dat is None) and fu.param == False:
-                      if fu.mu is None:  continue
+#                      if fu.mu is None: continue                     #  2023.11
+                      if fu.V.dat is None or fu.param: continue  # 23.11
                       str_wr = '\n'+fu.nameFun()+' '
                       if co.CVNumOfIter > 0 :
                           if fu.MSDmode == 'MSDrel':   str_wr += " CV% " + str(fu.sCrVa*100) + " CV " + str(fu.sCrVa)

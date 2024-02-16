@@ -91,9 +91,9 @@ def oFunFromSolFile(ReadFrom, Vnum=1):  # для tbl   нулевая  коло�
             x_gr = fi.readline().split()
             tb = loadtxt(fi, 'double')
             if len(tb.shape) == 1:
-                print ("SSSSSSSSSSSSSSSSSSSSSSSSS", tb.shape[0])
+#                print ("SSSSSSSSSSSSSSSSSSSSSSSSS", tb.shape[0])
                 tb = reshape(tb, (1, tb.shape[0]))
-                print ("SSSSSSSSS", tb.shape[0], tb.shape[1])
+#                print ("SSSSSSSSS", tb.shape[0], tb.shape[1])
                 print (tb)
             ret_fun.A = [Grid(cols[0], float(x_gr[0]), float(x_gr[-1]), -(len(x_gr) - 1)),
                          Grid(cols[1], tb[0][0], tb[-1][0], -(tb.shape[0] - 1))]
@@ -126,14 +126,18 @@ def FunFromSolFile(ReadFrom, AddObj = False):
     else :
         ret_fun = Fun('')
         ret_fun.V = Vari(cols[-1])
-    if len(xp) == 0: ret_fun.dim = 1
-    else:            ret_fun.dim = 2
+    if len(xp) == 0 and len(yp) == 0: ret_fun.dim = 0
+    elif len(xp) == 0:                ret_fun.dim = 1
+    else:                             ret_fun.dim = 2
     ret_fun.param = True
     ret_fun.V = Vari(cols[-1])
 
     tmp_curentTabl = SvF.curentTabl  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
     SvF.curentTabl = None
-    if ret_fun.dim == 1:
+    if ret_fun.dim == 0:
+        ret_fun.A = []
+        ret_fun.grd = grd    #  бросил надоело ...
+    elif ret_fun.dim == 1:
             ret_fun.A = [Grid(cols[0], yp[0], yp[-1], -(len(yp) - 1))]
             ret_fun.grd = grd
     elif ret_fun.dim == 2:
@@ -145,7 +149,7 @@ def FunFromSolFile(ReadFrom, AddObj = False):
 
 
 
-def FunFromFileNew ( ReadFrom, Vnum = 1, AddObj = False ) :        #  для tbl   нулевая  колонка - аргумент. по умолчанию первая функция
+def FunFromFileNew ( ReadFrom, Vnum = 1, AddObj = False ) :    #  для tbl  нулевая колонка - аргумент. по умолчанию первая функция
         if SvF.printL : print ('FunFromFile', ReadFrom)
         root, ext = splitext(ReadFrom.upper())
         if '.ASC' == ext or \
@@ -202,8 +206,10 @@ class Fun (Object) :
         self.var   = None           # 29
         self.mu    = None
         self.CVerr = None           # 04.23
-        self.testSet  = []
-        self.teachSet = []
+#        self.testSet  = []
+#        self.teachSet = []
+        self.testSet  = SvF.testSet
+        self.teachSet = SvF.teachSet
         self.domain = None
         self.neNDT = None
         self.Nxx   = 0
@@ -226,6 +232,17 @@ class Fun (Object) :
 
         if SvF.Compile :  return
         self.Initialize( self.Finitialize )
+
+    def NameArds (self) :
+            ret = self.V.name
+            for d, a in enumerate (self.A):
+                if d == 0:  ret += '('
+                ret += a
+                if d == self.dim-1 :
+                    ret += ')'
+                    break
+                ret += ','
+            return ret
 
 
     def Oprint (self) :
@@ -803,6 +820,7 @@ class Fun (Object) :
         return ret
 
     def MSDnan (self, valid_f = None) :        # valid_f  - for verification - validation
+            if self.mu is None : return self.MSDnan_no_mu()     # 24.01
             self.MSDmode = 'MSD'
             ret = 0
             num = 0
@@ -810,12 +828,17 @@ class Fun (Object) :
             if not SvF.Use_var:                                      #  mu[n]  <->  mu[n]()
                 for n in self.sR:
                     if not isnan(self.V.dat[n]):
+#                        print (self.name)
+ #                       print( self.mu[n]())
                         ret += self.mu[n]() * self.delta(n) ** 2
                         num += self.mu[n]()
                 return ret / self.V.sigma2 / num
             else:
                 for n in self.sR:
-                    if not isnan(self.V.dat[n])  :
+                    if not isnan(self.V.dat[n]):
+#                        print ('______________________________', self.delta(n))
+ #                       print (self.name)
+  #                      print( self.mu[n])
                         ret += self.mu[n] * self.delta(n)**2
                         num += self.mu[n]
                 ret = ret / self.V.sigma2 / num
@@ -1325,16 +1348,15 @@ class Fun (Object) :
                                                    ] -self.V.avr)  #  значения в новых узлах
                         Ksigma += gr[i,j,k]
       else :                                                    # POLY
-            nums = head  #fi.readline().split()
+            nums = head  #fi.readline().split()          #  1 7 8
             file_dim = int(nums[0])
             file_sizeP = int(nums[2])
             if SvF.printL : print ("file_dim=", file_dim," dim=", self.dim)
             if file_dim > self.dim :
                 print ("*************************** ReadSol Poly  file_dim > dim", file_dim,">", self.dim)
                 return
-            fi.readline()
-            tb = loadtxt (fi,'double')
-###            fi.close()
+            fi.readline()                   # (sCO2M-270.0)/100.0	Pm
+            tb = loadtxt (fi,'double')      #  коеф  и степени
             if SvF.printL : print ("ReadSol from", fName, "shape", tb.shape)
 
             if self.param and (file_sizeP!=self.sizeP):
@@ -1342,17 +1364,12 @@ class Fun (Object) :
                 return
             for i in self.PolyR :  self.grd[i] = 0   # обнуляем
             if file_dim == self.dim :
-#                  if tb.ndim == 1 :   #  одна строка  (только свободный член)
- #                   gr[0].value = tb[0]
-  #                else :
                     for i in range (min(file_sizeP, self.sizeP)) :    self.grd[i] = tb[i,0]
-#                    for i in range (min(file_sizeP, self.sizeP)) :    gr[i].value = tb[i,0]
             else :   # file_dim < self.dim      1 < 2
                     for i_file in range (file_sizeP) :
                         for i_self in self.PolyR :
                             if self.pow[i_self][0] == tb[i_file,1] and self.pow[i_self][1] == 0 :
                                 self.grd[i_self] = tb[i_file,0]
-#                                gr[i_self] = tb[i_file,0]
       self.grd_to_var()
       if SvF.printL > 0 : print ("End of ReadSol from", fName, 'Ksigma', Ksigma)
 #      print ("End of ReadSol from", fName, 'Ksigma', Ksigma)
@@ -1574,7 +1591,7 @@ class Fun (Object) :
                 return ret
 
             elif self.type == 'G_Cycle':
-                if X < 0 : X += 407
+                if X < 0 : X += 407    #  ??????????????
 
             Xi = int(floor ( X ))
             if Xi < 0            : Xi = 0 
@@ -1582,6 +1599,7 @@ class Fun (Object) :
             dX = X-Xi
             if abs(dX) < 1e-10   :  
 #                if self.dim == 1 :  return  self.grd[Xi       ]
+ #               print (self.name,Xi,self.A[0].Ub,X)
                 if self.dim == 1 :  return  gr[Xi       ]
 #                if self.dim == 2 :  return  self.grd[Xi ,Y    ]
                 if self.dim == 2 :  return  gr[Xi ,Y    ]

@@ -13,7 +13,7 @@ class pFun (Fun) :
  #       del SvF.Task.Funs[-1]
   #      Object.__init__(self, self.V.name, 'Fun')
    #     self.sizeP = PolySize ( self.dim, self.PolyPow )
-        print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS', self.sizeP)
+ #       print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS', self.sizeP)
 
         if SvF.Compile : return
 
@@ -139,8 +139,10 @@ class pFun (Fun) :
         
         
     def F ( self, ArS_real ) :  # не проверенно    real args
-        if SvF.Use_var : gr = self.var
-        else          : gr = self.grd
+        #if SvF.Use_var : gr = self.var
+        if self.param or not SvF.Use_var:  gr = self.grd
+        else :                             gr = self.var
+#        print ('GGGGGG', gr, self.var, self.grd, SvF.Use_var)
         x = (ArS_real[0]-self.A[0].min)/self.A[0].ma_mi
         if self.dim == 1 :
             return sum ( gr[i] * x**self.pow[i][0]     # 29
