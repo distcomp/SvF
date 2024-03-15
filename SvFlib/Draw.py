@@ -99,6 +99,7 @@ def DrawComb( param ):
                             p_tabs = ta.split('.')
                             if len(p_tabs) ==1:
                                 p_name = ta
+                                print ('p_name',ta)
                             else:
                                 ob = getObjectNotGrid(p_tabs[0])
                                 if ob.Otype == 'Table':

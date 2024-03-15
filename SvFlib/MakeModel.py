@@ -772,7 +772,7 @@ def WriteString31(buf):
       #          y = (ArS_real[1] - self.A[1].min) / self.A[1].step
        #         z = (ArS_real[2] - self.A[2].min) / self.A[2].step
                 else :
-                    print ( "dim >= 2 bot ready yet" );  exit(-1)
+                    print ( "dim >= 2 not ready yet" );  exit(-1)
                 equation = eqPars.join()
             eqPars.myprint()
             print (eqPars.join())       #   в езультатк   A_Immun.grd[A_Immun.A[0].indByVal (tt)]=sum (

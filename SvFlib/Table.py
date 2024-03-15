@@ -453,6 +453,7 @@ class Table (Object):
                     if str(ws.cell(row=ro,column=1).value)[0] == '#'  : continue
                 except ValueError:  pass
                 OK = True
+                AllNaN = True
                 for fld in self.Flds :
   #                  print (pceil.value, pceil.data_type )
                     if fld.src_num == -1 :
@@ -466,6 +467,8 @@ class Table (Object):
                     else:
                         fld.tb[NoR] = floatGradNaN(ws.cell(row=ro,column=fld.src_num+1).value)
                     if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break    #continue
+                    if not isnan(fld.tb[NoR]):  AllNaN = False                 #2024.3.10
+                if AllNaN : continue                                            #2024.3.10
                 if not OK: continue
                 if self.CheckWhere ( NoR) == False : continue    #   30
 #                if not where is None:
