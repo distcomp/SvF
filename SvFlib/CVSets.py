@@ -6,7 +6,7 @@ from  numpy import *
 from Lego   import *
 from Tools  import *
 
-import COMMON as co
+import COMMON as SvF
 
  ############################## 21.10 #################################
 
@@ -32,11 +32,11 @@ def AddMarginBor ( tSet, CVmargin, NoR, border=None ) :   #  tSet  [ [...], [...
 
 
 def SvF_MakeSets_byParam( arr, CVstep=0, CVmargin=0, border=None ):  # sort if margin !
-    if co.printL:  print('MakeSets_byParam', CVstep, CVmargin )
+    if SvF.printL:  print('MakeSets_byParam', CVstep, CVmargin )
 
     NoR = len(arr)
     unique_par = list(set(arr.tolist()))
-    if co.printL: print('unique_par', len(unique_par), unique_par)
+    if SvF.printL: print('unique_par', len(unique_par), unique_par)
 
     if CVstep <= 0:
         CVstep = len(unique_par)  # каждое значение - множество
@@ -55,12 +55,12 @@ def SvF_MakeSets_byParam( arr, CVstep=0, CVmargin=0, border=None ):  # sort if m
         teachSet = AddMarginBor(testSet, CVmargin, NoR, border)
 
     #    print len(unique_par), 'sizes test/teach',
-    if co.printL > 0:
+    if SvF.printL > 0:
         for s in range(CVstep): print(str(len(testSet[s])) + '/' + str(len(teachSet[s])), )
-    co.CV_NoR = NoR
-    co.CV_NoSets = len(testSet)
-    co.testSet  = testSet    #  номера точек тестирования
-    co.teachSet = teachSet   #  номера точек которые выбрасываются
+    SvF.CV_NoRs.append(NoR)
+    SvF.CV_NoSets = len(testSet)
+    SvF.testSet  = testSet    #  номера точек тестирования
+    SvF.teachSet = teachSet   #  номера точек которые выбрасываются
     print("EofMakeSets_byParam, Unique param.num =", len(unique_par), 'Parts=', CVstep, "\n")
 #    for nSet in range (CVstep) :
  #          print (nSet, 'testSet', testSet[nSet], '\nteachSet', teachSet[nSet] )
@@ -93,8 +93,9 @@ def MakeSets_byParts ( NoR, CVstep=7, CVpart_size=1, CVmargin=0) :
         teachSet = AddMarginBor ( testSet, CVmargin, NoR )
 #        teachSet = AddMargin ( testSet, CVmargin, NoR )
 
-    co.CV_NoR = NoR
-    co.CV_NoSets = len (testSet)
+    SvF.CV_NoRs.append(NoR)
+    print ('SvF.CV_NoRs', SvF.CV_NoRs)
+    SvF.CV_NoSets = len (testSet)
 
     for s in range(CVstep) : print (str(len(testSet[s]))+'/'+str(len(teachSet[s])),)
     print ("END of MakeSets_byParam")

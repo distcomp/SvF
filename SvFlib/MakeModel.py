@@ -67,6 +67,7 @@ def WriteTable30(buf):  #  разбор Table
 
 
 def WriteSelect30(buf):  ##  разбор  Select
+    print (buf)
     leftName, Fields, FileName, AsName, where = ParseSelect30 ( buf )
     WriteSelectTable( leftName, Fields, FileName, AsName, where )
     return
@@ -111,7 +112,7 @@ def WriteGrid27 ( buf ):
 ## 30            Swr('Task.AddGrid('+g.name+')')
 
 
-def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
+def WriteVarParam26 ( buf, param ) :
         if buf == '':  return
         if SvF.printL:  print ('VarParam26:', buf, param)
         Task = SvF.Task
@@ -152,7 +153,11 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
                 elif part[0] == '=' :             # Param:  H(X,Y) = DEM_Kostica.asc   H(Y,Y) = 1
                             Finitialize = part[1:]
                 elif part.find('<<') == 0:
+                        if len (part[2:]) > 0:
                             FromFile = part[2:]
+                        else:
+                            FromFile = fun.NameArds() + '.sol'
+
                 elif getGRID26 ( pars, Task.Grids ) != None :   #  Грид
                         gr = SvF.LastGrid
 #                        print('PART1:', part,  gr.name, gr.className)
@@ -275,8 +280,6 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
             if fun.type[0] == 'G':  Swr (fun.V.name+'.type = \''+fun.type+'\'; ')
           else :
             Swr (fun.V.name+' = p'+f_str)                                               #  pFun
-  #          Swr(fun.V.name + ' = pFun(' + f_str + ',' + str(fun.PolyPow) + '))')
-
           if not fun.domain is None :
             Swr(fun.V.name + '.domain = ' + fun.domain.name )
 ##30          Swr ('Task.InitializeAddFun ( '+fun.V.name+ ', \''+ Finitialize +'\' )')
@@ -300,7 +303,7 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
         ret_part += '])'
         Swr(def_part + ret_part)                     # def fE (t) : return E.F([t])
 
- #       if fun.PolyPow >=0:     fun = pFun(fun)
+        #       if fun.PolyPow >=0:     fun = pFun(fun)
 
  #       SvF.ReadFrom = ''
 
@@ -377,7 +380,9 @@ def WriteVarParam26 ( buf, param ) : #, testSet, teachSet ):
 #            wr('    def ' + SvF.funPrefix + f_name + '(' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + ',' + getName(fun.A[2]) + ') : return '
             wr('    def ' + Prefix_name + '(' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + ',' + getName(fun.A[2]) + ') : return '
                         + f_name + '.F([' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + ',' + getName(fun.A[2]) +'])')
-
+        if not d.param:
+          if SvF.numCV >= 0:
+            wr('    ' + f_name + '.mu = Gr.mu'+str(SvF.numCV)+';')
         if d.PolyPow >= 0 and not d.param:   # Poly
             wr ( '    ' + f_name + '.var[0].value = ' + Finitialize )
 # EQ:
@@ -484,7 +489,26 @@ def fromTEXplus(equation) :
     else:
         equation = UTF8replace(equation, '^', '')
     sel = parser(equation)
-                                        #    d/dt(Vac(t))  ->  \d(t,Vac(t))
+
+
+    if SvF.UsePrime and equation.find("'") >= 0:     #   G' > 0
+        for ip in range(len(sel.items) - 1):
+            if sel.items[ip].part == "'" :
+#                print (sel.items[ip-1].part,sel.items[ip-1].type, sel.items[ip].part,sel.items[ip].type )
+                fname = sel.items[ip-1].part
+                f= getFun(fname)
+ #               print (f.name)
+                if (len(f.A)) > 1:
+                    print ('Only for one argument')
+                    exit (-1)
+                sel.items[ip - 1].part = 'd/d'+f.A[0]+'('+ fname +')'
+                sel.items[ip].part = ""
+        equation = sel.join()
+        sel = parser(equation)
+ #       print (equation)
+#        1/0
+
+                            #    d/dt(Vac(t))  ->  \d(t,Vac(t))
     if equation.find ('d/d') >= 0 :
       for ip in range(len(sel.items) - 3):
         if sel.items[ip].part == 'd' and sel.items[ip + 1].part == '/' and sel.items[ip + 2].part[0] == 'd':
@@ -576,7 +600,7 @@ def ParseEQUATION ( equation, all_grids, Mode = 'EQ' ) :
 def ParseEQplus31 ( buf, Mode = 'EQ' ):
     Task = SvF.Task
  #   print('BB2:', buf)
-    buf = buf.rstrip();
+    buf = buf.rstrip()
     if buf == '': return
     if buf[-1] == ';' : buf = buf[:-1]          # Убираем последний ;
 
@@ -748,7 +772,7 @@ def WriteString31(buf):
       #          y = (ArS_real[1] - self.A[1].min) / self.A[1].step
        #         z = (ArS_real[2] - self.A[2].min) / self.A[2].step
                 else :
-                    print ( "dim >= 2 bot ready yet" );  exit(-1)
+                    print ( "dim >= 2 not ready yet" );  exit(-1)
                 equation = eqPars.join()
             eqPars.myprint()
             print (eqPars.join())       #   в езультатк   A_Immun.grd[A_Immun.A[0].indByVal (tt)]=sum (
@@ -890,12 +914,26 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
 #            print '********C', obj.count('Penal[')
             for p in range(obj.count('Penal[')) : SvF.Penalty.append (.1)
 
-        for itn, it in enumerate(eqPars.items):
+        if SvF.numCV == -1 :   # CV по умолчанию  2023.11
+            wr('\n    SvF.testSet, SvF.teachSet = MakeSets_byParts(SvF.curentTabl.NoR, SvF.CVstep)')  # CV_Sets (fu )
+            wr('\n    Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )')  # 23.11
+
+        for itn, it in enumerate(eqPars.items):        #  2023.11
             if it.part == 'MSD' or it.part == 'MSDnan' or it.part == 'MSDrel' : # or it.part == 'MSDcheck'
                 fn = (eqPars.items[itn-2].part)
-                wr('\n    ' + fn + '.mu = Gr.mu;')
-                wrs(' ' + fn + '.testSet = SvF.testSet;')
-                wrs(' ' + fn + '.teachSet = SvF.teachSet;')
+                wrs('\n    SvF.fun_with_mu.append(getFun(\''+fn+'\'))')
+                if SvF.numCV == -1 :
+                    wr('    ' + fn + '.mu = Gr.mu0')
+                    wr('    ' + fn + '.testSet = SvF.testSet')
+                    wr('    ' + fn + '.teachSet = SvF.teachSet')
+
+            # f = getFun(fn)
+        #        print ('FFF', fn, f.name)
+  #              SvF.fun_with_mu.append(f)
+  #              fn = (eqPars.items[itn-2].part)
+   #             wr('\n    ' + fn + '.mu = Gr.mu;')
+#                wrs(' ' + fn + '.testSet = SvF.testSet;')
+#                wrs(' ' + fn + '.teachSet = SvF.teachSet;')
 
         wr(' \t\t\t\t\t\t\t\t\t\t\t# ' + obj)
         wr('    def obj_expression(Gr):  \n        return (')
@@ -935,7 +973,7 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
             else              :  to_ = itn                              # last
             if from_ <= 1  and  to_ == itn : break                      # единственный элемент
             part = eqPars.join ( from_, to_+1 )
-            p_mu = part.find('Gr.mu[')          # 29  OBJ:  Σ(i=0,20,(x.V.dat[i]-x(x.A[0].dat[i]+t_min))**2) / x.V.sigma2 + x.Complexity(Penal[0])
+            p_mu = part.find('Gr.mu0[')          # 29  OBJ:  Σ(i=0,20,(x.V.dat[i]-x(x.A[0].dat[i]+t_min))**2) / x.V.sigma2 + x.Complexity(Penal[0])
             if p_mu >= 0 :
                 p_mu_end = part.find(']', p_mu)
                 repl = part[p_mu:p_mu_end+1]

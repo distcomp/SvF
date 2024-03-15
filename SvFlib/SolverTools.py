@@ -48,28 +48,50 @@ def makeNlFile ( Gr, stab_file ) :
             symbol_map = Gr.solutions.symbol_map[smap_id]
             return symbol_map
 
-def setMuToTeach (Gr, teachSet = [] ) :                 #  teachSet 1 - выбрасываем, 0 - берем
-        if SvF.CV_NoR > 0:
-            Gr.mu[:] = 1
-            for s in teachSet: Gr.mu[s] = 0
+#def setMuToTeach (Gr, teachSet = [] ) :                 #  teachSet 1 - выбрасываем, 0 - берем
+ #       if SvF.CV_NoRs[0] > 0:
+  #          Gr.mu0[:] = 1
+   #         for s in teachSet: Gr.mu0[s] = 0
 
-def makeNlFileTeach ( Gr, stab_file, teachSet_k ) :
-            setMuToTeach(Gr, teachSet_k )
-            return makeNlFile(Gr, SvF.tmpFileDir + "/" + stab_file + ".nl")
+def setMuToTeach_k (k) :                 #  teachSet 1 - выбрасываем, 0 - берем
+    for f in SvF.fun_with_mu:
+#        print (len(SvF.fun_with_mu), f.name, len (f.mu), k)
+        if f.mu is None: continue                                  # 20.01
+        f.mu[:] = 1
+#        print ('PPPPPPPPPPPP', f.teachSet, f.mu)
+        if type(k) == type(1) :
+            for s in f.teachSet[k]: f.mu[s] = 0
+        else: return
 
-def makeNlFileS ( Gr, teachSet ) : #, symbol_map, nls ) :
-        __peProblems = [SvF.TaskName + "0000"+str(k)    for k in range(len(teachSet))]     # __pe - prefix for Pyomo&Everest stuff
+
+#def makeNlFileTeach(Gr, stab_file, teachSet_k):
+ #   setMuToTeach(Gr, teachSet_k)
+  #  return makeNlFile(Gr, SvF.tmpFileDir + "/" + stab_file + ".nl")
+
+
+def makeNlFileTeach_k(Gr, stab_file, k):
+    setMuToTeach_k(k)
+    return makeNlFile(Gr, SvF.tmpFileDir + "/" + stab_file + ".nl")
+
+
+def makeNlFileS ( Gr, SetNum ) : #, symbol_map, nls ) :
+    if SetNum == '' :
+        __peProblems = [SvF.TaskName + "0000" + '0']
+        sym_maps = [makeNlFileTeach_k(Gr, __peProblems[0], '')]
+    else :
+        __peProblems = [SvF.TaskName + "0000"+str(k)    for k in range(SvF.CV_NoSets)]     # __pe - prefix for Pyomo&Everest stuff
 
  #       SvF.stab_NoTeach = len(teachSet)       #  передаем в Lego, чтобы не стабать 1 teach
   #      print('AAA SvF.Use_var', SvF.Use_var, SvF.stab_NoTeach)
 
-        if len(teachSet) >= 2 and SvF.Hack_Stab:
-            sym_maps = prep_hackStab(Gr, __peProblems, teachSet)
+        if SvF.CV_NoSets >= 2 and SvF.Hack_Stab:
+            sym_maps = prep_hackStab(Gr, __peProblems)
         else :
-            sym_maps = [makeNlFileTeach ( Gr, __peProblems[k], teachSet[k] )  for k in range(len(teachSet))]
+            sym_maps = [makeNlFileTeach_k ( Gr, __peProblems[k], k )  for k in range(SvF.CV_NoSets)]
+#            sym_maps = [makeNlFileTeach ( Gr, __peProblems[k], teachSet[k] )  for k in range(len(teachSet))]
 
-        print ('for  '+SvF.TaskName, len(__peProblems), '   files')
-        return  sym_maps, __peProblems
+    print ('for  '+SvF.TaskName, len(__peProblems), '   files')
+    return  sym_maps, __peProblems
 
 import concurrent.futures  ###################
 
@@ -158,22 +180,24 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
         if RunMo == 'S':  theSession.deleteWorkFiles([".nl", ".sol", ".zip", ".plan"])
         return resultss
 
-def  solveProblemsNl( Gr, teachSet, RunMo = 'L' ):   #  'L' - Local, 'N'- Nl local, 'S' - Server
+def  solveProblemsNl( Gr, SetNum, RunMo = 'L' ):   #  'L' - Local, 'N'- Nl local, 'S' - Server
         if RunMo == 'L' :
-            resultss = []                                   #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
-            for k in range(len(teachSet)):  # SvF.CV_NoSets):                                  # make   STABs
-                if k > 0: SvF.Task.ReadSols('.tmp')
-                setMuToTeach(Gr, teachSet[k])
+                resultss = []                                   #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
+#            for k in range(len(teachSet)):  # SvF.CV_NoSets):                                  # make   STABs
+ #               if k > 0: SvF.Task.ReadSols('.tmp')
+  #              if len(teachSet) == 0:  setMuToTeach_k(Gr, -1)
+   #             else :                  setMuToTeach_k(Gr, k)
+                setMuToTeach_k(SetNum)
                 results = SvF.optFact.solve(Gr, tee=False)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
                 get_termination_condition(results)
                 resultss.append(results)                    #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
 ##                resultss.append(deepcopy(results))  # НЕ ПОМОГЛО !!!!      #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
         else :
-            sym_maps, __peProblems = makeNlFileS ( Gr, teachSet )
+            sym_maps, __peProblems = makeNlFileS ( Gr, SetNum )
             resultss = solveNlFileS ( sym_maps, __peProblems, SvF.tmpFileDir, RunMo )
         return resultss
 
-def prep_hackStab (Gr, __peProblems, teachSet):
+def prep_hackStab (Gr, __peProblems):
 #        SvF.stab_val_sub = []    #  нельзя:  массив уже сформирован
         _, smap_id = Gr.write(SvF.stab_file, format=ProblemFormat.nl ) #,  io_options={'symbolic_solver_labels': True})  # создаем стаб
         stab_symbol_map = Gr.solutions.symbol_map[smap_id]
@@ -214,7 +238,7 @@ def prep_hackStab (Gr, __peProblems, teachSet):
         SvF.stab_val_sub = []
         SvF.stab_val_by_cv = []
 
-        for s in range(len(Gr.mu)):  Gr.mu[s] = 1
+        for s in range(len(Gr.mu0)):  Gr.mu0[s] = 1
         return sym_maps
 
 def make_hackStab ( stab_file, stab_val, nls ) :              #  Мастерим стаб заменяя  stab_val на stab_val_by_cv

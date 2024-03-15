@@ -12,6 +12,12 @@ GRADpRAD = 180/pi
 CLASS_TXT = type('a')
 CLASS_INT = type(1)
 
+def isnotNone (x):
+    return not (x is None)
+
+def isnot_nan (x):
+    return not isnan(x)
+
 def iround (flo):
     return int(round(flo))
 
@@ -62,28 +68,53 @@ def floatGradNaN ( txt ) :
             return float(txt)
         except:
             try :
-                gra = txt.index('°')
-                print ('GRAD:',txt)
+#                gra = txt.index('°')
+                gra = txt.find('°')
+                print ('GRAD:',txt, gra)
                 if gra >= 0:
                     ret = float(txt[:gra])
- #                   print (ret,txt[gra + 1:])
+#                    print (ret,txt[gra + 1:])
                     minut = txt[gra + 1:]
+                    minut = minut.replace ("''", '"')
                     if len (minut) == 0: return ret
                     pmin = minut.find (chr(8242))      #   chr(8242)    '?'    минуты
-#                    print (pmin, minut,minut[2])
- #                   print (ord(minut[2]),ord(minut[5]))
+ #                   print (pmin, minut,minut[2],ord(minut[2]))
+#                    print (ord(minut[2]),ord(minut[5]))
+                    if pmin == -1: pmin = minut.find ("'")
+#                    if pmin == -1: pmin = minut.find ("?")
+                    if pmin == -1: pmin = minut.find (chr(180))     #  "?"
+
+#                    print (pmin, minut,minut[2],ord(minut[2]),ord("?"))
+ #                   exit(-1)
   #                  print ( ord('?'), '29°45?11?')
                     if pmin == -1:  return ret + float(minut) / 60. * sign (ret)
 
                     ret += float(minut[:pmin]) / 60. * sign(ret)
-                    sec = minut[pmin + 1:]
+                    sec = str(minut[pmin + 1:])
+#                    print ('SS',sec)
                     if len (sec) == 0: return ret
                     psec = sec.find (chr(8243))      #   chr(8243)    '?'    секунды
-   #                 print ('S', psec, sec)
+#                    print ('S', psec, sec, sec[4], ord(sec[4]))
+                    if psec ==-1: psec = sec.find ('"')
+ #                   if psec != -1: psec = sec.find (chr(34))
+#                    if psec != -1: psec = find_kavychki (sec)
+ #                   print ('SS+', psec, sec, sec[4], ord(sec[4]), ord('"'), ord("\""))
+#                    print ('S', psec, sec)
                     if psec != -1: sec = sec[:psec]
                     return ret + float(sec) / 3600. * sign (ret)
+                else :
+                    parts = txt.split(',')
+                    if len(parts) == 4:
+ #                       print ('*************************PARTS', parts)
+  #                      print (float(parts[0]), float(parts[1])/60. , float(parts[2]+'.'+parts[3])/3600.)
+   #                     print (float(parts[0]) + ( float(parts[1])/60. + float(parts[2]+'.'+parts[3])/3600.)*sign(float(parts[0])))
+                        return float(parts[0]) + ( float(parts[1])/60. + float(parts[2]+'.'+parts[3])/3600.)*sign(float(parts[0]))
+                    elif len(parts) == 3:
+#                        print ('************************PARTS3', parts)
+                        return float(parts[0]) + (float(parts[1]+ '.' + parts[2]) / 60.) * sign(float(parts[0]))
+                    else: return NaN
             except:
-                if not txt is None : print ('TO FLOAT', txt)
+                if not txt is None : print ('ERR TO FLOAT', txt)
                 return NaN
 
 

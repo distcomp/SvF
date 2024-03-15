@@ -2,6 +2,8 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
+UsePrime = False
+
 max_workers = 3
 
 jobId_s = []
@@ -109,6 +111,14 @@ mngPenalty   = []
 #CVproc       = ''
 CVNumOfIter  =   20
 CV_Iter  =   0
+
+curentTabl  = None
+numCV      = -1
+CV_NoRs     = []     # 23.11    = 0
+testSet     = []
+teachSet    = []           #  teachSet содержит кого выбрасываем
+fun_with_mu = []
+
 CVparam      = ''
 #CVmargin     = 0
 CVpartSize   = 0
@@ -118,14 +128,8 @@ CV_NoSets    = 0
 CVNoBorder    = False
 NotCulcBorder = False
 
-testSet      = []
-teachSet     = []           #  teachSet содержит кого выбрасываем
-CV_NoR       = 0
-
 Task        = None
 TaskName    = 'NoName'
-
-curentTabl  = None
 
 useNaN      = False
 VarNormalization = False

@@ -130,6 +130,7 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
       else :
               if printL : print ("ReadSol from", ReadFrom)
               Ver,Typ,cols = Get_Ver_Typ_cols ( fi.readline() )
+#              print (Ver, Typ, cols)
 #              cols = fi.readline().split()
 #              if printL : print "ReadSol from", ReadFrom,  cols,
               if not Ver > 0 :
@@ -146,11 +147,16 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
               if printL : print ("shape", tb.shape)
 #              x2 = []
  #             for i in range(tb.shape[0]) : x2.append(tb[i,0])
-              print (ReadFrom)
-              x2 = tb[:,0]
-              if Typ == 'tbl':
+  #            print (ReadFrom, tb, tb.shape)
+              if str(tb.shape) == '()':    # функция число без аргументов
+                  grd = tb
+                  x2 = []
+   #               print (grd)
+              else:
+                x2 = tb[:,0]
+                if Typ == 'tbl':
                   grd = tb[:,1]
-              else :
+                else :
                   grd = delete(tb, range(0, 1), 1)
 #      print 'q',x1,'f', x2
       return cols, x1, x2, grd

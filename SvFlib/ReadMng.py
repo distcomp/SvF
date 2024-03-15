@@ -94,6 +94,7 @@ def ReadMng ( ) :
      buf = UTF8replace(buf, '’', "'")
      buf = UTF8replace(buf, '’', "'")
  #    buf = UTF8replace(buf, '\t', "    ")
+     buf = UTF8replace(buf, '—', '-')
      buf = UTF8replace(buf, '–', '-')
      buf = UTF8replace(buf, '‘', '\'')
      buf = UTF8replace(buf, '∫', '\\int')
@@ -174,6 +175,9 @@ def ReadMng ( ) :
 #     buf_up = buf.upper()
      p = buf_up.find ('SELECT*')
      if p >= 0 : buf = buf[:p+6]+' * '+buf[p+7:]
+
+     p = buf_up.find ('FROM/')
+     if p >= 0 : buf = buf[:p+4]+' '+buf[p+4:]
 
      buf = buf.replace(' \\in', '\\in')
 
@@ -356,6 +360,8 @@ def ReadMng ( ) :
                 SvF.Substitude = readBool();  continue
             elif Is(Q, "Use^forPower"):
                 SvF.UseHomeforPower = readBool();  continue
+            elif Is(Q, "UsePrime"):
+                SvF.UsePrime = readBool();  continue
             elif Is(Q, "TabSize"):
                 TabSize = readInt();   SvF.TabString = ' ' * TabSize;  continue
             elif Is(Q, "Default_step"):
@@ -421,17 +427,16 @@ def ReadMng ( ) :
                         return Task
     elif Is(Q, "MakeSets_byParam") :
             args = buf.split(' ');  #args[0] = '\''+ args[0] + '\''
- #           print ("UUUUUUUUUUUUUUU", args)
+            SvF.numCV += 1
             col_name = '.dat(\''+args[0]+'\')'
             Swr('SvF_MakeSets_byParam ( SvF.curentTabl'+col_name+', '+','.join(args[1:])+' )' )
-#            if 0 :  ## 30 not SvF.Preproc:   #  Устарело
- #               args = buf.split(' '); CVstep=0; CVmargin=0
-  #              if len (args) > 1: CVstep   = int(args[1])
-   #             if len (args) > 2: CVmargin = int(args[2])
-    #            SvF.testSet, SvF.teachSet = MakeSets_byParam(SvF.curentTabl, args[0], CVstep, CVmargin)
+            wr('    Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
+
     elif Is(Q, "MakeSets_byParts") :
             args = buf.split(' ')
+            SvF.numCV += 1
             Swr('SvF.testSet, SvF.teachSet = MakeSets_byParts ( SvF.curentTabl.NoR, '+','.join(args)+' )' )
+            wr('    Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
     elif Is(Q, "WriteSvFtbl" ):
                     Swr( '\nSvF.curentTabl.WriteSvFtbl (  \'' + buf + '\' )')
 ## 30                    if not SvF.Preproc: SvF.curentTabl.WriteSvFtbl ( readEqStr() )
@@ -455,10 +460,6 @@ def ReadMng ( ) :
  #   elif Is(Q, "LocalSolverName" ) :  SvF.LocalSolverName = readEqStr()
   #  elif Is(Q, "SolverName"      ) :  SvF.SolverName      = readEqStr()
     elif Is(Q, "Hack_Stab"       ) :  SvF.Hack_Stab  = bool(readStr()=='True');
-
-#    elif ( Is(Q,"DataFile") or
- #          Is(Q,"DataFile_Npp") ):   Tab.Select ( '* from '+buf )
-#    elif Is(Q, "NoMakeModel" )   :   SvF.MakeModel = False;
     elif Is(Q, "CVNoBorder" )   :  SvF.CVNoBorder    = True
     elif Is(Q, "NotCulcBorder") :  SvF.NotCulcBorder = True
     elif qlf == "TASK"          :  SvF.Task.Name = readEqStr(); print (SvF.Task.Name)
@@ -479,10 +480,6 @@ def ReadMng ( ) :
     elif Is(Q,"OptMode")     : SvF.OptMode = readEqStr()
 
     else :
-#        print ('SvF.Preproc=', SvF.Preproc)
-#        raw_line = Treat_FieldNames(raw_line)
-#        if True : # SvF.Preproc :
-     #       raw_line = Treat_FieldNames(raw_line)
             raw_upp = raw_line.upper()
             if raw_upp.find('SELECT ') >= 0:
                 #         print (raw_line)
