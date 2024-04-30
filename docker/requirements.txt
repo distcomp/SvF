@@ -1,0 +1,3 @@
+Pyomo
+numpy
+matplotlib
