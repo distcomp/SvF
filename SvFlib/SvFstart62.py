@@ -91,19 +91,18 @@ def SvFstart19 ( Task ) :
     print ('')
 
     if type(co.OptStep) == type('abc') :
-        steps = []
-        for ip, p in enumerate (Penal) :
-            steps.append(Penal[ip]*float(co.OptStep))
-        co.OptStep = steps
+        co.OptStep = [float(co.OptStep) * p for p in Penal[:]]
 
 #    def get_sigCV(Penal, itera):                   #   test
  #       return (Penal[0] - 1) ** 2
   #  SurMin(30, [0.0001], 1e-5, [0.5], get_sigCV)
    # exit(0)
 
-    if co.CVNumOfIter == 0:
-        get_sigCV ( Penal, -1 )
-    else :     
+#    if co.CVNumOfIter == -1: pass
+    if co.CVNumOfIter < 0: pass
+    elif co.CVNumOfIter == 0:
+            get_sigCV(Penal, -1)
+    else :
         points, step = SurMin ( co.CVNumOfIter, co.OptStep, co.ExitStep, Penal, get_sigCV )
 
         with open(co.resF,'a') as f:      #  RES filewrite
@@ -165,7 +164,8 @@ def testEstim (Gr, k) :  # k - testSet
             spart += err ** 2
             npart += 1
             fu.CVerr[s] = err                                   # 04.2023
-
+#            print ('CVerr', s, fu.CVerr[s])
+ #       print (fu.CVerr)
         if npart == 0:  print (spart, npart, 'NoVal', 'NoVal',)
         else:
             if fu.MSDmode == 'MSDrel':

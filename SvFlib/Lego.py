@@ -233,6 +233,10 @@ class Fun (Object) :
         if SvF.Compile :  return
         self.Initialize( self.Finitialize )
 
+
+
+
+
     def NameArds (self) :
             ret = self.V.name
             for d, a in enumerate (self.A):
@@ -488,6 +492,22 @@ class Fun (Object) :
 #            print('PPPPPPPPPPPPPPPPPPPSSS', self.sizeP, self.type)
             self.grd = zeros(self.sizeP, float64)
         return self
+
+    def Resize (self, As=[]) :    # new sizes
+        if self.type != 'p':  # не полином           # function-Param              # 29
+            if self.dim == 0:
+                pass
+            elif self.dim == 1:
+                self.grd.resize( As[0].Ub+1)
+            elif self.dim == 2:
+                new_grd = zeros((As[0].Ub + 1, As[1].Ub + 1), float64)
+                A0 = min (self.A[0].Ub + 1, As[0].Ub + 1)
+                A1 = min (self.A[1].Ub + 1, As[1].Ub + 1)
+                new_grd[:A0,:A1] = self.grd[:A0,:A1]
+                self.grd = new_grd
+#            elif self.dim == 3:
+ #               self.grd = zeros((self.A[0].Ub + 1, self.A[1].Ub + 1, self.A[2].Ub + 1), float64)
+        self.A = copy(As)
 
     def Normalization ( self, VarNormalization ) :
 #      self.dim   = len(self.A)
@@ -787,6 +807,7 @@ class Fun (Object) :
                     * sum ( (self.tbl[n,self.V.num]!=self.NDT) * self.mu[n] * self.delta(n)**2 for n in self.sR )
 
     def MSDrel (self, measurement_accur = 0) :        # valid_f  - for verification - validation
+            if self.mu is None : return self.MSDrel_no_mu()     # 24.01
             self.MSDmode = 'MSDrel'
             self.measurement_accur = measurement_accur
             ret = 0
@@ -798,6 +819,7 @@ class Fun (Object) :
                         ret += self.mu[n] * self.delta_rel(n)**2
                         num += self.mu[n]
             else :
+                print (self.name)
                 for n in self.sR:
                     if not isnan(self.V.dat[n]):
 #                        ret += self.mu[n]() * (self.delta(n)/ max(self.V.dat[n],measurement_accur))**2
@@ -893,7 +915,7 @@ class Fun (Object) :
             ret /= num
             return ret
 
-    def MSDno_mu ( self ) :
+    def MSD_no_mu ( self ) :            #   MSDno_mu -> MSD_no_mu    24/03/31
         return self.MSDnan_no_mu()
  #       return  1./self.V.sigma2 /self.NoR * sum ( self.delta(n)**2  for n in self.sR )
 

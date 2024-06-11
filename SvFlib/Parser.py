@@ -301,8 +301,8 @@ class  parser:
 #            print 'BB', body
             if int_type == 'int' :
 #                txt = 'sum ( fromiter( (('+dt__i+'!='+mi +')+('+ dt__i+'!='+ma+'))/2*'+step + '*' + body + ' for ' + dt__i + ' in myrange (' + mi + ',' + ma + ',' + step + ') ) )'
-                txt = 'sum ( (('+dt__i+'!='+mi +')+('+ dt__i+'!='+ma+'))/2*'+step + '*' + body + ' for ' + dt__i + ' in myrange (' + mi + ',' + ma + ',' + step + ') )'
-            else :
+                txt = 'sum ( (int('+dt__i+'!='+mi +')+int('+ dt__i+'!='+ma+'))/2*'+step + '*' + body + ' for ' + dt__i + ' in myrange (' + mi + ',' + ma + ',' + step + ') )'
+            else :   # intr
 #                txt = 'sum ( fromiter( '+step + '*' + body + ' for ' + dt__i + ' in myrange (' + mi + ',' + ma + '-' + step + ',' + step + ') ) )'
                 txt = 'sum ( '+step + '*' + body + ' for ' + dt__i + ' in myrange (' + mi + ',' + ma + '-' + step + ',' + step + ') )'
             for j in range (self.items[p_int+1].etc[0], self.items[p_int+1].etc[-1]+1 ) :  self.items[j].part = ''   #  очишаем все

@@ -352,6 +352,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
     old_points = []
     old_cCos = []
     old_stepMult = 1
+    par_der = []   # deriv
     firstDerec = True
 #    opt = LittleFactory ( None, 10000, 1e-9 )  # чтобы отделиться
     opt = Factory ( None, 10000, 1e-9 )  # чтобы отделиться
@@ -405,7 +406,13 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
                     nArg[itera - 1] -= step_i
                     if attempt == 0 :  step_i = - step_i
                     else            :  step_i *= -0.05
-            step = min (step, abs(step_i))
+            steps[itera - 1] = step_i                           # 24.05
+            par_der.append(grad*sign(step_i))
+            if (itera == dim) :
+                min_step = min([abs(steps[ipd] / pd) for ipd, pd in enumerate(par_der)])
+                step = sqrt(sum((pd * min_step) ** 2 for pd in par_der))
+                print('par_der', par_der, 'min_step', min_step, step)
+#           step = min (step, abs(step_i))
         elif firstDerec :   #itera == dim + 1 :
             pol, tmp, tmp1 = CulcCoef (opt, points, curvPenal, farWieght)                              # CulcCoef
             if coprintL: print ('coef', pol.coef[:dim+1], '\n    ', pol.coef[dim+1:])
@@ -416,7 +423,8 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
 #            Val = getVal ( nArg, itera )                                                        # getVal
             prognErr = abs (Val-prognVal)/(points[-1].Val-prognVal)         # погрешность прогноза:  0 - отлично
             Arg, mi, grad = AddPoint ( points, nArg, Val )                                     #  AddPoint
-            print ('\nITER', itera, Constr, mi, 'grd', grad, 'Er', prognErr, 'st', step, 'Pr', prognVal, Val, '\n\t', nArg , '\n')
+            print ('\nITER', itera, Constr, mi, 'grd', grad, 'Er', prognErr, 'st', step, 'Pr',
+                   prognVal, Val, '\n\t', nArg , 'firstDerec', '\n')
             if grad < 0 and Constr == 'Const' :
                 if    prognErr < 0.05:  step *= 3
                 elif  prognErr < 0.09:  step *= 2

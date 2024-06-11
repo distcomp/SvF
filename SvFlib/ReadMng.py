@@ -89,10 +89,12 @@ def ReadMng ( ) :
 #         raw_line = first_char + ret
          break
 
+
      buf = ret
      buf = UTF8replace(buf, '~', ' ')       # space in formula
      buf = UTF8replace(buf, '’', "'")
-     buf = UTF8replace(buf, '’', "'")
+     buf = UTF8replace(buf, '»', "'")
+     buf = UTF8replace(buf, '«', "'")
  #    buf = UTF8replace(buf, '\t', "    ")
      buf = UTF8replace(buf, '—', '-')
      buf = UTF8replace(buf, '–', '-')
@@ -152,6 +154,7 @@ def ReadMng ( ) :
              buf = buf[:p + 3] + 'n' + buf[p + 3:]
          be = p + 3
 
+#     print ('\nret********', buf)
 
      n=0
      if SvF.Substitude:
@@ -160,19 +163,23 @@ def ReadMng ( ) :
          p = buf[n]
          if p == '\'' or p == '\"' :   #  а не в строке ли мы?
              quotes = 1 - quotes
-         if quotes == 0:
+         if quotes == 0:                                            # remove blancks
 #         if ',;:+-/%()[]{}^=<>!'.find(p) >= 0:    #  without  '.*'  Select *  from  ../Trajectories.tbl where x !=to_x
 #         if '.,;:+-*/%()[]{}^=<>!'.find(p) >= 0:
            if ',;:+-*/%()[]{}^=<>!'.find(p) >= 0:     #  '.'    ???
              if n+1<len(buf) :
-                 if buf[n+1] == ' ' :  buf = buf[:n+1] + buf[n+2:]
+                 if buf[n+1] == ' ' :
+                     if buf[n+2:].find ('for ') == 0: n+=1; continue    # ИСКЛЮЧЕНИЯ
+                     if buf[n+2:].find ('sum ') == 0: n+=1; continue    # ИСКЛЮЧЕНИЯ
+                     buf = buf[:n+1] + buf[n+2:]
              if n-1>=0 :
                  if buf[n-1] == ' ' :
                      buf = buf[:n-1] + buf[n:]
                      continue
          n += 1
-     buf_up = buf.upper()                           # ИСКЛЮЧЕНИЯ
-#     buf_up = buf.upper()
+                                                    # ИСКЛЮЧЕНИЯ
+
+     buf_up = buf.upper()
      p = buf_up.find ('SELECT*')
      if p >= 0 : buf = buf[:p+6]+' * '+buf[p+7:]
 

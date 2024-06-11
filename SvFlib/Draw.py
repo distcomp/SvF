@@ -75,7 +75,7 @@ def DrawComb( param ):
         polyline = None
         fun = None
         to_draw = ''
-#        print ('part', part)
+        print ('part', part)
         for ipar, par in enumerate(part.split(';')) :                  #  Параметры отделяются ;
 #        draw_par = part.split(',')
 #            print ('par', par, ipar)

@@ -583,7 +583,7 @@ def ParseEQUATION ( equation, all_grids, Mode = 'EQ' ) :
         dif_minus, dif_plus  = eqPars.dif1 ( dif_minus, dif_plus, all_grids )
         dif_minus, dif_plus  = eqPars.dif2 ( dif_minus, dif_plus, all_grids )
         eqPars.summa(all_grids)
-        integral_grids = eqPars.integral( all_grids )                       # лучше оставить последним - там всякие for и sum
+        integral_grids = eqPars.integral( all_grids )                  # лучше оставить последним - там всякие for и sum
         equation = eqPars.join()
         if SvF.printL : print ('END PARSE', equation)
 
@@ -926,6 +926,10 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
                     wr('    ' + fn + '.mu = Gr.mu0')
                     wr('    ' + fn + '.testSet = SvF.testSet')
                     wr('    ' + fn + '.teachSet = SvF.teachSet')
+            elif it.part[0:3] == 'MSD':
+                fn = (eqPars.items[itn-2].part)
+                wr( '    ' + fn + '.mu = None' )
+
 
             # f = getFun(fn)
         #        print ('FFF', fn, f.name)
@@ -951,7 +955,7 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
         wr( 'def print_res(Task, Penal, f__f):\n' )                            #  print_res
         wr( '    Gr = Task.Gr' )
         for nf, fu in enumerate( Task.Funs ) :
-            if obj.find(fu.V.name) >= 0 :
+            if obj.find(fu.V.name+'.') >= 0 :
                 wr( '\n    '+fu.V.name+ ' = ' + 'Task.Funs[' + str(nf) + ']' )    #  f__p = Gr.F[1]
 #        f.write ( '\n\n    OBJ_ = Gr.OBJ ()' )
         wr ( '\n    OBJ_ = Gr.OBJ ()' )

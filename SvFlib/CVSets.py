@@ -63,7 +63,7 @@ def SvF_MakeSets_byParam( arr, CVstep=0, CVmargin=0, border=None ):  # sort if m
     SvF.teachSet = teachSet   #  номера точек которые выбрасываются
     print("EofMakeSets_byParam, Unique param.num =", len(unique_par), 'Parts=', CVstep, "\n")
 #    for nSet in range (CVstep) :
- #          print (nSet, 'testSet', testSet[nSet], '\nteachSet', teachSet[nSet] )
+ #          print (nSet, ' testSet', testSet[nSet], '\n   teachSet', teachSet[nSet] )
   #  1/0
 
 

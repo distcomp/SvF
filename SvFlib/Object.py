@@ -41,7 +41,7 @@ def findGridByName(grids, name):   #  ищем в    grids  !!
         for g in grids:
             #            print 'Grid', g.name, name, g.step
             if g.name == name:
-                SvF.LastGrid = g
+                SvF.LastGrid = g#
                 return g
         return None
 
