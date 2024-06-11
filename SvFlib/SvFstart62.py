@@ -67,10 +67,12 @@ def SvFstart19 ( Task ) :
                     print ("len(Penal) shoud be", co.lenPenalty)
                     exit(-1)
         except IOError as e:
-            print ("******* Can''t open RES file: ", co.resF, "\n Create new ? (Y/N)")
-            ans = input()
-            if ans != 'Y' and ans != 'y':  exit (-1)
-            print ( "Use Penalty = 0.1" )
+            print ("******* Can''t open RES file: ", co.resF)
+            exit(-1)
+ #           print ("******* Can''t open RES file: ", co.resF, "\n Create new ? (Y/N)")
+  #          ans = input()
+   #         if ans != 'Y' and ans != 'y':  exit (-1)
+    #        print ( "Use Penalty = 0.1" )
     Penal = Penal[ : co.lenPenalty]
     co.Penalty = Penal
 
