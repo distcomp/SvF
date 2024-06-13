@@ -1,3 +1,3 @@
 [submodule "pyomo-everest"]
 	path = pyomo-everest
-	url = https://github.com/distcomp/pyomo-everest
+	url = git@github.com:distcomp/pyomo-everest.git
