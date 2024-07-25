@@ -213,7 +213,15 @@ def WriteVarParam26 ( buf, param ) :
                             fun.type = 'p'
                             fun.sizeP = PolySize(fun.dim, fun.PolyPow )
 
-                elif up_part.find('VARTYPE')==0 :     fun.type = part.split('=')[1]
+                elif up_part.find('VARTYPE')==0 :
+                        fun.type = part.split('=')[1]
+                        if    fun.type == 'SPWL':   fun.type = 'gSPWL'
+                        elif  fun.type == 'G7':     fun.type = 'gSPWL'
+                        elif  fun.type == 'G_ind':  fun.type = 'gSPWLi'
+                        elif  fun.type == 'SPWLi':  fun.type = 'gSPWLi'
+                        elif  fun.type == 'G':      fun.type = 'gG'       #  Там что-то не так
+                        elif  fun.type == 'Cycle':  fun.type = 'gCycle'
+                        elif  fun.type == 'G_Cycle': fun.type = 'gCycle'
                 elif up_part.find('DATAFILE')>=0 :    fun.DataReadFrom = 'Select * from '+ part.split('=')[1]
                 elif up_part.find('SELECT')>=0 :      fun.DataReadFrom = part_blanck
 #                elif up_part.find('INITIALIZE')>=0 :  Finitialize = part.split('=')[1]   # 22.12.19
@@ -277,7 +285,8 @@ def WriteVarParam26 ( buf, param ) :
           if fun.PolyPow < 0 :
 #            Swr (fun.V.name+' = '+f_str+',-1,'+Finitialize+'); ')
             Swr (fun.V.name+' = '+f_str)                                                #  Fun
-            if fun.type[0] == 'G':  Swr (fun.V.name+'.type = \''+fun.type+'\'; ')
+#            if fun.type[0] == 'G':  Swr (fun.V.name+'.type = \''+fun.type+'\'; ')
+            if len(fun.type) > 1:  Swr (fun.V.name+'.type = \''+fun.type+'\'; ')    # SPWL ...
           else :
             Swr (fun.V.name+' = p'+f_str)                                               #  pFun
           if not fun.domain is None :
@@ -397,7 +406,7 @@ def WriteVarParam26 ( buf, param ) :
 
 
 def fromTEXplus(equation) :
- #   print ('TEXsubst', equation)
+#    print ('TEXsubst', equation)
   #  if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
    # else :                      equation = UTF8replace(equation, '^', '')
 
@@ -483,7 +492,7 @@ def fromTEXplus(equation) :
                     sel = parser(equation)
 #                    print ('Tex', it.part, equation );  sel.myprint()
                     break
-
+#    print ('@@@@@@@@@@@@', equation, SvF.UseHomeforPower)
     if SvF.UseHomeforPower:
         equation = UTF8replace(equation, '^', '**')
     else:
@@ -716,7 +725,7 @@ def WriteModelEQ31 ( buf ):
 
 def WriteString31(buf):
     if buf == '': return
-    print ('WriteString31________________', buf, SvF.Substitude, (not SvF.Substitude) )
+#    print ('WriteString31________________', buf, SvF.Substitude, (not SvF.Substitude) )
     if SvF.Substitude == False :
         Swr( buf )
         return
@@ -758,7 +767,7 @@ def WriteString31(buf):
                 part_plus = fname + '.grd'
                 if fun.dim == 0:                  #  не понятно
                     pass
-                elif (fun.type == 'g' or fun.type[0] == 'G') and fun.dim == 1:
+                elif (fun.type[0] == 'g') and fun.dim == 1:       # 2407
                     eqPars.items[p_fname].part = part_plus + '[' + fun.name + '.A[0].indByVal ('
                     eqPars.items[bracket_ope].part = ''
                     eqPars.items[bracket_clo].part = ')]'
@@ -816,12 +825,16 @@ def WriteModelCode26 ( code ):                      #   CODE:
 
 
 def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
+#        print ('************OBJ', obj)
         if SvF.ObjToReadSols :
             Swr('Task.ReadSols()')
             return
 #        if not SvF.MakeModel : return
         Task = SvF.Task
         Funs = Task.Funs
+
+        obj = fromTEXplus(obj)
+#        print ('############OBJ', obj)
 
         if len(obj)==0 :        #   obj по умолчанию   -   OBJ:
             for fu in Funs :

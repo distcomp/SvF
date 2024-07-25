@@ -55,6 +55,7 @@ def ReadMng ( ) :
  def readLine ():
      global first_char
      global raw_line
+     semicol = False
      ret =''
      while (1):
          if (len ( SvF.comment_buf ) > 0) and SvF.Comment :
@@ -77,6 +78,12 @@ def ReadMng ( ) :
              ret = ret[:-1]
              continue
 #         ret = ret.replace('\t', '    ')
+         if ret[0] == ':':
+             semicol = True
+  #           len(a) - len(a.lstrip())
+   #          ret = ret[1:]
+             first_char = ''
+             break
 
          for np, p in enumerate(ret) :
              if p!= ' ' : break
@@ -95,6 +102,8 @@ def ReadMng ( ) :
      buf = UTF8replace(buf, '’', "'")
      buf = UTF8replace(buf, '»', "'")
      buf = UTF8replace(buf, '«', "'")
+     buf = UTF8replace(buf, '“', '"')
+     buf = UTF8replace(buf, '”', '"')
  #    buf = UTF8replace(buf, '\t', "    ")
      buf = UTF8replace(buf, '—', '-')
      buf = UTF8replace(buf, '–', '-')
@@ -121,6 +130,7 @@ def ReadMng ( ) :
 
 #     print ('AFTER:', buf)
      buf = UTF8replace(buf, '\\mu', 'muu')
+     buf = UTF8replace(buf, '\\Delta ', 'Delta')
      buf = UTF8replace(buf, '\\Delta', 'Delta')
 
      buf = UTF8replace(buf, '\\tau', 'tau1')         # TEX   tau   - не ест Pioma
@@ -143,9 +153,6 @@ def ReadMng ( ) :
  #        print( buf)
   #       1/0
 
-
-
-
      be = 0                                     # \in  ->  \inn
      while 1:
          p = buf.find('\\in', be)               # \in  ->  \inn
@@ -153,11 +160,10 @@ def ReadMng ( ) :
          if p != buf.find('\\int', be):
              buf = buf[:p + 3] + 'n' + buf[p + 3:]
          be = p + 3
-
-#     print ('\nret********', buf)
+ #    print ('\nret********', '|'+buf+'|')
 
      n=0
-     if SvF.Substitude:
+     if SvF.Substitude and (semicol==False):
        quotes= 0
        while n<len(buf) :
          p = buf[n]
@@ -178,10 +184,12 @@ def ReadMng ( ) :
                      continue
          n += 1
                                                     # ИСКЛЮЧЕНИЯ
+  #   print ('\nbuf1********', '|'+buf+'|')
 
      buf_up = buf.upper()
      p = buf_up.find ('SELECT*')
      if p >= 0 : buf = buf[:p+6]+' * '+buf[p+7:]
+     print ('\nbuf2********', '|'+buf+'|')
 
      p = buf_up.find ('FROM/')
      if p >= 0 : buf = buf[:p+4]+' '+buf[p+4:]
@@ -189,7 +197,7 @@ def ReadMng ( ) :
      buf = buf.replace(' \\in', '\\in')
 
      raw_line = first_char + buf
-#     print ('bufFFFFFFFFF', buf)
+     print ('bufFFFFFFFFF', buf, raw_line, '|'+first_char+'|')
      return buf
 
 
@@ -245,7 +253,8 @@ def ReadMng ( ) :
         global buf
         if buf[0] == '=' : buf=buf[1:]    #  =Server
         if buf[0] == '\'' and buf[-1] == '\'' :
-     ##       buf=buf[1:-1]   #  29    03.10.21
+            return buf[1:-1]  # 30g+
+        if buf[0] == '"' and buf[-1] == '"':
             return buf[1:-1]  # 30g+
         return  readStr()
 
@@ -340,10 +349,11 @@ def ReadMng ( ) :
     if Q[-1] == ':' :  old_qlf = Q   # if Q in ['GRID:','VAR:','PARAM:','EQ:', 'DEF:','CODE:', 'OBJ:'] :
     printS  (Q+' |')
 
- #   print  (Q+'|', ord(Q[0]))
+#    print  (Q+'|', ord(Q[0]))
+    Q = Q.replace ('USE^FORPOWER', 'USEHOMEFORPOWER')
     Qasc = Q.encode('ascii', 'ignore')
     if (Qasc in coMembersUP ) :    #  Win редактор гадит в первую строку !!!!!
-#        print('Mem****************************', Q)
+#        print('Mem****************************', Q, Qasc)
  #       1./0
         n = coMembersUP.index(Qasc)
  #       print ('Q',Q)
@@ -365,7 +375,7 @@ def ReadMng ( ) :
                 SvF.UseGreek = readBool(); continue
             elif Is(Q, "Substitude"):
                 SvF.Substitude = readBool();  continue
-            elif Is(Q, "Use^forPower"):
+            elif Is(Q, "UseHomeforPower"):
                 SvF.UseHomeforPower = readBool();  continue
             elif Is(Q, "UsePrime"):
                 SvF.UsePrime = readBool();  continue
@@ -379,7 +389,7 @@ def ReadMng ( ) :
         buf = ''
 #    if   Is(Q, "TaskName" )   : SvF.TaskName = readEqStr(); nSwr( 'SvF.TaskName = \''+SvF.TaskName+'\''); nSwr( 'print(SvF.TaskName)')
     elif Is(Q, "ChDir" )      :
-                    new_cwd = readEqStr();
+                    new_cwd = readEqStr()  #; print ('AAA', new_cwd)
                     os.chdir(new_cwd);   sys.path.append(os.getcwd())
 #                    printS ( '*******************  change CWD:', getcwd() )
     elif Is(Q, "SetStartDir") :

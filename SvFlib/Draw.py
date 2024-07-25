@@ -14,6 +14,14 @@ from Table   import *
 from GIS     import *
 
 import matplotlib.ticker
+from matplotlib.ticker import FuncFormatter
+
+# Функция форматирования для замены точки на запятую
+def comma_formatter_pos(x, pos):
+    return f'{x:.10g}'.replace('.', ',')
+def comma_formatter(x):
+    return f'{x:.10g}'.replace('.', ',')
+#    return f'{x:.2f}'.replace('.', ',')
 
 def DrawComb( param ):
     if SvF.DrawMode == '' :  return
@@ -28,6 +36,9 @@ def DrawComb( param ):
     #fig.tight_layout()
     plt.subplots_adjust(left=SvF.subplots_left, right=SvF.subplots_right,
                         top=SvF.subplots_top, bottom=SvF.subplots_bottom)
+    if SvF.CommaFormatter:
+        ax.xaxis.set_major_formatter(FuncFormatter(comma_formatter_pos))
+        ax.yaxis.set_major_formatter(FuncFormatter(comma_formatter_pos))
 
     plt.yticks(fontsize=SvF.axisNUM_FONT_SIZE, rotation=0)
     plt.xticks(fontsize=SvF.axisNUM_FONT_SIZE, rotation=0)
@@ -308,10 +319,15 @@ def DrawComb( param ):
                 if mii == maa and type(levs) == type(1): levs = [mii - 1, mii, mii + 1]     #28
 #                cs = ax.contourf(X, Y, z, levs, locator=ticker.LogLocator(base=2.0), cmap=colorMap)  # cm.PuBu_r  cm.autumn   cm.gray
                 cs = ax.contourf(X, Y, z, levs, locator=SvF.locator, cmap=colorMap)  # cm.PuBu_r  cm.autumn   cm.gray
+                if SvF.CommaFormatter:
+                    ax.clabel(cs, inline=True, fontsize=8, fmt=comma_formatter)
 
                 if (not mii is None) and mii != maa:
                     cs1 = ax.contour(X, Y, z, levs, colors='k', linewidths=0.5)
-                    ax.clabel(cs1, inline=1, fontsize=NUM_FONT_SIZE, fmt=levelFmt)
+                    if SvF.CommaFormatter:
+                        ax.clabel(cs1, inline=1, fontsize=NUM_FONT_SIZE, fmt=comma_formatter)
+                    else :
+                        ax.clabel(cs1, inline=1, fontsize=NUM_FONT_SIZE, fmt=levelFmt)   #  сторо !
 
                 plt.xlabel(Ax.oname, fontsize=FONT_SIZE + 1, style=FONTstyle)
                 plt.ylabel(Ay.oname, fontsize=FONT_SIZE + 1, style=FONTstyle, rotation=yRotation)
@@ -319,8 +335,10 @@ def DrawComb( param ):
                 if SvF.Legend :
                     leg_name = fun.V.draw_name
                     if leg_name == '' : leg_name = fun.onameFun()
-                    plt.title(leg_name, fontsize=FONT_SIZE + 1, style=FONTstyle, y=1.01, x=SvF.title_x)  # , pad = 3)
-                    cbar = plt.colorbar(cs)      
+                    plt.title(leg_name, fontsize=FONT_SIZE + 1, style=FONTstyle, y=1.01, x=SvF.title_x )# , pad = 3)
+                    cbar = plt.colorbar(cs)
+                    if SvF.CommaFormatter:
+                        cbar.ax.yaxis.set_major_formatter(FuncFormatter(comma_formatter_pos))
  #                   ticklabs = cbar.ax.get_yticklabels()  #########################################   2022.10.27   ????????????
   #                  cbar.ax.set_yticklabels(ticklabs, fontsize=NUM_FONT_SIZE)  ###################  ?????????????
           # Data
@@ -351,6 +369,7 @@ def DrawComb( param ):
     ax.xaxis.set_label_coords( SvF.Xlabel_x, SvF.Xlabel_y ) #-0.01 ) # SvF.Xlabel_x ) #-0.01)
     ax.yaxis.set_label_coords( SvF.Ylabel_x, SvF.Ylabel_y ) #1.02)  # в длиннах оси
 
+    plt.tight_layout()
     if SvF.DrawMode.find('File') >= 0 :
         if DrawErr:  plt.savefig(file_name+'Err.' + SvF.graphic_file_type, dpi=SvF.DPI)  # (os.path.join('%s'%dir,'inner_int_gamma_%g%s.%s'%(fun.gamma, suffix, fmt)), dpi = dpi)
         else:        plt.savefig(file_name + '.'+ SvF.graphic_file_type, dpi=SvF.DPI)

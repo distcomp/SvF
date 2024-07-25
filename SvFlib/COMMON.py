@@ -45,6 +45,7 @@ TabString       = '    '
 Use_var = False         # 29
 
 #   Drow  #############################
+CommaFormatter = False
 MarkerSize     = 1
 MarkerColor    = 'red'
 DataColor      = 'b'
