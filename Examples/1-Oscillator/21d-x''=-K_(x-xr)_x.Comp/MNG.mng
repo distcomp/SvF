@@ -1,0 +1,25 @@
+CVNumOfIter     41
+CVstep          21  
+
+Select x, t  from  ../Spring5.dat
+
+GRID:	
+        t  ∈ [ -1.,  2.5, 0.025 ]
+
+Var:    x ( t ) 
+#	v ( t )
+	K   
+#	μ  #   will be substituted on 'muu'   
+	xr
+
+SchemeD1 = Central          
+EQ:	
+        d2/dt2(x) == - K * ( x - xr ) #- μ * v    
+# 	v == d/dt(x)
+
+OBJ:    x.Complexity ( Penal[0] ) + x.MSD()
+
+Draw
+
+EOF
+
