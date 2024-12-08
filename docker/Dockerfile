@@ -6,7 +6,13 @@ COPY --from=solvers /usr/local/ /usr/local/
 COPY --from=solvers /usr/lib/ /usr/lib/
 COPY --from=solvers /etc/alternatives/ /etc/alternatives/
 
-COPY requirements.txt /tmp/requirements.txt
+COPY docker/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY bin/ /usr/local/bin/
+RUN apt-get install zip
+
+COPY docker/bin/ /usr/local/bin/
+
+COPY . /home/vvv/git_work/SvF/
+
+COPY svf-service/runSvF-remote.sh /usr/local/bin/

@@ -139,11 +139,11 @@ optFact          = None
 token      =  ''
 optFile    =  'peipopt.opt'
 
-#LocalSolverName  = 'ipopt' #3_11_1'
-LocalSolverName  = '/opt/solvers/bin/ipopt'
+LocalSolverName  = 'ipopt' #3_11_1'
+#LocalSolverName  = '/opt/solvers/bin/ipopt'
 
-#SolverName       = 'ipopt'
-SolverName       = '/opt/solvers/bin/ipopt'  # 3.14.09
+SolverName       = 'ipopt'
+#SolverName       = '/opt/solvers/bin/ipopt'  # 3.14.09
 #RunSolver   = 'Local'   #   LocalParallel   ServerParallel
 
 solverOptVal =  {  "linear_solver"              : 'ma57'\
