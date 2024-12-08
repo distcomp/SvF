@@ -12,7 +12,7 @@ echo  "python /home/vladimirv/git_work/SvF/SvFlib/_START.py"
 
 #python /home/sokol/C/SvF/Lib30/_START.py $1
 #python /home/sokol/D/SvF/SvFlib/_START.py $1
-python /home/vladimirv/git_work/SvF/SvFlib/_START.py $1
+python /home/vvv/git_work/SvF/SvFlib/_START.py $1
 
 
 #########################  http://citforum.ru/programming/shell/gl4.shtml    ####################

@@ -6,8 +6,10 @@ F_Arg_Type = ''            #  заплатка для ArgNorm для fNi_fon(X,Y
 
 
 DrawMode = 'Screen&File'
-LocalSolverName  = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'
-SolverName       = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'  # 3.14.09
+#LocalSolverName  = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'
+#SolverName       = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'  # 3.14.09
+LocalSolverName  = 'ipopt' # '/opt/solvers/bin/ipopt'
+SolverName       = 'ipopt' # '/opt/solvers/bin/ipopt'  # 3.14.09
 
 
 feasibleSol = None          #  function feasibleSol(Peal) - перед оптимизацией

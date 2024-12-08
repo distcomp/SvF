@@ -109,7 +109,7 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
         if RunMo == 'S':                                        # RUN dist    #===== solve in parallel ===========
             SvF_resources = []                                                  #####   ABC   28/01/2023
             for r in SvF.Resources:
-                SvF_resources.append(ssop_config.SSOP_RESOURCES[r])
+                SvF_resources.append(ssop_config.SSOP_RESOURCES.get(r, r))
             theSession = SsopSession(name      = SvF.TaskName + str(SvF.CV_Iter),
                                      token     = SvF.token,
                                      resources = SvF_resources,
