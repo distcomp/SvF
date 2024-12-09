@@ -34,7 +34,7 @@ Open **SvF** folder in your system console and run
 **=====================================================================**
 
 
-If you know Russian read the Section 1 (software requirements) of [User Manual](https://github.com/distcomp/SvF/blob/main/SvF_UserGuide29v02.pdf) :
+If you know Russian read the Section 1 (software requirements) of [User Manual](https://github.com/distcomp/SvF/blob/main/SvF_UserGuide29v04.pdf) :
 
 1. OS Linux is the default recommendation
 2. Python 3.7.4+ (to save disk space, it is recommended to use the [Miniconda Python environment](https://docs.conda.io/en/latest/miniconda.html)
