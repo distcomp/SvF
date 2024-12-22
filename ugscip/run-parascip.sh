@@ -3,7 +3,7 @@ set -e
 NAME=$(dirname $1)/$(basename $1 .nl)
 BASE=$(basename $1 .nl)
 NPROC=$2
-echo "write problem $BASE.conv.cip write solution $BASE.cip.init.sol quit" | scipampl $NAME.nl -i
+echo "write problem $BASE.conv.cip write solution $BASE.cip.init.sol quit" | scip $NAME -AMPL -i
 if grep 'no solution available' $BASE.cip.init.sol > /dev/null; then
     INITSOL=''
     echo 'No initial solution in stub'
@@ -16,11 +16,11 @@ if [ -f presolv.set ]; then
 fi
 ROOT_SET=''
 if [ -f root.set ]; then
-    ROOT_SET='-sl root.set'
+    ROOT_SET='-sr root.set'
 fi
 SOLVER_SET=''
-if [ -f solver.set ]; then
-    SOLVER_SET='-sl solver.set'
+if [ -f scip.set ]; then
+    SOLVER_SET='-s scip.set'
 fi
 touch ug.set
 PART=""
@@ -40,4 +40,4 @@ done
 #salloc $PART -n $NPROC mpirun parascip_port ug.set $BASE.conv.cip $INITSOL $LC_SET $ROOT_SET $SOLVER_SET
 #mpirun parascip parascip.set $BASE.conv.cip
 sed -i '/Final Solution/d' $BASE.conv.sol
-echo "read $BASE.conv.sol write amplsol q" | scipampl $NAME.nl -i
+echo "read $BASE.conv.sol q" | scip $NAME -AMPL -i
