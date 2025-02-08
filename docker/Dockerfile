@@ -1,4 +1,4 @@
-FROM distcomp/solvers:latest as solvers
+FROM distcomp/solvers:py-3.8-mkl-latest as solvers
 
 FROM registry.gitlab.com/everest/agent:master-3.8-bullseye as agent
 
@@ -16,3 +16,5 @@ COPY docker/bin/ /usr/local/bin/
 COPY . /home/vvv/git_work/SvF/
 
 COPY svf-service/runSvF-remote.sh /usr/local/bin/
+
+ENV LD_LIBRARY_PATH=/usr/local/lib/
