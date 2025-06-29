@@ -1,6 +1,7 @@
 # -*- coding: cp1251 -*-
 
-from  numpy import *
+#from  numpy import *
+import numpy as np
 
 from  GaKru import *
 
@@ -43,7 +44,7 @@ import openpyxl
         
 
 
-def ReadGridInf ( ReadFrom, printL=0, Rect = [] ) :
+def ReadSetInf ( ReadFrom, printL=0, Rect = [] ) :
       try :
             fi = open ( ReadFrom, "r")
       except IOError as e:
@@ -65,9 +66,9 @@ def ReadGridInf ( ReadFrom, printL=0, Rect = [] ) :
   #            print (Rect[1] - YLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10
    #           print (Rect[3] - YLLCORNER - CELLSIZE/2 ) / CELLSIZE + 1e-10
               if len (Rect) == 4 :
-                  xmi = int ( ceil( (Rect[0] - XLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10 ) )    # !!!!!!!!!!!
+                  xmi = int ( np.ceil( (Rect[0] - XLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10 ) )    # !!!!!!!!!!!
                   xma = int (floor( (Rect[2] - XLLCORNER - CELLSIZE/2 ) / CELLSIZE + 1e-10 ) )    # !!!!!!!!!!!
-                  yma = grdY - 1 - int ( ceil( (Rect[1] - YLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10 ))
+                  yma = grdY - 1 - int ( np.ceil( (Rect[1] - YLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10 ))
                   ymi = grdY - 1 - int (floor( (Rect[3] - YLLCORNER - CELLSIZE/2 ) / CELLSIZE + 1e-10 ))
                   print ("|||", xmi, xma, ymi, yma)
                   XLLCORNER += CELLSIZE * xmi
@@ -75,24 +76,24 @@ def ReadGridInf ( ReadFrom, printL=0, Rect = [] ) :
                   grdX = xma-xmi+1
                   grdY = yma-ymi+1
 
-                  gr = zeros((grdY, grdX),float64)
+                  gr = np.zeros((grdY, grdX),np.float64)
                   for s in range(ymi) : line = fi.readline()
                   for s in range(grdY):
                       line = fi.readline().split()
                       for c in range (grdX) :
                           gr[s][c] = float(line[c+xmi])
               else :
-                  gr = loadtxt (fi,'double')
+                  gr = np.loadtxt (fi,'double')
 
               for s in range(gr.shape[0]) : # grdY):
                   for c in range (gr.shape[1]): #grdX) :
-                      if gr[s][c] == NDT : gr[s][c] = NaN
+                      if gr[s][c] == NDT : gr[s][c] = nan
 
-              gr_rev = zeros((grdY, grdX),float64)
+              gr_rev = np.zeros((grdY, grdX),np.float64)
               for s in range(grdY) : gr_rev[s][:] = gr[grdY-1-s][:]
 
-              x1 = [] #zeros(grdX, float64)
-              x2 = [] #zeros(grdY, float64)
+              x1 = [] #np.zeros(grdX, np.float64)
+              x2 = [] #np.zeros(grdY, np.float64)
               for i in range(grdX): x1.append( XLLCORNER + CELLSIZE * (i + 0.5) )
 #              for i in range(grdX): x1[i] = XLLCORNER + CELLSIZE * (i + 0.5)
               for j in range(grdY): x2.append( YLLCORNER + CELLSIZE * (grdY-1 - j + 0.5) )
@@ -119,6 +120,24 @@ def Get_Ver_Typ_cols ( head ):
             else :
                 return 0, None, None
 
+def Get_File_Etc_Ver_Type (ReadFrom ):   # Ver = 0, если чужой файл
+    try:
+        fi = open(ReadFrom, "r")
+    except IOError as e:
+        print("не удалось открыть файл", ReadFrom)
+        return None, None, None, None;
+
+    line1 = fi.readline()
+    head = line1.strip()
+    p_ver = head.find('#SvFver_')
+    if p_ver > 0:
+        parts = head[p_ver + 8:].split('_')
+        Ver = int(parts[0])
+        Type = parts[1]
+        Etc = head[0:p_ver].split()
+        return fi, Etc, Ver, Type
+    else:
+        return fi, line1, 0, None
 
 
 def ReadSolInf ( ReadFrom, printL=0 ) :
@@ -138,11 +157,11 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
                   exit (-1)
               if Typ != 'tbl' :                                   # 2-мерный
                   x_poi = fi.readline().split()
-                  x1 = zeros( len(x_poi), float64 )
+                  x1 = np.zeros( len(x_poi), np.float64 )
                   for j in range(len(x1)) : x1[j] = float(x_poi[j])
               else :                                                  # 1-мерный
                   x1  = []    #   ?????????????????
-              tb = loadtxt (fi,'double')
+              tb = np.loadtxt (fi,'double')
               fi.close()
               if printL : print ("shape", tb.shape)
 #              x2 = []
@@ -157,7 +176,7 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
                 if Typ == 'tbl':
                   grd = tb[:,1]
                 else :
-                  grd = delete(tb, range(0, 1), 1)
+                  grd = np.delete(tb, range(0, 1), 1)
 #      print 'q',x1,'f', x2
       return cols, x1, x2, grd
 

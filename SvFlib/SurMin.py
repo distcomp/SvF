@@ -1,6 +1,7 @@
 # -*- coding: cp1251 -*-
 from __future__ import division
-from  numpy import *
+#from  numpy import *
+import numpy as np
 from copy   import *
 #from pyomo.environ import *
 import pyomo.environ as py
@@ -44,10 +45,10 @@ coprintL = 0    # чтобы отделиться от роекта
  #   return opt
 
 
-def CrePolyPow2 ( dim, maxP ) :            # arrays
+def CrePolyPow2 ( dim, maxP ) :            # np.arrays
         polyPow = []
         for i in range((maxP+1)**dim) :
-            powers = zeros(dim)
+            powers = np.zeros(dim)
             sumP = 0
             tmpP = i
             for d1 in range(dim) :
@@ -107,7 +108,7 @@ def int_angleV1V2 ( v1, v2 ) :
 
 
 def norma ( v ) :
-        return sqrt ( sum ( v**2 ) )
+        return np.sqrt ( sum ( v**2 ) )
 
 
 def distance ( p1, p2 ) :
@@ -139,9 +140,9 @@ def AddPoint ( points, Arg, Val ) :
     return points[-1].Arg, ismin, grad
 
 
-def wieght ( np, points, farWieght ) :
+def wieght ( npp, points, farWieght ) :
                 dim = len (points[-1].Arg)
-                if np < len(points)-1-dim : return exp ( - distance (points[np],points[-1]) * farWieght )
+                if npp < len(points)-1-dim : return np.exp ( - distance (points[npp],points[-1]) * farWieght )
                 else                    : return 1
 #                return exp ( - distance (points[np],points[-1]) * farWieght )
 
@@ -189,7 +190,7 @@ def CulcCoef ( opt, points, curvPenal, farWieght ) :
                     partPen = curvPenal * sum (CM.Cpoly[c]()**2 for c in range (dim+1, polLen)) / obj
                 else :    partPen = 0
 
-                pol.coef = array([ CM.Cpoly[c]() for c in range(polLen) ])
+                pol.coef = np.array([ CM.Cpoly[c]() for c in range(polLen) ])
                 return pol, partWeight, partPen
 
 
@@ -198,7 +199,7 @@ def Prognose ( opt, pol, point, step ) :
                 dim = len(point.Arg)
                 CMP = py.ConcreteModel()
 
-                norm = sqrt ( sum ( pol.coef**2 ) ) 
+                norm = np.sqrt ( sum ( pol.coef**2 ) )
                 def ini_circ (CMP, c): return - pol.coef[c+1] / norm * step * 0.999999
                 CMP.nInc  = py.Var ( range(dim), domain=py.Reals, initialize = ini_circ )
 
@@ -234,10 +235,10 @@ def Prognose ( opt, pol, point, step ) :
                 else :   Constr = 'Const'
 #                print prognVal, point.Val, pol.Culc(CMP.nInc)(), \
  #                     'ang', int_angleV1V2 ( [ CMP.nInc[a]() for a in range(dim) ],pol.coef[1:dim+1] )
-                Incr = array([ CMP.nInc[a]() for a in range(dim) ]) 
+                Incr = np.array([ CMP.nInc[a]() for a in range(dim) ])
                 return  prognVal+point.Val, Incr+point.Arg, Constr, Incr
-#                return  prognVal+point.Val, array([ CMP.nInc[a]()+point.Arg[a] for a in range(dim) ]), \
- #                                   Constr, array([ CMP.nInc[a]()              for a in range(dim) ])
+#                return  prognVal+point.Val, np.array([ CMP.nInc[a]()+point.Arg[a] for a in range(dim) ]), \
+ #                                   Constr, np.array([ CMP.nInc[a]()              for a in range(dim) ])
 
     
 #maxpartPen = .5
@@ -331,11 +332,11 @@ def condition ( points, farWieght, opt ) :
     M.solutions.load_from(results)
     if str(results.solver.termination_condition) != 'optimal':
                     print ("Stst:", results.solver.termination_condition, '\n')
-    obus = sqrt ( M.OBJ() )
+    obus = np.sqrt ( M.OBJ() )
  #   for cp in range(dim+1): print cp, M.plane[cp]() 
 #    print 'obus', obus
 #    return obus, [M.plane[c]() for c in range(dim+1)]
-    return obus, array([M.plane[c]() for c in range(dim)])
+    return obus, np.array([M.plane[c]() for c in range(dim)])
 
 def SetAllArgs (Arg, InArg, stepsIN ) :
     a_in = 0
@@ -363,7 +364,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
         if stepsIN[ia] != 0 :
             Arg.append(a)
             steps.append (stepsIN[ia])
-    Arg = array (Arg)
+    Arg = np.array (Arg)
     dim = len (Arg)
 
     curvPenal = 0.001
@@ -378,14 +379,14 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
             Val = getVal ( AllArgs, -1 )
             points = [Point (Arg, Val, 0)]
             for p in points:  p.prin()
-            return points, NaN
+            return points, nan
 
     for itera in range (CVNumOfIter) :
         if itera == 0 :
             AllArgs = SetAllArgs(Arg, InArg, stepsIN)
             Val = getVal ( AllArgs, itera )
 #            Val = getVal ( Arg, itera )
-            print ('\nITER', itera, 'start', Val, 'st', NaN,  Arg, '\n')
+            print ('\nITER', itera, 'start', Val, 'st', np.nan,  Arg, '\n')
             points = [Point (Arg, Val, 0)]
 
         elif itera <= dim :
@@ -407,10 +408,10 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
                     if attempt == 0 :  step_i = - step_i
                     else            :  step_i *= -0.05
             steps[itera - 1] = step_i                           # 24.05
-            par_der.append(grad*sign(step_i))
+            par_der.append(grad*np.sign(step_i))
             if (itera == dim) :
                 min_step = min([abs(steps[ipd] / pd) for ipd, pd in enumerate(par_der)])
-                step = sqrt(sum((pd * min_step) ** 2 for pd in par_der))
+                step = np.sqrt(sum((pd * min_step) ** 2 for pd in par_der))
                 print('par_der', par_der, 'min_step', min_step, step)
 #           step = min (step, abs(step_i))
         elif firstDerec :   #itera == dim + 1 :
@@ -433,15 +434,20 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
             if prognErr > 0.3 :
                 firstDerec = False      # 28
                 step /= 3
+            old_points = deepcopy (points)                      # 25.01
+
         else :
             if len(old_points) > 0 : 
                 farWieght, curvPenal = arrange_farWieght_curvPenal (opt, old_points, curvPenal, farWieght, Val, nArg)
                 farWieght *= ( distance (old_points[-dim-2],old_points[-1]) / distance (points[-dim-2],points[-1]) )
                 print ('farWieght dist', farWieght)
-            pol, tmp, tmp1 = CulcCoef (opt, points, curvPenal, farWieght)                              # CulcCoef
+            pol, tmp, tmp1 = CulcCoef (opt, points, curvPenal, farWieght)
             if coprintL: print ('coef', pol.coef[:dim+1], '\n    ', pol.coef[dim+1:])
-            ang_pov = int_angleV1V2 ( old_coef[1:dim+1], pol.coef[1:dim+1] )   # angle поворота линейных членов полинома
-            print ('ang_pov' , ang_pov)
+            if dim == 1 :                                                                   # 25.01
+                ang_pov = 0
+            else :
+                ang_pov = int_angleV1V2 ( old_coef[1:dim+1], pol.coef[1:dim+1] )   # angle поворота линейных членов полинома
+                print ('ang_pov' , ang_pov)
             old_coef = deepcopy (pol.coef)
 
             ostep = step                                                # step    выбор шага
@@ -491,10 +497,10 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
               if 1 :  
                 malt = 0.03
                 for i in range (10) :
-#                    nnArg = array([ nArg[a]+cCos[a]*step*malt for a in range(dim) ])       #  шаг в сторону +
+#                    nnArg = np.array([ nArg[a]+cCos[a]*step*malt for a in range(dim) ])       #  шаг в сторону +
                     nnArg = nArg + cCos*step*malt                                  #  шаг в сторону +
                     prognValN = pol.CulcShift (nnArg, points[-1])
-#                    mnArg = array([ nArg[a]-cCos[a]*step*malt for a in range(dim) ])       #  шаг в сторону -
+#                    mnArg = np.array([ nArg[a]-cCos[a]*step*malt for a in range(dim) ])       #  шаг в сторону -
                     mnArg = nArg - cCos*step*malt                                  #  шаг в сторону -
                     mprognValN = pol.CulcShift (mnArg, points[-1])                  #    берем кто меньше
                     if mprognValN < prognValN :
@@ -506,7 +512,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
                     malt *= 0.1
                     if prognValN < points[-1].Val : break
                 nArg = nnArg
-#                nArg = array(nnArg)
+#                nArg = np.array(nnArg)
                 prognVal = prognValN
             
             AllArgs = SetAllArgs(nArg, InArg, stepsIN)

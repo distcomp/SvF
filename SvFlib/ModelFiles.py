@@ -25,6 +25,7 @@ from Parser    import *
 import io
 
 import ezodf
+from docx2python import docx2python
 
 def MngFile ( ) :
     if  len(argv)>1 :  return argv[1]
@@ -99,10 +100,12 @@ def readMNGfile ( fName ):
     if fName.count('.odt'):
         fi = ezodf.opendoc(fName)
         start = False
+        print('Len', len(fi.body))
         for odtParag in fi.body :
+            print ('XXX', allText(odtParag, ''))
             if not start :                                      #  мотаем до BoF-SvF
                 if allText(odtParag, '').find('BoF-SvF') == 0:
-#                    print('START  BoF-SvF')
+                    print('START  BoF-SvF')
                     start = True
                 continue
             ret = allText(odtParag, '')
@@ -129,6 +132,14 @@ def readMNGfile ( fName ):
                 if len(ret) >= 3:
                     if ret[:3] == 'EOF': break
     ###            fi.close()  #  ???????       &&&&&&&&&&&&&&&
+    elif fName.count('.docx'):
+        with docx2python(fName) as docx_content:
+            tmp = docx_content.text.split('\n')
+            BoF = False
+            for line in tmp:
+                if line == 'EoF': break
+                if BoF:  lines_buf.append(line)
+                elif line == 'BoF-SvF': BoF = True
     else:  # mng
         if sys.version_info.major == 3:
             fi = open(fName, encoding="utf-8")  # python 3
@@ -217,20 +228,17 @@ def MNGreadline():
 
 
 
-def Swr(str):
+def Swr(str):                                               # с отступом
     if SvF.SModelFile is None : startStartModel ()
     try :
         SvF.SModelFile.write('\n' + str)
     except :
         str = str.encode('ascii', 'replace')    #     Win не любит некоторые символы
-#       print ("PPPPPPPPPPA", str)
         str = str.decode('UTF-8')
-#       print ("PPPPPPPPPPU", str)
         SvF.SModelFile.write('\n' + str)
     SvF.StartModel_pos = len (str)         #   чтобы выравниватть комментарии
 
 def Swrs(str):
-    if SvF.SModelFile is None : startStartModel ()
     if SvF.SModelFile is None: startStartModel()
 #    print ('Swrs', str)
     try:
@@ -246,6 +254,27 @@ def Swrs(str):
 def nSwr(a1,a2='',a3=''):
     if SvF.SModelFile is None : startStartModel ()
     SvF.SModelFile.write( '\n'+str(a1)+str(a2)+str(a3) )
+
+
+def wr(str):
+     if SvF.ModelBuf is None:  startModel ()
+     if SvF.ModelBuf == 1:  return
+     SvF.ModelBuf.append('\n' + str)
+
+def wrs(str):
+     if SvF.ModelBuf is None:  startModel ()
+     if SvF.ModelBuf == 1:  return
+     SvF.ModelBuf.append(str)
+
+
+
+def to_logOut (aaa) :
+        if SvF.LogOutFile is None :  SvF.LogOutFile = open('SvF_LogOut.txt', 'w')
+        st = str(aaa)
+        print ('LogOutFile' + st)
+        SvF.LogOutFile.write( '\n'+st )
+
+
 
 def startStartModel () :
 #    print (getcwd(), ')))))))))))))))))))))))))))))))))))))))))))))))))))')
@@ -284,26 +313,16 @@ def endObjStartModel () :
     Swr('\nSvF.Task.defMSD = None')  # Mo.defMSD
     Swr('\nSvF.Task.defMSDVal = None')  # Mo.defMSDVal
     Swr('\nSvF.Task.print_res = print_res')
-    Swr('\nSvF.lenPenalty = ' + str(SvF.lenPenalty))
+#    Swr('\nSvF.lenPenalty = ' + str(SvF.lenPenalty))
     Swr('\nfrom SvFstart62 import SvFstart19')
     Swr('\nSvFstart19 ( Task )')  # 27   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
-def wr(str):
-     if SvF.ModelBuf is None:  startModel ()
-     if SvF.ModelBuf == 1:  return
-     SvF.ModelBuf.append('\n' + str)
-
-def wrs(str):
-     if SvF.ModelBuf is None:  startModel ()
-     if SvF.ModelBuf == 1:  return
-     SvF.ModelBuf.append(str)
-
 def startModel () :
      SvF.ModelBuf = []                         #   список строк
-     wr('from  numpy import *')
- #    wr('import  numpy as np')
+#     wr('from  numpy import *')
+     wr('import  numpy as np')
      wr('\nfrom Lego import *')
      wr('import pyomo.environ as py')
      wr('\ndef createGr ( Task, Penal ) :')
@@ -315,6 +334,6 @@ def startModel () :
  #    wr('        for f in Funs :')
   #   wr('            if (not f.param) and (not f.V.dat is None):')
    #  wr('                f.mu  = Gr.mu')
-    # wr('                f.testSet  = SvF.testSet')
-     #wr('                f.teachSet = SvF.teachSet')
+    # wr('                f.ValidationSets  = SvF.ValidationSets')
+     #wr('                f.notTrainingSets = SvF.notTrainingSets')
 

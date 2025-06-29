@@ -2,7 +2,7 @@
 import sys
 import platform
 import os
-
+import numpy as np
 import COMMON as SvF
 
 prog_name = sys.argv[0]
@@ -19,8 +19,8 @@ sys.path.append( SvF.startDir )
 
 if SvF.startDir.find('/home/vladimirv/mc2/agent') == 0 :       #  опции для       svf-remote   **************
     SvF.DrawMode         = 'File'
-    SvF.LocalSolverName  = '/opt/scipopt803/bin/ipopt'
-    SvF.SolverName       = '/opt/scipopt803/bin/ipopt'  # 3.14.09
+    SvF.LocalSolverName  = '/opt/scipopt911/bin/ipopt'
+    SvF.SolverName       = '/opt/scipopt911/bin/ipopt'  # 3.14.09
 
 from ReadMng import ReadMng
 
@@ -32,6 +32,7 @@ while (1) :
     print ('\n\nCWD', os.getcwd(),  'RUN   StartModel.py *****************' )
     sys.path.append( os.getcwd() )
     exec(open("StartModel.py").read())                  ######  Model call
+#    print ('SvF.resF'+SvF.resF+'!')
     with open(SvF.resF, 'a') as f:  # RES filewrite
         f.write('addStrToRes: ' + SvF.addStrToRes)
     if SvF.EofTask:
@@ -40,7 +41,7 @@ while (1) :
         SvF.ModelBuf = None
         SvF.resF = ''
         SvF.OptStep = '0.01'
-        SvF.optEstim = float_info.max
+        SvF.optEstim = np.float_info.max
         SvF.curentTabl = None
         SvF.useNaN = False
     else :  break

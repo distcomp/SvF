@@ -1,23 +1,29 @@
 # -*- coding: cp1251 -*-
-
+from   copy   import *
 from Object import *
 
-#class Vari (Object):                  #  var  ###################################
+
 class Vari ():                  #  var  ###################################
-  def __init__ (self, name) :
+  def __init__ (self, name, fld_name = '') :
+      from Table import getCurrentFieldData
 #      Object.__init__ ( self, name, 'Vari')
       self.name  = name
       self.oname = name
+      self.axe_name = ''
+      self.leg_name = ''
+      self.title_name = ''
       self.draw_name = name
       self.data_name = name + '-data'
+      if fld_name == '' :   self.fld_name = name
+      else :                self.fld_name = fld_name
       self.avr     = 0          #  для вычитания
       self.sigma   = 1
       self.sigma2  = 1
       self.average = 0
 #      self.Lbound  = None # min
 #      self.Ubound  = None
-      self.dat     = None
-
+      if SvF.Compile: return  ##############################################################
+      self.dat     = getCurrentFieldData (self.fld_name)
 
 
  # def Oprint(self) :
@@ -28,7 +34,7 @@ class Vari ():                  #  var  ###################################
         NoR = 0
         self.average = 0
         for m in self.dat:
-            if  not isnan(m):
+            if  not np.isnan(m):
                 self.average += m
                 NoR += 1
         if NoR ==0:
@@ -41,15 +47,15 @@ class Vari ():                  #  var  ###################################
         else :
             self.sigma2 = 0
             for m in self.dat:
-                if  not isnan(m):
+                if  not np.isnan(m):
                     self.sigma2 += (m-self.average)**2
             self.sigma2 =  self.sigma2 / (NoR-1) 
-        self.sigma = sqrt ( self.sigma2 )
+        self.sigma = np.sqrt ( self.sigma2 )
 
         if VarNormalization :  ########################################== 'Y' :
             self.avr = self.average
             for m in self.dat :
-               if not isnan(m):  m -= self.avr
+               if not np.isnan(m):  m -= self.avr
         else :
             self.avr = 0
 

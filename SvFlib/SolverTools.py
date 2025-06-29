@@ -14,6 +14,7 @@ from pyomo.opt import SolverFactory
 from pyomo.opt import ProblemFormat
 from pyomo.opt import TerminationCondition
 from pyomo.opt import (ReaderFactory,ResultsFormat)
+import pyomo   #      05.10.24
 
 from ssop_session import *
 
@@ -48,24 +49,21 @@ def makeNlFile ( Gr, stab_file ) :
             symbol_map = Gr.solutions.symbol_map[smap_id]
             return symbol_map
 
-#def setMuToTeach (Gr, teachSet = [] ) :                 #  teachSet 1 - выбрасываем, 0 - берем
+#def setMuToTeach (Gr, notTrainingSets = [] ) :                 #  notTrainingSets 1 - выбрасываем, 0 - берем
  #       if SvF.CV_NoRs[0] > 0:
   #          Gr.mu0[:] = 1
-   #         for s in teachSet: Gr.mu0[s] = 0
+   #         for s in notTrainingSets: Gr.mu0[s] = 0
 
-def setMuToTeach_k (k) :                 #  teachSet 1 - выбрасываем, 0 - берем
+def setMuToTeach_k (k) :                 #  notTrainingSets 1 - выбрасываем, 0 - берем
     for f in SvF.fun_with_mu:
 #        print (len(SvF.fun_with_mu), f.name, len (f.mu), k)
-        if f.mu is None: continue                                  # 20.01
         f.mu[:] = 1
-#        print ('PPPPPPPPPPPP', f.teachSet, f.mu)
-        if type(k) == type(1) :
-            for s in f.teachSet[k]: f.mu[s] = 0
-        else: return
+        if type(k) == type(1):
+           for s in f.notTrainingSets[k]:   f.mu[s].value = 0
 
 
-#def makeNlFileTeach(Gr, stab_file, teachSet_k):
- #   setMuToTeach(Gr, teachSet_k)
+#def makeNlFileTeach(Gr, stab_file, notTrainingSets_k):
+ #   setMuToTeach(Gr, notTrainingSets_k)
   #  return makeNlFile(Gr, SvF.tmpFileDir + "/" + stab_file + ".nl")
 
 
@@ -81,14 +79,14 @@ def makeNlFileS ( Gr, SetNum ) : #, symbol_map, nls ) :
     else :
         __peProblems = [SvF.TaskName + "0000"+str(k)    for k in range(SvF.CV_NoSets)]     # __pe - prefix for Pyomo&Everest stuff
 
- #       SvF.stab_NoTeach = len(teachSet)       #  передаем в Lego, чтобы не стабать 1 teach
+ #       SvF.stab_NoTeach = len(notTrainingSets)       #  передаем в Lego, чтобы не стабать 1 teach
   #      print('AAA SvF.Use_var', SvF.Use_var, SvF.stab_NoTeach)
 
         if SvF.CV_NoSets >= 2 and SvF.Hack_Stab:
             sym_maps = prep_hackStab(Gr, __peProblems)
         else :
             sym_maps = [makeNlFileTeach_k ( Gr, __peProblems[k], k )  for k in range(SvF.CV_NoSets)]
-#            sym_maps = [makeNlFileTeach ( Gr, __peProblems[k], teachSet[k] )  for k in range(len(teachSet))]
+#            sym_maps = [makeNlFileTeach ( Gr, __peProblems[k], notTrainingSets[k] )  for k in range(len(notTrainingSets))]
 
     print ('for  '+SvF.TaskName, len(__peProblems), '   files')
     return  sym_maps, __peProblems
@@ -183,10 +181,6 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
 def  solveProblemsNl( Gr, SetNum, RunMo = 'L' ):   #  'L' - Local, 'N'- Nl local, 'S' - Server
         if RunMo == 'L' :
                 resultss = []                                   #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
-#            for k in range(len(teachSet)):  # SvF.CV_NoSets):                                  # make   STABs
- #               if k > 0: SvF.Task.ReadSols('.tmp')
-  #              if len(teachSet) == 0:  setMuToTeach_k(Gr, -1)
-   #             else :                  setMuToTeach_k(Gr, k)
                 setMuToTeach_k(SetNum)
                 results = SvF.optFact.solve(Gr, tee=False)  # tee=True)   keepfiles=True)  #!!  ТОЛЬКО ДЛЯ ОДНОГО resultss
                 get_termination_condition(results)

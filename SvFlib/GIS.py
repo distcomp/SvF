@@ -13,7 +13,7 @@ class Polyline (Object):
             Object.__init__(self, name, 'Polyline')
 #            self.name = name
 ## 30            if name != '' :  addObject ( name, 'Polyline', self )
-   #         print (type(X))
+ #           print (type(X))
             if ( type(X) == type ([])
                 or str(type(X)) == '<class \'range\'>'
                 or str(type(X)) == '<class \'numpy.ndarray\'>'
@@ -22,10 +22,10 @@ class Polyline (Object):
                 self.Y = Y
                 self.Z = Z
             elif type(X) == type ('abc') :
-                self.X = deepcopy ( SvF.curentTabl.getField_tb(X) )
-                self.Y = deepcopy ( SvF.curentTabl.getField_tb(Y) )
+                self.X =  SvF.curentTabl.getFieldData(X)
+                self.Y =  SvF.curentTabl.getFieldData(Y)
                 if not (Z is None) :
-                    self.Z = deepcopy(SvF.curentTabl.getField_tb(Z))
+                    self.Z = SvF.curentTabl.getFieldData(Z)
 #            elif str(type(X)) == '<class \'range\'>' :
  #               self.X = X
   #              self.Y = Y
@@ -64,13 +64,13 @@ class Polyline (Object):
             else:
                 pixVal = Val
             if p == 0:
-                xe = mask.A[0].getPointNum(self.X[0])
-                ye = mask.A[1].getPointNum(self.Y[0])
+                xe = mask.A[0].ValToInd(self.X[0])
+                ye = mask.A[1].ValToInd(self.Y[0])
             else:
                 xb = xe
                 yb = ye
-                xe = mask.A[0].getPointNum(self.X[p])
-                ye = mask.A[1].getPointNum(self.Y[p])
+                xe = mask.A[0].ValToInd(self.X[p])
+                ye = mask.A[1].ValToInd(self.Y[p])
                 dx = xe - xb
                 dy = ye - yb
                 if dx == 0 and dy == 0: continue
@@ -98,13 +98,13 @@ def set_datValbyMask( CS,datVal, Mask,MaskVal ):  #  if Mask[..] == MaskVal  ->>
     for i in CS.sR :
         x = CS.A[0].dat[i]+CS.A[0].min
         y = CS.A[1].dat[i]+CS.A[1].min
-        mask_i = Mask.A[0].getPointNum (x)
-        mask_j = Mask.A[1].getPointNum (y)
+        mask_i = Mask.A[0].ValToInd (x)
+        mask_j = Mask.A[1].ValToInd (y)
         if Mask.grd[mask_i,mask_j] == MaskVal :
             CS.V.dat[i] = datVal
  #           print (i,mask_i,mask_j)
 #        print (i, CS.A[0].dat[i]+CS.A[0].min,CS.A[1].dat[i],CS.V.dat[i]+CS.A[1].min ,
- #              Mask.A[0].getPointNum (CS.A[0].dat[i]+CS.A[0].min), Mask.A[1].getPointNum (CS.A[1].dat[i]+CS.A[1].min))
+ #              Mask.A[0].ValToInd (CS.A[0].dat[i]+CS.A[0].min), Mask.A[1].ValToInd (CS.A[1].dat[i]+CS.A[1].min))
 
 
 def ArctanToGrad(DX):
@@ -149,13 +149,13 @@ def ClosePolygon (Border) :
 def DrawPolygon (mask,Polyg,Val):
         for p in range (int(len(Polyg)/2)) :
             if p==0 :
-                xe=mask.A[0].getPointNum (Polyg[0])
-                ye=mask.A[1].getPointNum (Polyg[1])
+                xe=mask.A[0].ValToInd (Polyg[0])
+                ye=mask.A[1].ValToInd (Polyg[1])
             else :    
                 xb=xe    
                 yb=ye
-                xe=mask.A[0].getPointNum (Polyg[2*p])
-                ye=mask.A[1].getPointNum (Polyg[2*p+1])
+                xe=mask.A[0].ValToInd (Polyg[2*p])
+                ye=mask.A[1].ValToInd (Polyg[2*p+1])
                 dx = xe - xb
                 dy = ye - yb
                 if dx==0 and dy==0 : continue
@@ -221,7 +221,7 @@ def MultVal (H1,Val) :
 #    ret.grd = H1.grd * Val
     for i in ret.A[0].NodS :
         for j in ret.A[1].NodS :
-            if not isnan(ret.grd[i,j]): ret.grd[i,j] *= Val
+            if not np.isnan(ret.grd[i,j]): ret.grd[i,j] *= Val
     return ret
 
 def CutMargins (H, mSize) :
@@ -237,7 +237,7 @@ def CutMargins (H, mSize) :
     A1.Ub -= 2*y_s
     A0.makeSets()
     A1.makeSets()
-    grd = zeros ( (A0.Ub+1, A1.Ub+1),float64 )
+    grd = np.zeros ( (A0.Ub+1, A1.Ub+1),np.float64 )
     for i in A0.NodS :
         for j in A1.NodS :
             if H.param:  grd[i,j] = H.grd[i+x_s,j+y_s]
@@ -310,10 +310,10 @@ def SaveProfil ( H, XY, step, fName ) :       #  рабртаем в ГК
 #        print p1,p2
 
         d = [ p2[0] - p1[0], p2[1] - p1[1] ]
-        L = sqrt ( d[0]**2 + d[1]**2 )
-        N = int(ceil((L/step))+1)
+        L = np.sqrt ( d[0]**2 + d[1]**2 )
+        N = int(np.ceil((L/step))+1)
         h = [ d[0]/(N-1), d[1]/(N-1) ]
-        hh = sqrt(h[0]**2+h[1]**2)
+        hh = np.sqrt(h[0]**2+h[1]**2)
 #        print 'd', d, 'L', L, 'N', N, 'h', h
 
         for n in range(N) :
@@ -396,7 +396,7 @@ def XpartYpart(DX, DY):
     Yp = DX.CopyMtr(True,'Ypart')
     for y in Xp.A[0].NodS:
         for x in Xp.A[1].NodS:
-            xy = abs(DX.grd[y, x]) + abs(DY.grd[y, x])      ########################  sqrt ?
+            xy = abs(DX.grd[y, x]) + abs(DY.grd[y, x])      ########################  np.sqrt ?
             if xy == 0:
                 Xp.grd[y, x] = 0
                 Yp.grd[y, x] = 0
@@ -411,7 +411,7 @@ def makeIncline (DX,DY) :
              ret = DX.CopyMtr(True,'Slope')
              for x in ret.A[0].NodS :
                 for y in ret.A[1].NodS :
-                    ret.grd[x,y] = sqrt(DX.grd[x,y]**2+DY.grd[x,y]**2)
+                    ret.grd[x,y] = np.sqrt(DX.grd[x,y]**2+DY.grd[x,y]**2)
              return ret
 
 
@@ -439,7 +439,7 @@ def makeFlowPond(H, Xp, Yp, flow_int, Pond):
     h = H.A[0].step
     Flow = H.makeMtrParamVnameSetG ('Flow',flow_int)
     Fl = Flow.grd
-    Htbl = zeros(((H.A[0].Ub + 1) * (H.A[1].Ub + 1), 3), float64)
+    Htbl = np.zeros(((H.A[0].Ub + 1) * (H.A[1].Ub + 1), 3), np.float64)
     m = 0
     for x in H.A[0].NodS:
         for y in H.A[1].NodS:
@@ -484,7 +484,7 @@ def makeFlow(H, Xp, Yp, flow_int):
     Flow = H.makeMtrParamVnameSetG ('Flow',flow_int)
     Fl = Flow.grd
     grd_init = Fl[0,0]
-    Htbl = zeros(((H.A[0].Ub + 1) * (H.A[1].Ub + 1), 3), float64)
+    Htbl = np.zeros(((H.A[0].Ub + 1) * (H.A[1].Ub + 1), 3), np.float64)
     m = 0
     for x in H.A[0].NodS:
         for y in H.A[1].NodS:
@@ -524,7 +524,7 @@ def makeFlow(H, Xp, Yp, flow_int):
 def Flood(H):
     print ('Flood*****************************************')  # Заполнение луж и лужищ'
     Hg = H.grd
-    Htbl = zeros(((H.A[0].Ub + 1) * (H.A[1].Ub + 1), 3), float64)
+    Htbl = np.zeros(((H.A[0].Ub + 1) * (H.A[1].Ub + 1), 3), np.float64)
     m = 0
     for x in H.A[0].NodS:
         for y in H.A[1].NodS:

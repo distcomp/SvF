@@ -6,6 +6,9 @@ from __future__ import division
 import pyomo.environ as py
 #import matplotlib.pyplot as plt
 from   os.path  import *
+
+from sympy import false
+
 #import sys
 
 from Object import *
@@ -16,202 +19,85 @@ from Vari      import *     # 30
 from GridArgs import *
 from Pars        import *
 from InData import *
-from Polynome import * 
+from Polynome import *
 
 from   copy   import *
 from   shutil import move
 import Table as Tab
+#from ModelFiles import *  #to_logOut
 #import MakeModel as MM
 #from MakeModel import ParseSelect30
 
 # import COMMON as co
 
-def str_val (val) :
-    if isnan(val) : return 'nan'
-    return "%20.16g" % (val)
+
+from Lego_Tools  import *
+
+from Lego_Tensor import *
 
 
-#  GRID 2  *************************************************************
-def cnstrFun2 (args, V_name, NDT) :   #
-    fu = Func()     #   Устарело! Надо заменить!
-    fu.dim = 2
-    fu.param = True
-    fu.NDT = NDT
-    fu.V = Vari (V_name)
-    fu.A.append(args[0]);  fu.A[0].setUb();   fu.A[0].makeSets()
-    fu.A.append(args[1]);  fu.A[1].setUb();   fu.A[1].makeSets()
-    ret =  gFun2 (fu)    #Fun ()  #   Устарело!
-    ret.A[0].Aprint()
-    ret.A[1].Aprint()
-    ret.grd = zeros((ret.A[0].Ub + 1, ret.A[1].Ub + 1), float64)
-    return ret
-
-
-
-
-#def Read_gFun1 ( ReadFrom ) :      #  outofdate  27
-#def Read_gFun2 ( ReadFrom ) :      #  outofdate  27
-
-def oFunFromSolFile(ReadFrom, Vnum=1):  # для tbl   нулевая  колонка - аргумент. по умолчанию первая функция
-    if SvF.printL: print ('FunFromFile', ReadFrom)
-    with open(ReadFrom, "r") as fi:
-        ret_fun = Fun()
-        ret_fun.param = True
-        #            fnames = fi.readline().split()
-        head = fi.readline()
-        Ver, Typ, cols = Get_Ver_Typ_cols(head)
-
-        if Typ == 'tbl':
-            ret_fun.dim = 1
-            ret_fun.V = Vari(cols[Vnum])   # для tbl   нулевая  колонка - аргумент. Vnum - функция
-        else:
-            ret_fun.dim = 2
-            ret_fun.V = Vari(cols[-1])
-        #          dim   = len (fnames) - 2
-        #            ret_fun.dim   = dim
- #       ret_fun.V = Vari(cols[Vnum])
-        #            if SvF.printL :
-        #           print "Read from", ReadFrom, cols, 'dim=', ret_fun.dim
-        tmp_curentTabl = SvF.curentTabl  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
-        SvF.curentTabl = None
-        if ret_fun.dim == 1:
-            tb = loadtxt(fi, 'double')
-            ret_fun.A = [Grid(cols[0], tb[0][0], tb[-1][0], -(tb.shape[0] - 1))]
-            ret_fun.grd = zeros(ret_fun.A[0].Ub + 1, float64)
-            for x in ret_fun.A[0].NodS:
-                ret_fun.A[0].Val[x] = tb[x][0]
-                ret_fun.grd[x] = tb[x][Vnum]
-        #                ret_fun.grd = ravel( delete (tb, range(0,1), 1 ) )
-        #                for x in ret_fun.A[0].NodS :
-        #                       ret_fun.A[0].Val[x] = tb[x][0]
-        #                        ret_fun.grd[x]      = tb[x][1]
-        #                return  ret_fun
-
-        elif ret_fun.dim == 2:
-            x_gr = fi.readline().split()
-            tb = loadtxt(fi, 'double')
-            if len(tb.shape) == 1:
-#                print ("SSSSSSSSSSSSSSSSSSSSSSSSS", tb.shape[0])
-                tb = reshape(tb, (1, tb.shape[0]))
-#                print ("SSSSSSSSS", tb.shape[0], tb.shape[1])
-                print (tb)
-            ret_fun.A = [Grid(cols[0], float(x_gr[0]), float(x_gr[-1]), -(len(x_gr) - 1)),
-                         Grid(cols[1], tb[0][0], tb[-1][0], -(tb.shape[0] - 1))]
-            ###                ret_fun.A = [ Grid ( fnames[0], float(x_gr[0]), float(x_gr[-1]), -(len (x_gr)-1) ),
-            ###                           Grid ( fnames[1], tb[ 0][0],      tb[-1][0],       -(tb.shape[0]-1) ) ]
-            #                ret_fun.A = [ Arg ( fnames[0], -(len (x_gr)-1), float(x_gr[0]), float(x_gr[-1]) ),
-            #                             Arg ( fnames[1], -(tb.shape[0]-1), tb[ 0][0], tb[-1][0] ) ]
-            for x in ret_fun.A[0].NodS:  ret_fun.A[0].Val[x] = float(x_gr[x])
-            for x in ret_fun.A[1].NodS:  ret_fun.A[1].Val[x] = tb[x][0]
-            ret_fun.grd = delete(tb, range(0, 1), 1).transpose()
-        SvF.curentTabl = tmp_curentTabl
-        return ret_fun
-
-    #      except IOError as e:
-    print ("**********************не удалось открыть файл  !" + ReadFrom + '!')
-    return None;
-
-
-def FunFromSolFile(ReadFrom, AddObj = False):
-    if SvF.printL: print ('FunFromSolFile', ReadFrom)
-    root, ext = splitext(ReadFrom.upper())
-    if '.ASC' == ext:
-        cols, xp, yp, grd = ReadGridInf(ReadFrom)
-    else:
-        cols, xp, yp, grd = ReadSolInf(ReadFrom)
-
-#    print 'BBB', grd.shape
-    if AddObj :
-        ret_fun = Fun(cols[-1])
-    else :
-        ret_fun = Fun('')
-        ret_fun.V = Vari(cols[-1])
-    if len(xp) == 0 and len(yp) == 0: ret_fun.dim = 0
-    elif len(xp) == 0:                ret_fun.dim = 1
-    else:                             ret_fun.dim = 2
-    ret_fun.param = True
-    ret_fun.V = Vari(cols[-1])
-
-    tmp_curentTabl = SvF.curentTabl  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
-    SvF.curentTabl = None
-    if ret_fun.dim == 0:
-        ret_fun.A = []
-        ret_fun.grd = grd    #  бросил надоело ...
-    elif ret_fun.dim == 1:
-            ret_fun.A = [Grid(cols[0], yp[0], yp[-1], -(len(yp) - 1))]
-            ret_fun.grd = grd
-    elif ret_fun.dim == 2:
-            ret_fun.A = [Grid(cols[0], xp[0], xp[-1], -(len(xp) - 1)),
-                         Grid(cols[1], yp[0], yp[-1], -(len(yp) - 1))]
-            ret_fun.grd = grd.transpose()  # delete(tb, range(0, 1), 1).transpose()
-    SvF.curentTabl = tmp_curentTabl
-    return ret_fun
-
-
-
-def FunFromFileNew ( ReadFrom, Vnum = 1, AddObj = False ) :    #  для tbl  нулевая колонка - аргумент. по умолчанию первая функция
-        if SvF.printL : print ('FunFromFile', ReadFrom)
-        root, ext = splitext(ReadFrom.upper())
-        if '.ASC' == ext or \
-           '.SOL' == ext :
-            return FunFromSolFile(ReadFrom, AddObj)
-#            cols, x1, x2, tb = ReadGridInf(ReadFrom)
-        else:
-            cols, x1, x2, tb = ReadSolInf ( ReadFrom )    # только для dim==1
-        if AddObj:
-            ret_fun = Fun(cols[Vnum])
-        else:
-            ret_fun = Fun('')
-            ret_fun.V = Vari(cols[Vnum])
-#        ret_fun = Fun()
-        if len ( x2 ) == 0 :  ret_fun.dim = 1
-        else               :  ret_fun.dim = 2
-        ret_fun.param = True
-#        ret_fun.V     = Vari ( cols[Vnum] )
-
-        tmp_curentTabl = SvF.curentTabl  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
-        SvF.curentTabl = None
-        if ret_fun.dim == 1:
-            ret_fun.A = [Grid(cols[0], tb[0][0], tb[-1][0], -(tb.shape[0] - 1))]
-            ret_fun.grd = zeros(ret_fun.A[0].Ub + 1, float64)
-            for x in ret_fun.A[0].NodS:
-###                ret_fun.A[0].Val[x] = tb[x][0]
-                ret_fun.grd[x] = tb[x][Vnum]
-        elif ret_fun.dim == 2:
-            ret_fun.A = [Grid(cols[0], float(x1[0]), float(x1[-1]), -(len(x1) - 1)),
-                         Grid(cols[1], x2[0], x2[-1], -(len(x2) - 1))]
-            ret_fun.grd = tb
-#            print (tb.shape)
-        SvF.curentTabl = tmp_curentTabl
-        return ret_fun
-
-class Fun (Object) :
-#    def __init__ (self, Vname='',  As=[], param=False, PolyPow=-1  ) :
-    def __init__ (self, Vname='',  As=[], param=False, PolyPow=-1, Finitialize = 0, DataReadFrom = '' ) :
-        Object.__init__(self, Vname, 'Fun')
+class BaseFun (Tensor) :
+    def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 1, DataReadFrom = '',Data=[],
+                  Type='g', Domain = None, ReadFrom = '' ) :
+        Tensor.__init__ (self, Vname )
+        from Table import getCurrentFieldData
+#        Object.__init__(self, Vname, 'Fun')
         self.V = Vari(Vname)  #V #0 #[ ]             #  var
-        self.A = copy(As) #[ ]             #  Arg
+ #       self.A = copy(As) #[ ]             #  Arg
+        self.A = deepcopy(As) #[ ]             #  Arg     КОПИРУЕМ АРГУМЕНТЫ
 
+        #    self.smbF = ''
         self.dim = len (self.A)  #-1
+        self.param    = param #False
+        self.DataReadFrom = DataReadFrom
         self.NoR   = 0
+        self.domain = None
+        self.domain_SPWL = None
+        self.type  = Type
+        self.PolyPow  = Degree # -1            # степень полинома
+        if self.PolyPow != -1:  self.type  = 'p'
+
+        self.Int_smbFxx_2 = None
+
+ #       self.domain_ = py.Reals
+        if SvF.Compile :  return
+
+        if isnotNone ( Domain ) : self.domain = Domain.domain
+
+        if   self.type == 'g':             pass
+        elif   self.type == 'p':           pass
+        elif   self.type == 'smbFun':      pass
+        elif self.type == 'SPWL':          self.type = 'gSPWL'
+#        elif self.type == 'G7':            self.type = 'gSPWL'
+#        elif self.type == 'G_ind':         self.type = 'gSPWLi'
+        elif self.type == 'SPWLi':         self.type = 'gSPWLi'
+        elif self.type == 'G':             self.type = 'gG'  # Там что-то не так
+#        elif self.type == 'Cycle':         self.type = 'gCycle'
+        elif self.type == 'gCycle':        pass
+        else :
+            print ('Неизвестный тип функции   ', self.type)
+            exit (-1)
+#        print ( "Fun:"+self.V.name, "Type:"+self.type)
+        self.Oprint()
+
+
         self.sR    = []           # множ записей табл
         self.NDT   = -99999
-        self.type  = "g"
-        self.PolyPow  = PolyPow # -1            # степень полинома
         self.sizeP = 0
-        if PolyPow > 0 :
+        if self.PolyPow > 0 :
             self.type = "p"
             self.sizeP = PolySize ( self.dim, self.PolyPow )
-        self.grd   = None
-        self.var   = None           # 29
+
+        #self.grd   = None
+#        self.var   = None           # 29
         self.mu    = None
         self.CVerr = None           # 04.23
-#        self.testSet  = []
-#        self.teachSet = []
-        self.testSet  = SvF.testSet
-        self.teachSet = SvF.teachSet
-        self.domain = None
-        self.neNDT = None
+#        self.tesValidationSets  = []
+#        self.notTrainingSets = []
+        self.ValidationSets  = SvF.ValidationSets
+        self.notTrainingSets = SvF.notTrainingSets
+        self.TrainingSets = SvF.TrainingSets
+
         self.Nxx   = 0
         self.Nyy   = 0
         self.Nxy   = 0
@@ -222,19 +108,215 @@ class Fun (Object) :
         self.MSDmode = ''
         self.measurement_accur = 0
         self.CVresult = []    #  [[spart, npart],[spart, npart],.. ]    27
-        self.sCrVa = 0        #  sqrt (..)                              27
-        self.DataReadFrom = DataReadFrom
-        self.param    = param #False
-        self.domain_ = py.Reals
+        self.sCrVa = 0        #  np.sqrt (..)                              27
+ #       self.DataReadFrom = DataReadFrom
+#        self.param    = param #False
         self.Finitialize = Finitialize
+        self.ArgNormalition = False
 
-        self.sizeP = PolySize ( self.dim, self.PolyPow )
+#        self.sizeP = PolySize ( self.dim, self.PolyPow )
+        if SvF.Compile :  return    #####################################
 
-        if SvF.Compile :  return
-        self.Initialize( self.Finitialize )
+        for a in self.A:
+            d = getCurrentFieldData(a.name)     #      Если имя есть в таблице ...
+            if not (d is None) : a.dat = d
+        for id, d in enumerate(Data):           #      Если имя есть в Data=[]   ...
+            if d == '':  continue
+            if id==0:   self.V = Vari(Vname, d)
+            else:
+                self.A[id-1].fld_name = d
+                from Table import getCurrentFieldData
+                self.A[id-1].dat = getCurrentFieldData(d)
+
+        self.CleanData()   #  dat
+        self.Allocate_grd()
+#        self.CleanData()   #  dat
+        self.Normalization(SvF.VarNormalization)
+        self.calcNDTparam()
+        if ReadFrom != '':  self.ReadSol(ReadFrom)
+
+    def Allocate_grd(self) :
+        if self.type != 'p':  # не полином
+            Sizes = [a.Ub + 1 for a in self.A]
+            self.Allocate_tensor(Sizes)
+        else:
+            self.Allocate_tensor([self.sizeP])
+
+    """
+    def Initialize ( self, InitFloat = None ) :
+        if SvF.printL > 0: printS('Initialize: |'); self.Oprint()
+        if InitFloat is None : InitFloat = '0'
+       
+        tmpcurentTabl = SvF.curentTabl
+        if self.DataReadFrom != '':
+     #       Tab.Select ( self.DataReadFrom )
+            leftName, Fields, FileName, AsName, where = Tab.ParseSelect30(self.DataReadFrom)
+            Tab.Table( FileName, AsName, Fields )
+        
+        for ia, a in enumerate(self.A):  # дописываем гриды
+            if SvF.printL:  print ('A:', a)
+            if type(a) != type('abc'):
+                self.A[ia] = deepcopy(a)   #   !!!!!!!!!!!! #
+                continue
+            g = findSetByName(SvF.Task.Sets, a)
+            if g == None:
+                print ('\n***********************  NO Set FOR ARG NAME ', a, '*********************')
+                g = Set (a)
+                print ("***********************Set:",)
+                g.myprint()
+                print ('    HAS BEEN ADDED *****************************')
+            # exit (-1)
+            self.A[ia] = Set (g) #Arg (g)
+        
+        
+        if self.dim > 0 :
+            self.CleanData()
+#            SvF.curentTabl = tmpcurentTabl
+            self.Normalization(SvF.VarNormalization)
+            self.calcNDTparam()
+        
+        #        if self.param:                     # function-Param
+        if self.type != 'p':          #  не полином           # function-Param              # 29
+#                print('RRRRRRRRRRRRRRRRRR  SSS', self.sizeP, self.type)
+                if self.dim == 0:
+                    self.grd = 0
+                elif self.dim == 1:
+#                    print('UUUUUUUUUUUUSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS', self.A[0].Ub, self.type)
+                    self.grd = np.zeros((self.A[0].Ub + 1), np.float64)
+                    if not np.isnan (InitFloat) :  self.grd[:] = InitFloat
+                elif self.dim == 2:
+#                    print('DDDDDDDUUSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS', self.A[0].Ub + 1, self.A[1].Ub + 1, self.type)
+                    self.grd = np.zeros((self.A[0].Ub + 1, self.A[1].Ub + 1), np.float64)
+                    if not np.isnan (InitFloat) :  self.grd[:][:] = InitFloat
+#                    print('G',self.grd)
+
+                elif self.dim == 3:
+#                    print('DDDDDDDUUSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS', self.A[0].Ub + 1, self.A[1].Ub + 1, self.type)
+                    self.grd = np.zeros((self.A[0].Ub + 1, self.A[1].Ub + 1, self.A[2].Ub + 1), np.float64)
+                    if not np.isnan (InitFloat) :  self.grd[:][:][:] = InitFloat
+                if self.param: self.InitByData()                #29
+        else :
+#            print('PPPPPPPPPPPPPPPPPPPSSS', self.sizeP, self.type)
+            self.grd = np.zeros(self.sizeP, np.float64)
+       
+        return self
+    """
+
+    def CleanData(self):
+        from ModelFiles import to_logOut
+        if self.dim == 0: return
+
+        dSize = 0
+        if isnotNone(self.V.dat): dSize = len(self.V.dat)
+        for a in self.A :
+            if isnotNone(a.dat): dSize = len(a.dat)
+        print (dSize)
+        if dSize == 0:
+#            print ('Nothing to Clean')
+            return
+
+        self.NoR = 0
+        for i in range (dSize):
+            if isnotNone(self.V.dat):
+                if np.isnan(self.V.dat[i]) or self.V.dat[i] == self.NDT:
+                    if SvF.useNaN == False:
+                        print('Rec', i, 'deleted')
+                        to_logOut('W:   Record  ' + str(i) + '  was deleted from data set of function   ' + self.V.name)
+                        continue
+                self.V.dat[self.NoR] = self.V.dat[i]
+            OK = 1
+            for a in self.A:
+                if a.dat is None: continue
+                if np.isnan(a.dat[i]): OK = 0; break
+                if a.dat[i] == self.NDT: OK = 0; break
+                if a.dat[i] < a.min   or   a.dat[i] > a.max:   OK = 0; break
+#                if a.dat[i] < 0   or   a.dat[i] > a.ma_mi :   OK = 0; break
+                a.dat[self.NoR] = a.dat[i]
+            if  OK:  self.NoR += 1
+            else :
+                to_logOut('W:   Record  ' + str(i) + '  was deleted from data set of function   ' + self.V.name)
+                print('Rec', i, 'deleted')
+
+        if isnotNone(self.V.dat):  # resize
+                self.V.dat = np.delete(self.V.dat, range(self.NoR, self.V.dat.shape[0]))
+        for a in self.A:
+            if isnotNone( a.dat ):
+                a.dat = np.delete(a.dat, range(self.NoR, a.dat.shape[0]))
+
+        self.sR = range(self.NoR)
+        print('After Cleaning' ,self.name, '->self.NoR =', self.NoR)
 
 
+    """""
+            if tabl is None:  return False
+            haveAll = True
+            haveAny = False
 
+            V_tb = tabl.getFieldData(self.V.name)
+            #        if print ('V', V_tb[:])
+            if V_tb is None:
+                #            print ("GetData ****************************** No Field in ", tabl.name,  "For Var", self.V.name, "****")
+                haveAll = False
+            else:
+                self.V.dat = np.zeros(tabl.NoR, np.float64)
+                haveAny = True
+
+            A_tb = []
+            for a in self.A:
+                A_tb.append(tabl.getFieldData(a.oname))
+                if A_tb[-1] is None:
+                    #               print ("GetData ****************************** No Field in ", tabl.name,  "For Arg", a.name, "*****")
+                    haveAll = False
+                else:
+                    a.dat = np.zeros(tabl.NoR, np.float64)
+                    haveAny = True
+            if haveAny == False: return False
+
+            self.NoR = 0
+            numNaN = 0
+            for i in tabl.sR:
+                if not V_tb is None:
+                    if np.isnan(V_tb[i]) or V_tb[i] == self.NDT:
+                        if SvF.useNaN == False: continue
+                        numNaN += 1
+                    self.V.dat[self.NoR] = V_tb[i]  # 0
+                OK = 1
+                for narg, a_tb in enumerate(A_tb):
+                    if A_tb[narg] is None: continue
+                    if np.isnan(a_tb[i]): OK = 0; break
+                    if a_tb[i] == self.NDT: OK = 0; break
+                    if a_tb[i] < self.A[narg].min or a_tb[i] > self.A[narg].max: OK = 0; break
+                    self.A[narg].dat[self.NoR] = a_tb[i]  # 1 ...
+                if not OK: continue
+                self.NoR += 1
+            #            print self.NoR,
+
+            if not V_tb is None:  # resize
+                self.V.dat = np.delete(self.V.dat, range(self.NoR, self.V.dat.shape[0]))
+            for narg, arg in enumerate(self.A):
+                if not A_tb[narg] is None:
+                    arg.dat = np.delete(arg.dat, range(self.NoR, arg.dat.shape[0]))
+
+            self.sR = range(self.NoR)
+            #        if not self.V.dat is None :
+            #           for i in range (len(self.V.dat) ) : print (i, self.V.dat[i])
+            print(self.name, '->self.NoR =', self.NoR)
+            if SvF.printL: print("GetData numNaN", numNaN, "NoR", self.NoR)  # , "mins", tbl.min(0), "maxs", tbl.max(0)
+            return haveAll
+    """
+
+    def StrArds (self) :
+            ret = ''
+            for d, a in enumerate (self.A):
+                ret += a.name + ','
+#                print (ret)
+            if len(self.A)>0: ret = ret[0:-1]
+            return ret
+
+    def ArgNamesList (self) :
+            ret = []
+            for a in self.A:  ret.append(a.name)
+            return ret
 
 
     def NameArds (self) :
@@ -250,18 +332,21 @@ class Fun (Object) :
 
 
     def Oprint (self) :
-            printS (self.Otype + ' '+ self.V.name + '(' ,'|')
-            for d, a in enumerate (self.A): #range(self.dim) :
-                if type (a) == type ('abc') : print (a)
-                else                        : a.Oprint()
-                if d == self.dim-1 :  break
-                printS (',','|')
-
             if self.param :  param = 'p'
             else          :  param = 'v'
-            if self.type == 'p' : printS (')',self.type+str(self.PolyPow)+param,'|')
-            else                : printS (')',self.type               +param,'|')
-            print (self.V.sigma, self.V.average, self.NoR)
+            st = param + self.Otype + ' ' +  self.V.name + '('
+   #         printS (self.Otype + ' '+ self.V.name + '(' ,'|')
+            for d, a in enumerate (self.A): #range(self.dim) :
+                if type (a) == type ('abc') : st += ' ' + a  #print (a)
+                else                        :
+                    st +=  a.name +': ' + str(a.min) + '-' + str(a.max) + " st:" +str(a.step) + ' Up:' +str(a.Ub) # a.Oprint()
+                if d < self.dim-1          : st += ','
+                else                        : st += ' ) '
+            st += self.type
+            if self.type == 'p': st += str(self.PolyPow)
+            st += " sig:" + str(self.V.sigma) + ' avr:' + str(self.V.average) + ' NoR:' + str (self.NoR)
+            print (st)
+            return
 
     def Rename (self, Vname, *A) :
             self.name = Vname
@@ -280,29 +365,32 @@ class Fun (Object) :
             NoR += 1
         self.NoR = NoR
         print(self.NoR)
-        self.V.dat    = resize(self.V.dat, NoR)
-        self.A[0].dat = resize(self.A[0].dat, NoR)
-        self.A[1].dat = resize(self.A[1].dat, NoR)
+        self.V.dat    = np.resize(self.V.dat, NoR)
+        self.A[0].dat = np.resize(self.A[0].dat, NoR)
+        self.A[1].dat = np.resize(self.A[1].dat, NoR)
         self.sR = range(self.NoR)
 
 
     def Uppend_dat ( self, V, A0, A1=None) :      #
         self.NoR += 1
-        self.V.dat    = resize(self.V.dat, self.NoR)
+        self.V.dat    = np.resize(self.V.dat, self.NoR)
         self.V.dat[self.NoR-1] = V
-        self.A[0].dat    = resize(self.A[0].dat, self.NoR)
+        self.A[0].dat    = np.resize(self.A[0].dat, self.NoR)
         self.A[0].dat[self.NoR-1] = A0 - self.A[0].min
         if not A1 is None :
-            self.A[1].dat    = resize(self.A[1].dat, self.NoR)
+            self.A[1].dat    = np.resize(self.A[1].dat, self.NoR)
             self.A[1].dat[self.NoR-1] = A1 - self.A[1].min
         self.sR = range(self.NoR)
 
-
+    """""
     def grd_to_var (self) :
         if self.var is None:  return
         if self.param : return
         if self.type == 'p' :
             for i in range ( self.sizeP ) :  self.var[i].value = self.grd[i]
+        elif self.type == 'smbFun' :
+            pass
+  #          for i in range ( self.NoCoeff ) :  self.var[i].value = self.grd[i]
         else :
             if   self.dim == 0:
                 self.var.value = self.grd
@@ -323,12 +411,16 @@ class Fun (Object) :
 #                            self.var[i,j,k].value = self.grd[i,j,k]
                             self.var[i,j,k].set_value(self.grd[i,j,k], skip_validation=True)
 
+    
     def var_to_grd (self) :
         if self.var is None:  return
         if self.param : return
 #        print ('var_to_grd',self.type,self.dim)
         if self.type == 'p' :
             for i in range ( self.sizeP ) :  self.grd[i] = self.var[i].value
+        elif self.type == 'smbFun' :
+            pass
+    #         for i in range ( self.NoCoeff ) :  self.grd[i] = self.var[i].value
         else :
             if   self.dim == 0:   self.grd = self.var.value
             elif self.dim == 1:
@@ -341,7 +433,7 @@ class Fun (Object) :
                     for j in self.A[1].NodS:
                         for k in self.A[2].NodS:
                             self.grd[i,j,k] = self.var[i,j,k].value
-
+    """""
                                                                          # возможно меняет  param и type.
     def CopyFromFun ( self, DataFrom, new_param=None, new_type=None, copy_dat = True ):
         if new_type is None : self.type  = DataFrom.type                # для полином -> грид : вычисляет значения
@@ -362,16 +454,17 @@ class Fun (Object) :
         self.NoR   = DataFrom.NoR
         self.sR    = DataFrom.sR
         self.PolyPow  = DataFrom.PolyPow
-        self.domain = DataFrom.domain
-        self.neNDT = deepcopy(DataFrom.neNDT)      #    deepcopy ?????
+   #     self.domain = DataFrom.domain
+        self.domain = deepcopy(DataFrom.domain)      #    deepcopy ?????
         self.Nxx   = DataFrom.Nxx
         self.Nyy   = DataFrom.Nyy
         self.Nxy   = DataFrom.Nxy
         self.gap   = deepcopy(DataFrom.gap)
         self.DataReadFrom = DataFrom.DataReadFrom
-        self.domain_  = DataFrom.domain_
-        self.testSet  = DataFrom.testSet
-        self.teachSet = DataFrom.teachSet
+ #       self.domain_  = DataFrom.domain_
+        self.ValidationSets  = DataFrom.ValidationSets
+        self.notTrainingSets = DataFrom.notTrainingSets
+        self.TrainingSets = DataFrom.TrainingSets
 #        self.G     = DataFrom.G
         self.grd = None
         self.var = None                 # 29
@@ -380,9 +473,9 @@ class Fun (Object) :
             return self                                   # 29
         if self.type == 'p' :      return self     # grd  handling
 #       'p' -> 'g'
-        if self.dim   == 1:  self.grd = zeros(self.A[0].Ub + 1, float64)
-        elif self.dim == 2:  self.grd = zeros((self.A[0].Ub + 1, self.A[1].Ub + 1), float64)
-        elif self.dim == 3:  self.grd = zeros((self.A[0].Ub + 1, self.A[1].Ub + 1, self.A[2].Ub + 1), float64)
+        if self.dim   == 1:  self.grd = np.zeros(self.A[0].Ub + 1, np.float64)
+        elif self.dim == 2:  self.grd = np.zeros((self.A[0].Ub + 1, self.A[1].Ub + 1), np.float64)
+        elif self.dim == 3:  self.grd = np.zeros((self.A[0].Ub + 1, self.A[1].Ub + 1, self.A[2].Ub + 1), np.float64)
 
         if 1 :           
                 Ax = self.A[0]
@@ -420,7 +513,7 @@ class Fun (Object) :
         ret.dim = 1
         if not draw_name is None : ret.V.draw_name = draw_name
         ret.A.append (deepcopy(self.A[axenum]))
-        ret.grd = zeros((ret.A[0].Ub + 1), float64)
+        ret.grd = np.zeros((ret.A[0].Ub + 1), np.float64)
         for i,x in enumerate (ret.A[0].Val):
             if axenum == 0:  ret.grd[i] = self.F([x,val])
             else:            ret.grd[i] = self.F([val,x])
@@ -432,66 +525,6 @@ class Fun (Object) :
                     ret.A[0].dat.append(self.A[axenum].dat[i])
         return ret
 
-    def Initialize ( self, InitFloat = None ) :
-        if SvF.printL > 0: printS('Initialize: |'); self.Oprint()
-#        haveAll = False
- #       printS('******************Initialize: |');  self.Oprint();   print (InitFloat)
-        if InitFloat is None : InitFloat = '0'
-
-        tmpcurentTabl = SvF.curentTabl
-        if self.DataReadFrom != '':
-     #       Tab.Select ( self.DataReadFrom )
-            leftName, Fields, FileName, AsName, where = Tab.ParseSelect30(self.DataReadFrom)
-            Tab.Table( FileName, AsName, Fields )
-        for ia, a in enumerate(self.A):  # дописываем гриды
-            if SvF.printL:  print ('A:', a)
-            if type(a) != type('abc'):
-                self.A[ia] = deepcopy(a)   #   !!!!!!!!!!!! #
-                continue
-            g = findGridByName(SvF.Task.Grids, a)
-            if g == None:
-                print ('\n***********************  NO GRID FOR ARG NAME ', a, '*********************')
-                g = Grid (a)
-                print ("***********************GRID:",)
-                g.myprint()
-                print ('    HAS BEEN ADDED *****************************')
-            # exit (-1)
-            self.A[ia] = Grid (g) #Arg (g)
-
-        if SvF.curentTabl != None :
-           haveAll = self.GetData (SvF.curentTabl)     # считываем
-#           print('AAAAAAA for PARAM')
-           if haveAll==False and self.param :
-               print ('Not all field for PARAM')
-#               exit (-1)
-#        self.ReadFrom = ''
-        SvF.curentTabl = tmpcurentTabl
-
-        self.Normalization(SvF.VarNormalization)
-
-        self.Make_neNDT()
-#        if self.param:                     # function-Param
-        if self.type != 'p':          #  не полином           # function-Param              # 29
-#                print('RRRRRRRRRRRRRRRRRR  SSS', self.sizeP, self.type)
-                if self.dim == 0:
-                    self.grd = 0
-                elif self.dim == 1:
-#                    print('UUUUUUUUUUUUSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS', self.A[0].Ub, self.type)
-                    self.grd = zeros((self.A[0].Ub + 1), float64)
-                    if not isnan (InitFloat) :  self.grd[:] = InitFloat
-                elif self.dim == 2:
-#                    print('DDDDDDDUUSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS', self.A[0].Ub + 1, self.A[1].Ub + 1, self.type)
-                    self.grd = zeros((self.A[0].Ub + 1, self.A[1].Ub + 1), float64)
-                    if not isnan (InitFloat) :  self.grd[:][:] = InitFloat
-                elif self.dim == 3:
-#                    print('DDDDDDDUUSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS', self.A[0].Ub + 1, self.A[1].Ub + 1, self.type)
-                    self.grd = zeros((self.A[0].Ub + 1, self.A[1].Ub + 1, self.A[2].Ub + 1), float64)
-                    if not isnan (InitFloat) :  self.grd[:][:][:] = InitFloat
-                if self.param: self.InitByData()                #29
-        else :
-#            print('PPPPPPPPPPPPPPPPPPPSSS', self.sizeP, self.type)
-            self.grd = zeros(self.sizeP, float64)
-        return self
 
     def Resize (self, As=[]) :    # new sizes
         if self.type != 'p':  # не полином           # function-Param              # 29
@@ -500,23 +533,20 @@ class Fun (Object) :
             elif self.dim == 1:
                 self.grd.resize( As[0].Ub+1)
             elif self.dim == 2:
-                new_grd = zeros((As[0].Ub + 1, As[1].Ub + 1), float64)
+                new_grd = np.zeros((As[0].Ub + 1, As[1].Ub + 1), np.float64)
                 A0 = min (self.A[0].Ub + 1, As[0].Ub + 1)
                 A1 = min (self.A[1].Ub + 1, As[1].Ub + 1)
                 new_grd[:A0,:A1] = self.grd[:A0,:A1]
                 self.grd = new_grd
 #            elif self.dim == 3:
- #               self.grd = zeros((self.A[0].Ub + 1, self.A[1].Ub + 1, self.A[2].Ub + 1), float64)
+ #               self.grd = np.zeros((self.A[0].Ub + 1, self.A[1].Ub + 1, self.A[2].Ub + 1), np.float64)
         self.A = copy(As)
 
     def Normalization ( self, VarNormalization ) :
-#      self.dim   = len(self.A)
-#       print tbl.min(0)[self.num] 
- #     print len(self.A)
-# ?        self.V.name
-        for arg in self.A :   arg.Normalization_UbSets ( )
+#        for arg in self.A :
+ #           print('Fun NOR Nor', arg.name, arg.dat)
+  #          arg.Normalization ( )
         self.V.Normalization (VarNormalization)
-##      self.V.Normalization (self, VarNormalization) 
 
 
 
@@ -528,38 +558,40 @@ class Fun (Object) :
               if vis1  < 0 : vis1  = - vis1 * A1.step
 
               for m in self.sR :
-                for x   in range( max(0, A0.indNormVal(A0.dat[m]-vis0)), min(A0.Ub, A0.indNormVal(A0.dat[m]+vis0))+1 ) :
-                  for y in range( max(0, A1.indNormVal(A1.dat[m]-vis1)), min(A1.Ub, A1.indNormVal(A1.dat[m]+vis1))+1 ) :
+                for x   in range( max(0, A0.NormValToInd(A0.dat[m]-vis0)), min(A0.Ub, A0.NormValToInd(A0.dat[m]+vis0))+1 ) :
+                  for y in range( max(0, A1.NormValToInd(A1.dat[m]-vis1)), min(A1.Ub, A1.NormValToInd(A1.dat[m]+vis1))+1 ) :
                      self.grd[x,y] = val  #1              29
           
             
     def calcNDTparam(self) :
+        if self.dim == 0: return
         A0 = self.A[0]
-        neNDT = self.neNDT
+        domain = self.domain
         if self.dim == 1:
-          if neNDT is None :
+          if domain is None :
             self.Nxx = A0.Ub-1
           else :
-            self.Nxx = sum ( neNDT[x-1]*neNDT[x]*neNDT[x+1] for x in range( 1,A0.Ub ) )
-        else :          
+            self.Nxx = sum ( domain[x-1]*domain[x]*domain[x+1] for x in range( 1,A0.Ub ) )
+        elif self.dim == 2:
           A1 = self.A[1]
-          if neNDT is None :
+          if domain is None :
               self.Nxx = (A0.Ub-1)*(A1.Ub+1)
               self.Nyy = (A0.Ub+1)*(A1.Ub-1)
               self.Nxy = (A0.Ub-1)*(A1.Ub-1)
           else :
-            self.Nxx = sum ( neNDT[x-1,y] * neNDT[x,y] * neNDT[x+1,y]  
+            self.Nxx = sum ( domain[x-1,y] * domain[x,y] * domain[x+1,y]
                     for y in A1.NodS    for x in A0.mNodSm )
-            self.Nyy = sum ( neNDT[x,y-1] * neNDT[x,y] * neNDT[x,y+1]  
+            self.Nyy = sum ( domain[x,y-1] * domain[x,y] * domain[x,y+1]
                     for y in A1.mNodSm  for x in A0.NodS )
-            self.Nxy = sum ( neNDT[x+1,y+1] * neNDT[x+1,y-1] * neNDT[x-1,y+1] * neNDT[x-1,y-1]
+            self.Nxy = sum ( domain[x+1,y+1] * domain[x+1,y-1] * domain[x-1,y+1] * domain[x-1,y-1]
                     for y in A1.mNodSm  for x in A0.mNodSm )
-            
+
 
     def fneNDT (self, x, y=0) :
-        if self.neNDT is None : return 1
-        if self.dim == 1      : return self.neNDT[x]
-        if self.dim == 2      : return self.neNDT[x,y]
+        if self.domain is None : return 1
+#        print ('@@@@@@@@@@@@@@@@@@@self.neNDT[x,y]', self.neNDT[x,y])
+        if self.dim == 1      : return self.domain[x]
+        if self.dim == 2      : return self.domain[x,y]
 
     def f_gap (self, x, y=0) :
         if self.gap is None : return 1
@@ -567,97 +599,19 @@ class Fun (Object) :
         if self.dim == 2      : return self.gap[x,y]
 
     def AddGap ( self ) :
-        if self.dim == 1 :   self.gap = ones (  self.A[0].Ub+1,                 float64 )
-        if self.dim == 2 :   self.gap = ones ( (self.A[0].Ub+1, self.A[1].Ub+1),float64 )
+        if self.dim == 1 :   self.gap = ones (  self.A[0].Ub+1,                 np.float64 )
+        if self.dim == 2 :   self.gap = ones ( (self.A[0].Ub+1, self.A[1].Ub+1),np.float64 )
 
-
-    def Make_neNDT(self) :
-        if self.dim == 0 :  return
-
-        if not self.domain is None :
-#            self.domain.Make_neNDT()
-            self.neNDT = self.domain.isDat
-        self.calcNDTparam()
-        return
 
     def neNDTbyVal (self, xVal, yVal=None) :
         ix = self.A[0].ValToInd(xVal)
         if self.dim == 1:
-            return self.neNDT[ix]
+            return self.domain[ix]
         else :
             iy = self.A[1].ValToInd(yVal)
-            return self.neNDT[ix,iy]
+            return self.domain[ix,iy]
 
-    def GetData ( self, tabl ) :
- #       print ('GetData', self.name)
-#        if SvF.printL >0 : printS ('GetData: |'); self.printM()
-        if tabl is None :  return False
-        haveAll = True
-        haveAny = False
 
-        V_tb = tabl.getField_tb (self.V.name)
-#        if print ('V', V_tb[:])
-        if V_tb is None :
-#            print ("GetData ****************************** No Field in ", tabl.name,  "For Var", self.V.name, "****")
-            haveAll = False
-        else :
-            self.V.dat = zeros( tabl.NoR, float64 )
-            haveAny = True
-
-        A_tb = []    
-        for a in self.A :
-            A_tb.append( tabl.getField_tb (a.oname) )
-            if A_tb[-1] is None :
- #               print ("GetData ****************************** No Field in ", tabl.name,  "For Arg", a.name, "*****")
-                haveAll = False
-            else :
-                a.dat = zeros( tabl.NoR, float64 )
-                haveAny = True
-        if haveAny == False : return False
-
-        self.NoR = 0
-        numNaN = 0
-        for i in tabl.sR :
-            if not V_tb is None :
-                if isnan ( V_tb[i] ) or V_tb[i] == self.NDT :
-                    if SvF.useNaN == False: continue
-                    numNaN += 1 
-                self.V.dat[self.NoR] = V_tb[i]                   # 0
-            OK = 1
-            for narg, a_tb in enumerate(A_tb) :
-                if A_tb[narg] is None : continue
-                if isnan (a_tb[i])     : OK = 0; break
-                if a_tb[i] == self.NDT : OK = 0; break
-                if a_tb[i] <  self.A[narg].min or a_tb[i] >  self.A[narg].max  : OK = 0; break
-                self.A[narg].dat[self.NoR] = a_tb[i]   # 1 ...
-            if not OK : continue
-            self.NoR += 1
-#            print self.NoR, 
-
-        if not V_tb is None :                         #  resize
-              self.V.dat = delete ( self.V.dat, range(self.NoR,self.V.dat.shape[0]) )
-        for narg, arg in enumerate(self.A) :
-            if not A_tb[narg] is None :
-                  arg.dat = delete (arg.dat, range(self.NoR,arg.dat.shape[0]) )
-        
-        self.sR = range (self.NoR)
-#        if not self.V.dat is None :
- #           for i in range (len(self.V.dat) ) : print (i, self.V.dat[i])
-        print (self.name, '->self.NoR =', self.NoR)
-        if SvF.printL : print ("GetData numNaN", numNaN,"NoR", self.NoR)  #, "mins", tbl.min(0), "maxs", tbl.max(0)
-        return haveAll
-
-    def nameFun(self):
-            name = self.V.name
-            if len(self.A) > 0:  name += '('
-            #           print 'nnn', name, self.dim
-            for ar in self.A:
-                if type(ar) == type('abc'):  name += ar + ','
-                else:                        name += ar.name + ','
-            if len(self.A) > 0:  name = name[0:-1]  # -1 убрать запятую
-            if len(self.A) > 0:  name = name + ')'
-            #            print 'nameFun', name, len(self.A), '|'
-            return name
 
     def onameFun(self):
             name = self.V.name
@@ -769,24 +723,60 @@ class Fun (Object) :
 
     def Fix (self) :
         if self.type == 'p' : return
-        if self.neNDT is None : return
-        if self.dim == 0 :
-            pass
-# ?????                  self.grd.value = self.NDT
-# ?????                  self.grd.fixed = True 
-        elif self.dim == 1 :
+        if self.domain is None : return
+        if self.dim == 0 : return
+
+        if self.dim == 1 :
             for x in self.A[0].NodS :  
-                if not self.neNDT[x] :
+                if not self.domain[x] :
                   self.var[x].value = self.NDT
                   self.var[x].fixed = True
         else :      
             for x in self.A[0].NodS :  
-              for y in self.A[1].NodS :  
-                if not self.neNDT[x,y] :
+              for y in self.A[1].NodS :
+           #     if  np.isnan(self.var[x,y].value) or self.var[x,y].value== self.NDT:  ################
+            #        self.var[x,y].value=0     ########################################
+                if not self.domain[x,y] :
                   self.var[x,y].value = self.NDT
                   self.var[x,y].fixed = True
 
+    def FillNaN (self) :
+        if self.type == 'p' : return
+        if self.type == 'smbFun' : return
 
+#        if self.domain is None : return
+        if self.dim == 0 : return
+
+        if self.dim == 1 :
+            for x in self.A[0].NodS :
+                if  np.isnan(self.grd[x]) or self.grd[x]== self.NDT:  ################
+                    self.grd[x].value=1     ########################################
+        else :
+            for x in self.A[0].NodS :
+              for y in self.A[1].NodS :
+                if  np.isnan(self.grd[x,y]) or self.grd[x,y]== self.NDT:  ################
+                    self.grd[x,y]=1     ########################################
+
+    """""
+    def Feal(self):
+        if self.type == 'p': return
+        if self.domain is None: return
+        if self.dim == 0: return
+
+        if self.dim == 1:
+            for x in self.A[0].NodS:
+                if not self.domain[x]:
+                    self.var[x].value = self.NDT
+                    self.var[x].fixed = True
+        else:
+            for x in self.A[0].NodS:
+                for y in self.A[1].NodS:
+                    #     if  np.isnan(self.var[x,y].value) or self.var[x,y].value== self.NDT:  ################
+                    #        self.var[x,y].value=0     ########################################
+                    if not self.domain[x, y]:
+                        self.var[x, y].value = self.NDT
+                        self.var[x, y].fixed = True
+    """
     def delta( self, n ) :
         return	 self.Ftbl ( n ) - self.V.dat[n]   #  13.03.2023
  #       return	 self.V.dat[n] - self.Ftbl ( n )
@@ -814,14 +804,14 @@ class Fun (Object) :
             num = 0
             if SvF.Use_var:                                      #  mu[n]  <->  mu[n]()
                 for n in self.sR :
-                    if not isnan(self.V.dat[n])  :
+                    if not np.isnan(self.V.dat[n])  :
 #                        ret += self.mu[n] * (self.delta(n)/ max(self.V.dat[n],measurement_accur))**2
                         ret += self.mu[n] * self.delta_rel(n)**2
                         num += self.mu[n]
             else :
                 print (self.name)
                 for n in self.sR:
-                    if not isnan(self.V.dat[n]):
+                    if not np.isnan(self.V.dat[n]):
 #                        ret += self.mu[n]() * (self.delta(n)/ max(self.V.dat[n],measurement_accur))**2
                         ret += self.mu[n]() * self.delta_rel(n)**2
                         num += self.mu[n]()
@@ -834,7 +824,7 @@ class Fun (Object) :
         ret = 0
         num = 0
         for n in self.sR:
-                if not isnan(self.V.dat[n]):
+                if not np.isnan(self.V.dat[n]):
                     #                        ret += self.mu[n] * (self.delta(n)/ max(self.V.dat[n],measurement_accur))**2
                     ret += self.delta_rel(n) ** 2
                     num += 1
@@ -849,7 +839,7 @@ class Fun (Object) :
 #            print ('SvF.Use_var', SvF.Use_var)
             if not SvF.Use_var:                                      #  mu[n]  <->  mu[n]()
                 for n in self.sR:
-                    if not isnan(self.V.dat[n]):
+                    if not np.isnan(self.V.dat[n]):
 #                        print (self.name)
  #                       print( self.mu[n]())
                         ret += self.mu[n]() * self.delta(n) ** 2
@@ -857,7 +847,7 @@ class Fun (Object) :
                 return ret / self.V.sigma2 / num
             else:
                 for n in self.sR:
-                    if not isnan(self.V.dat[n]):
+                    if not np.isnan(self.V.dat[n]):
 #                        print ('______________________________', self.delta(n))
  #                       print (self.name)
   #                      print( self.mu[n])
@@ -865,23 +855,23 @@ class Fun (Object) :
                         num += self.mu[n]
                 ret = ret / self.V.sigma2 / num
             if SvF.Hack_Stab:
-                num = sum ( int(not isnan(self.V.dat[n])) for n in self.sR ) # подсчет num
+                num = sum ( int(not np.isnan(self.V.dat[n])) for n in self.sR ) # подсчет num
                 for n in self.sR:
-                    if not isnan(self.V.dat[n]):
+                    if not np.isnan(self.V.dat[n]):
                         co.stab_val_sub.append( 1 /self.V.sigma2 /num)
 
-                if len(co.stab_val_by_cv) == 0:  co.stab_val_by_cv = [ [] for _ in range(len(co.teachSet))]
+                if len(co.stab_val_by_cv) == 0:  co.stab_val_by_cv = [ [] for _ in range(len(co.notTrainingSets))]
 #                print ('len(co.stab_val_by_cv)',len(co.stab_val_by_cv))
-                for cv_n, cv_set in enumerate (co.teachSet) :
+                for cv_n, cv_set in enumerate (co.notTrainingSets) :
                     mu = [1] * len(self.sR)
                     for s in cv_set: mu[s] = 0
-                    num = sum(int((not isnan(self.V.dat[nmu])) and emu==1) for nmu, emu in enumerate (mu))  # подсчет num
+                    num = sum(int((not np.isnan(self.V.dat[nmu])) and emu==1) for nmu, emu in enumerate (mu))  # подсчет num
 
                     for nmu, emu in enumerate (mu):
-                        if (not isnan(self.V.dat[nmu])):
+                        if (not np.isnan(self.V.dat[nmu])):
                             if emu==1 : co.stab_val_by_cv[cv_n].append( 1 /self.V.sigma2 /num)
                             else:       co.stab_val_by_cv[cv_n].append( 0 )
-#                for cv_n in range (len(co.teachSet)): print('LLLLLLLLLLLLLLLLLLLLLLLLL', cv_n, len(co.stab_val_by_cv[cv_n]))
+#                for cv_n in range (len(co.notTrainingSets)): print('LLLLLLLLLLLLLLLLLLLLLLLLL', cv_n, len(co.stab_val_by_cv[cv_n]))
 
             return ret
 
@@ -909,7 +899,7 @@ class Fun (Object) :
 #            print verif_f.A[0].dat[n],verif_f.A[0].min,verif_f.V.dat[n]
  #           print self.grd[0]()
             for n in verif_f.sR :
-                if not isnan(verif_f.V.dat[n])  :
+                if not np.isnan(verif_f.V.dat[n])  :
                       ret += (self.F([verif_f.A[0].dat[n]+verif_f.A[0].min])-verif_f.V.dat[n])**2
                       num += 1
             ret /= num
@@ -925,7 +915,7 @@ class Fun (Object) :
             num = 0
             if self.V.dat is None :  return 0
             for n in self.sR :
-                if not isnan(self.V.dat[n])  :
+                if not np.isnan(self.V.dat[n])  :
                     ret += self.delta(n)**2
                     num += 1
             return ret  / self.V.sigma2 / num
@@ -943,34 +933,36 @@ class Fun (Object) :
     def Complexity ( self, bets ) :
             return self.ComplDer2 ( bets )
 
-    def ComplCycle ( self, bets ) :
-            return    bets[0]**4 * self.sumXXcycle ( )
-
-    def ComplCyc0E ( self, bets ) :                 #28    первая точка должна быть равна последней
-            return    bets[0]**4 * self.sumXXcyc0E ( )
-
 
     def ComplDer2 ( self, bets ) :
 #            print ('ComplDer2', self.type)
             if self.dim == 1 :
-              return    bets[0]**4 * self.sumXX ( )
+              return    bets[0]**4 * self.INTxx ( )
+            elif self.dim == 3:
+                return (  bets[0] ** 4 * self.INTxx()
+                        + bets[1] ** 4 * self.INTyy()
+                        + bets[2] ** 4 * self.INTzz()
+                        + bets[0] ** 2 * bets[1] ** 2 * self.INTxy()
+                        + bets[0] ** 2 * bets[2] ** 2 * self.INTxz()
+                        + bets[1] ** 2 * bets[2] ** 2 * self.INTyz()
+                       )
             else:
-              return (  bets[0]**4 * self.sumXX ( ) 
-                      + bets[1]**4 * self.sumYY ( ) 
-                      + bets[0]**2 * bets[1]**2 * self.sumXY ( )
+              return (  bets[0]**4 * self.INTxx ( )
+                      + bets[1]**4 * self.INTyy ( )
+                      + bets[0]**2 * bets[1]**2 * self.INTxy ( )
                      )   
 
     def ComplDer1 ( self, bets ) :
             if self.dim == 1 :
-                return  bets[0]**4  * self.sumX()
+                return  bets[0]**4  * self.INTx()
             else:
-                return ( bets[0]**4  * self.sumX()
-                       + bets[1]**4  * self.sumY()
+                return ( bets[0]**4  * self.INTx()
+                       + bets[1]**4  * self.INTy()
                        )
-#              return    bets[0]**4 /self.Nxx  /(1./self.A[0].Ub)**2 * self.sumX ( )
+#              return    bets[0]**4 /self.Nxx  /(1./self.A[0].Ub)**2 * self.INTx ( )
  #           else:
-  #            return (  bets[0]**4 / self.Nxx  / (1./self.A[0].Ub)**2 * self.sumX ( )
-   #                   + bets[1]**4 / self.Nyy  / (1./self.A[1].Ub)**2 * self.sumY ( )
+  #            return (  bets[0]**4 / self.Nxx  / (1./self.A[0].Ub)**2 * self.INTx ( )
+   #                   + bets[1]**4 / self.Nyy  / (1./self.A[1].Ub)**2 * self.INTy ( )
     #                 )
 
     def Mean ( self ) :                                         #  А как же кол-во дырок   NDT
@@ -1014,6 +1006,21 @@ class Fun (Object) :
       #            ret += self.grd[b[0],b[1]]**2
                   ret += gr[b[0], b[1]] ** 2
             return ret/NoB
+
+    def Norma_L2mL2Border3DXY ( self ) :    # для 3 переменных по первым двум
+            if self.dim != 3 : return None
+            ret = 0
+            NoB = 0
+            if self.param or not SvF.Use_var:   gr = self.grd
+            else:                               gr = self.var  # 20/02/2023
+            for i in self.A[0].NodS:
+                for j in self.A[1].NodS:
+                    for k in self.A[2].NodS:
+                        if i == 0 or i == self.A[0].Ub or j == 0 or j == self.A[1].Ub:
+                            NoB += 1
+                            ret += gr[i,j,k] ** 2
+            return ret/NoB
+
                   
     def SavePoints ( self ) :
         for a in self.A :
@@ -1049,12 +1056,12 @@ class Fun (Object) :
 
     def grdNaN (self, i,j=None) :
         if self.dim == 1 :
-            if self.fneNDT(i) == 0 : return NaN
+            if self.fneNDT(i) == 0 : return nan
 #            if self.param :
             v = self.grd[i]
  #           else          :  v = self.grd[i]()
         else :
-            if self.fneNDT(i,j) == 0 : return NaN
+            if self.fneNDT(i,j) == 0 : return nan
 #            if self.param :
             v = self.grd[i,j]
  #           else          :  v = self.grd[i,j]()
@@ -1062,35 +1069,35 @@ class Fun (Object) :
 
     def grdNDT (self, i,j=None) :
         v = self.grdNaN (i,j)
-        if isnan(v): return self.NDT
+        if np.isnan(v): return self.NDT
         return  v
 
     def grdNaNreal (self, i=None,j=None,k=None) :
         if self.dim == 0 :
             return self.grd
         elif self.dim == 1 :
-            if self.fneNDT(i) == 0 : return NaN
+            if self.fneNDT(i) == 0 : return nan
             v = self.grd[i]
         elif self.dim == 2 :
-            if self.fneNDT(i,j) == 0 : return NaN
+            if self.fneNDT(i,j) == 0 : return nan
             v = self.grd[i, j]
         else:
- #           if self.fneNDT(i, j, k) == 0: return NaN
+ #           if self.fneNDT(i, j, k) == 0: return nan
             v = self.grd[i, j, k]
 
         return  v + self.V.avr
 
     def grdNDTreal (self, i,j=None) :
         v = self.grdNaNreal ( i,j )
-        if isnan(v): return self.NDT
+        if np.isnan(v): return self.NDT
         return  v
 
 
 
-    def prep_val ( self, val, neNDT ) :
+    def prep_val ( self, val, domain ) :
                       if self.param :     ret = val
                       else          :     ret = val()
-                      if   neNDT == 0 :   return  str(self.NDT)
+                      if   domain == 0 :   return  str(self.NDT)
 #                      elif not neNDT  :   return  str(self.NDT)
                       else:               return "%20.16g" % ((self.V.avr + ret))   #  значения
           
@@ -1117,12 +1124,12 @@ class Fun (Object) :
           elif self.dim == 1:
               for i in self.A[0].NodS :
 #                print >> fi,  self.prep_val ( self.grd[i], self.neNDT[i] )
-                fi.write( self.prep_val ( self.grd[i], self.neNDT[i] )+'/n' )
+                fi.write( self.prep_val ( self.grd[i], self.domain[i] )+'/n' )
           elif self.dim == 2:
               for j in self.A[1].NodS:                       #  точки по y
                   for i in self.A[0].NodS :
 #                      print >> fi,  self.prep_val ( self.grd[i,j], self.neNDT[i,j] ),
-                      fi.write( self.prep_val(self.grd[i, j], self.neNDT[i, j]) )
+                      fi.write( self.prep_val(self.grd[i, j], self.domain[i, j]) )
                   fi.write ( '\n' )
     
           elif self.dim == 3:
@@ -1157,12 +1164,11 @@ class Fun (Object) :
 
     def SaveSol ( self, fName='' ) :                ## OLD
 #      self.var_to_grd()
-      Ksigma = 0
       Prefix = SvF.Prefix
       
       if SvF.printL > 0 : print ('Before SaveSol to ', fName, self.type)
       if fName == '' :
-          if  self.type[0] == 'g':       # 2407
+          if  self.type[0] == 'g'  or self.type == 'smbFun':   # 2505    # 2407
                                 fName = Prefix +self.nameFun() + ".sol"
           else                : fName = Prefix +self.nameFun() + ".p.sol"
       if SvF.printL > 0 : print ('SaveSol to ', fName, self.type)
@@ -1172,14 +1178,13 @@ class Fun (Object) :
             print ("Can''t open file: ", fName)
             return
 
-      if self.type[0] == 'g' :   # 2407
+      if self.type[0] == 'g'  or self.type == 'smbFun':   # 2505
           for a in self.A : fi.write ( a.name + '\t' )
           fi.write ( self.V.name )
           if   self.dim==0 :
               fi.write ( '\t#SvFver_62_tbl\n' )
               v = self.grdNaNreal()
               fi.write( str_val ( v ) )
-              Ksigma = v
           elif self.dim==1 :
             fi.write ( '\t#SvFver_62_tbl\n' )
             A = self.A[0]
@@ -1188,7 +1193,6 @@ class Fun (Object) :
                 v = self.grdNaNreal(i)
 #                fi.write( str(A.min + A.step*i) + "\t" + str_val(v)+'\n' )
                 fi.write( str(A.Val[i]) + "\t" + str_val(v)+'\n' )
-                Ksigma += v     # nan  ?
 
           elif self.dim==2 :
             fi.write ( '\t#SvFver_62_mtr2\n' )
@@ -1201,7 +1205,6 @@ class Fun (Object) :
                 for i in Ax.NodS :
                     v = self.grdNaNreal(i,j)
                     fi.write( "\t" + str_val(v) )
-                    Ksigma += v  # nan  ?
 
           elif self.dim==3 :
               fi.write ( '\t#SvFver_62_mtr3\n' )
@@ -1214,11 +1217,9 @@ class Fun (Object) :
 #                      print >> fi,  self.prep_val ( self.grd[i,j,k], 1 ) + '\t',  #self.neNDT[i,j] )
                       v = self.grdNaNreal(i,j,k)
                       fi.write( str_val(v) + '\t' )
-                      Ksigma += v
 #                      fi.write( self.prep_val ( self.grd[i,j,k], 1 ) + '\t' )
-#                      if self.param :     Ksigma += self.grd[i,j,k]
-#                      else          :     Ksigma += self.grd[i,j,k]()
                   fi.write ( '\n' )
+#      elif self.type == 'smbFun':          pass
       else :                                                    # POLY
         fi.write ( "%d" % self.dim + " %d" % self.PolyPow + " %d" % self.sizeP + '\n' )
 
@@ -1234,13 +1235,14 @@ class Fun (Object) :
         gfName = fName.replace ('.p.', '.')
         fung.SaveSol(gfName)
       fi.close()
-      if SvF.printL > 0 : print ("END of SaveSol to ", fName,'Ksigma', Ksigma, self.type)
+      if SvF.printL > 0 : print ("END of SaveSol to ", fName, self.type)
 
       return
 
 
     def ReadSol ( self, fName='', printL=0 ) :
-      Ksigma = 0
+      if self.type == 'smbFun':  ##########################
+          return
 #      print 'self.Task.Mng.Prefix'+self.Task.Mng.Prefix+'|',fName
       Prefix = SvF.Prefix
       if fName == '' :
@@ -1251,9 +1253,9 @@ class Fun (Object) :
             fi = open ( fName, "r")
       except IOError as e:
             print ("Can''t open file: ", fName)
-            return
+            return False
       head = fi.readline().split()
-#      if printL : print "ReadSol from", fName,  head,
+      print ("ReadSol from", fName,  head )
 ######################################################
       if head[0][0:4] == '#SvF' :    #New   бросил, не отладил...
          ver = head[0].split('_')
@@ -1270,7 +1272,7 @@ class Fun (Object) :
  #                       Arg.append ( Af )
  #                       print (self.A[d].Ub)
   #                print ('StepInStep', StepInStep)
-                  tb = loadtxt ( fi,'double' )
+                  tb = np.loadtxt ( fi,'double' )
                   if SvF.printL : print ("shape", tb.shape)
                                 
                   if self.dim==0 :
@@ -1279,12 +1281,12 @@ class Fun (Object) :
    #                     print ('TTT', self.grd())
                         
                   elif self.dim==1 :
-#                       tb = loadtxt (fi,'double')
+#                       tb = np.loadtxt (fi,'double')
  #                      if printL : print "shape", tb.shape
                        for j in self.A[0].NodS :
                            self.grd[j].value = (tb[int(j*StepInStep[0]), 0]-self.V.avr)  #  значения в новых узлах 
                   elif dim==2 :
-  #                     tb = loadtxt (fi,'double')
+  #                     tb = np.loadtxt (fi,'double')
    #                    if printL : print "shape", tb.shape
 
                        #for j in self.A[1].NodS :
@@ -1292,7 +1294,7 @@ class Fun (Object) :
                          #  self.grd[i,j].value = (tb[int(j*StepInStep[1]),int(i*StepInStep[0])] -self.V.avr)  #  значения в новых узлах
                          
 #                        fi.readline().split()
- #                       tb = loadtxt (fi,'double')
+ #                       tb = np.loadtxt (fi,'double')
                         if SvF.printL : print ("shape", tb.shape)
 
                         for j in self.A[1].NodS :
@@ -1307,45 +1309,44 @@ class Fun (Object) :
 #                       print self.grd[0,0].value, self.grd[self.A[0].Ub,self.A[1].Ub].value
             fi.close()
             if SvF.printL > 0 : print ("End of Fun.ReadSol from", fName)
+            print ("End of Fun.ReadSol from", fName)
             return
 ##############################################################################
       if self.type[0] == 'g' :         # 2407
+  #      print ('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%', self.V.name, fName)
+   #     print (self.grd)
         gr = self.grd
         if self.dim==0 :
             self.grd = float(fi.readline())                  #   !  gr  !
 #            print ('*************************************gr', gr, self.grd)
 ###            fi.close()
-            Ksigma = gr
         elif self.dim==1 :
 ###           fi.close()
            fun = FunFromSolFile ( fName, False )
            for j in self.A[0].NodS :
                 if self.fneNDT(j) == 0:
-#                    self.grd[j].value = NaN
-                    gr[j] = NaN
+#                    self.grd[j].value = nan
+                    gr[j] = nan
                 else :
                     gr[j] = fun.F1_extra_const ( self.A[0].min + j * self.A[0].step ) -self.V.avr   #  значения в новых узлах
-                    if isnan(gr[j]): gr[j] = 1
-                    Ksigma += gr[j]
+                    if np.isnan(gr[j]): gr[j] = 1
         elif self.dim==2 :
 ###           fi.close()
            fun = FunFromSolFile ( fName, False )
            for j in self.A[1].NodS :
                for i in self.A[0].NodS :
                    if self.fneNDT(i,j) == 0:
-                       gr[i,j] = NaN
- #                      self.grd[i,j].value = NaN
+                       gr[i,j] = nan
+ #                      self.grd[i,j].value = nan
                    else :
                        gr[i,j] = fun.F2_extra_const ( self.A[0].min + i * self.A[0].step,
                                           self.A[1].min + j * self.A[1].step) -self.V.avr  #  значения в новых узлах
-                       if isnan(gr[i,j]) :  gr[i,j] = 1
-#                       if isnan(gr[i,j]) :  self.grd[i,j] = 1
-                       Ksigma += gr[i,j]
+                       if np.isnan(gr[i,j]) :  gr[i,j] = 1
+#                       if np.isnan(gr[i,j]) :  self.grd[i,j] = 1
 
 #                       self.grd[i,j].value = fun.F2_extra_const ( self.A[0].min + i * self.A[0].step,
  #                                         self.A[1].min + j * self.A[1].step) -self.V.avr  #  значения в новых узлах
-  #                     if isnan(self.grd[i,j].value) :  self.grd[i,j].value = 1
-   #                    Ksigma += self.grd[i,j]()
+  #                     if np.isnan(self.grd[i,j].value) :  self.grd[i,j].value = 1
 
         elif self.dim==3 :
                   StepInStep = []
@@ -1358,7 +1359,7 @@ class Fun (Object) :
 #                        for a in A : Af.append ( float(a) ) 
  #                       Arg.append ( Af )
  #                 print 'StepInStep', StepInStep
-                  tb = loadtxt (fi,'double')
+                  tb = np.loadtxt (fi,'double')
                   if SvF.printL : print ("shape", tb.shape)
                   for k in self.A[2].NodS :
                     for j in self.A[1].NodS :
@@ -1368,7 +1369,6 @@ class Fun (Object) :
                         gr[i,j,k] = (tb[ int(k*StepInStep[2]) * len(A[1]) + int(j*StepInStep[1])
                                                     ,int(i*StepInStep[0])
                                                    ] -self.V.avr)  #  значения в новых узлах
-                        Ksigma += gr[i,j,k]
       else :                                                    # POLY
             nums = head  #fi.readline().split()          #  1 7 8
             file_dim = int(nums[0])
@@ -1378,7 +1378,7 @@ class Fun (Object) :
                 print ("*************************** ReadSol Poly  file_dim > dim", file_dim,">", self.dim)
                 return
             fi.readline()                   # (sCO2M-270.0)/100.0	Pm
-            tb = loadtxt (fi,'double')      #  коеф  и степени
+            tb = np.loadtxt (fi,'double')      #  коеф  и степени
             if SvF.printL : print ("ReadSol from", fName, "shape", tb.shape)
 
             if self.param and (file_sizeP!=self.sizeP):
@@ -1393,39 +1393,46 @@ class Fun (Object) :
                             if self.pow[i_self][0] == tb[i_file,1] and self.pow[i_self][1] == 0 :
                                 self.grd[i_self] = tb[i_file,0]
       self.grd_to_var()
-      if SvF.printL > 0 : print ("End of ReadSol from", fName, 'Ksigma', Ksigma)
-#      print ("End of ReadSol from", fName, 'Ksigma', Ksigma)
+      if SvF.printL > 0 : print ("End of ReadSol from", fName )
       fi.close()
            
 
     def InitByData ( self ) :
       if self.V.dat is None : return
       if self.type == 'p':    return
+      if self.type == 'smbFun':    return
+#      print('IB*+++++++++++++', self.name, self.param)
 
       if self.dim==0 :
         if self.V.dat[0] != self.NDT :
                 self.grd = self.V.dat[0]
       elif self.dim==1 :
+#        print   (self.name, self.A[0].name, self.A[0].dat, self.sR)
         for m in self.sR :
-            if self.V.dat[m] == self.NDT or isnan (self.V.dat[m]): continue
-#            if self.V.name == 'Ste': print (self.A[0].dat)
-#            print ('LPC:', self.V.name, m) ; print ( self.A[0].dat[m]); print ( self.A[0].step ); print( self.V.dat[m])
- #           if self.V.name == 'Ste': 1/0
-            self.grd[int(floor(0.499999999 + self.A[0].dat[m]/self.A[0].step))] = self.V.dat[m]
+#            print (m)
+            if self.V.dat[m] == self.NDT or np.isnan (self.V.dat[m]): continue
+#            self.grd[int(floor(0.499999999 + self.A[0].dat[m]/self.A[0].step))] = self.V.dat[m]
+            self.grd[self.A[0].IndByVal(self.A[0].dat[m])] = self.V.dat[m]
+ #           print ('HH', m)
         for x in self.A[0].NodS:   ####   ??????????????????
             if self.fneNDT(x) == 0:
-                self.grd[x] = NaN
+                self.grd[x] = nan
 
       elif self.dim==2 :
         for m in self.sR :
-            if self.V.dat[m] == self.NDT or isnan (self.V.dat[m]):  continue
-            self.grd [ int (floor(0.499999999 + self.A[0].dat[m]/self.A[0].step)),
-                       int (floor(0.499999999 + self.A[1].dat[m]/self.A[1].step))
+            if self.V.dat[m] == self.NDT or np.isnan (self.V.dat[m]):  continue
+#            self.grd [ int (floor(0.499999999 + self.A[0].dat[m]/self.A[0].step)),
+ #                      int (floor(0.499999999 + self.A[1].dat[m]/self.A[1].step))
+  #                   ] = self.V.dat[m]
+            self.grd [ self.A[0].IndByVal(self.A[0].dat[m]),                # не проверенр
+                       self.A[1].IndByVal(self.A[1].dat[m])
                      ] = self.V.dat[m]
+
+
         for y in self.A[1].NodS :
             for x in self.A[0].NodS :
                 if self.fneNDT(x,y)==0 :
-                    self.grd[x,y] = NaN
+                    self.grd[x,y] = nan
       self.grd_to_var()
 
 
@@ -1485,7 +1492,7 @@ class Fun (Object) :
                     val = self.grd[j]
 #                    if self.param : val = self.grd[j]
  #                   else          : val = self.grd[j]()
-                    if isnan (val) : continue
+                    if np.isnan (val) : continue
                     if mi is None :
                         mi = val
                         ma = val
@@ -1499,7 +1506,7 @@ class Fun (Object) :
                     val = self.grd[j, i]
 #                    if self.param : val = self.grd[j,i]
  #                   else          : val = self.grd[j,i]()
-                    if isnan (val) : continue
+                    if np.isnan (val) : continue
                     if mi is None :
                         mi = val
                         ma = val
@@ -1533,124 +1540,16 @@ class Fun (Object) :
 #            ret.param = True
 
  #           if ret.dim==1 :
-  #              ret.grd = zeros ( ret.A[0].Ub+1,float64 )
+  #              ret.grd = np.zeros ( ret.A[0].Ub+1,np.float64 )
    #             for i in ret.A[0].NodS :
     #                    ret.grd[i] = self.grd[i]()
      #       elif ret.dim==2 :
-      #          ret.grd = zeros ( (ret.A[0].Ub+1, ret.A[1].Ub+1),float64 )
+      #          ret.grd = np.zeros ( (ret.A[0].Ub+1, ret.A[1].Ub+1),np.float64 )
        #         for i in ret.A[0].NodS :
         #              for j in ret.A[1].NodS :
          #               ret.grd[i,j] = self.grd[i,j]()
         return ret
 
- #   global dgr
-  #  dgr = None
-
-    def interpol ( self, lev, X,Y=0,Z=0 ) :   # X,Y,Z  в шагах
-        if self.param or not SvF.Use_var: gr = self.grd
-        else                            : gr = self.var            # 29
- #       print ("Use", SvF.Use_var)
-        if lev == 3 :
-            Zi = int(floor ( Z ))
-            if Zi < 0            : Zi = 0 
-            if Zi==self.A[2].Ub  : Zi=self.A[2].Ub-1
-            dZ = Z-Zi
-            if abs(dZ) < 1e-10   :  return  self.interpol ( lev-1, X,Y,Zi )       
-            if abs(dZ-1) < 1e-10 :  return  self.interpol ( lev-1, X,Y,Zi+1 )     
-            else                 :  return  self.interpol ( lev-1, X,Y,Zi ) * (1-dZ) + self.interpol ( lev-1, X,Y,Zi+1 ) * dZ       
-        if lev == 2 :
-            if self.type == 'gSPWLi':   # 'G_ind':
-                def ind_0_1(x):
-                    return 0.5 * x / py.sqrt(SvF.Epsilon + x ** 2) - 0.5 * (x-1) / py.sqrt(SvF.Epsilon + (x-1) ** 2)
-                ret = 0             # tetta(1 - dX) * tetta(dX)
-                for i in self.A[0].NodSm:
-                    dX = X - i
-                    for j in self.A[1].NodSm:
-                        dY = Y - j
-                        ret += ( (gr[i,j]   * (1 - dX) + gr[i+1,j]   * dX) * ( 1-dY )
-                               + (gr[i,j+1] * (1 - dX) + gr[i+1,j+1] * dX) * dY
-                               ) * ind_0_1(dX) * ind_0_1(dY)
-                return ret
-
-            Yi = int(floor ( Y ))
-            if Yi < 0            : Yi = 0 
-            if Yi==self.A[1].Ub  : Yi=self.A[1].Ub-1
-            dY = Y-Yi
-            if abs(dY) < 1e-10   :  return  self.interpol ( lev-1, X,Yi,Z )
-            if abs(dY-1) < 1e-10 :  return  self.interpol ( lev-1, X,Yi+1,Z ) 
-            else                 :  return  self.interpol ( lev-1, X,Yi,Z ) * (1-dY) + self.interpol ( lev-1, X,Yi+1,Z ) * dY
-        if lev == 1 :
-            if self.type == 'gG':    # !!!! Сдвиг на КОНСТАНТУ !!!!!
-                def η(x) :
-                    return py.sqrt(x ** 2 + SvF.Epsilon)
-#                dgr = [0.0]
- #               for n in self.A[0].mNodS:  dgr.append ( gr[n] - gr[n - 1] )
-  #              ret = gr[0]+0.5*(dgr[1] + dgr[self.A[0].Ub])*X  # gr[0]+0.5*dgr[self.A[0].Ub]*X VVV
-                ret = gr[0]+(gr[1]-gr[0] + gr[self.A[0].Ub]-gr[self.A[0].Ub-1])*X  # ABC
-                for n in self.A[0].mNodSm: # for n in self.A[0].NodSm: VVV
-                    ret += (gr[n+1] - 2*gr[n] + gr[n-1])*(η(X-n)-n) # (dgr[n+1]-dgr[n])
-                return ret * 0.5
-            elif self.type == 'gSPWL':   #'G7': #
-                def η(x):
-                    return py.sqrt(x ** 2 + SvF.Epsilon)
-##                dgr = [0.0]
- ##               for n in self.A[0].mNodS:  dgr.append(gr[n] - gr[n - 1])
-  ##              ret = 0.5 * (gr[0] + gr[self.A[0].Ub]) + 0.5*dgr[1]* X + 0.5*dgr[self.A[0].Ub] * (X-self.A[0].Ub)
-                dgr_1 = gr[1] - gr[0]
-                dgr_Ub = gr[self.A[0].Ub] - gr[self.A[0].Ub-1]
-                ret =  (gr[0] + gr[self.A[0].Ub]) + dgr_1 * X + dgr_Ub * (X - self.A[0].Ub)
-                for n in self.A[0].mNodSm:
-                    ret += (gr[n+1] - 2 * gr[n] + gr[n-1]) * η(X - n)
-                return ret * 0.5
-
-            elif self.type == 'gSPWLi':   #'G_ind':      #      0       1
-                def ind_0_1(x):                         # _____|-------\_______
-                    return 0.5 * x / py.sqrt(SvF.Epsilon + x ** 2) - 0.5 * (x-1) / py.sqrt(SvF.Epsilon + (x-1) ** 2)
-                ret = 0
-                for i in self.A[0].NodSm:
-                    dX = X - i
-                    ret += (gr[i] * (1 - dX) + gr[i + 1] * dX) * ind_0_1(dX)  # tetta(1 - dX) * tetta(dX)
-                return ret
-
-            elif self.type == 'gCycle':   #'G_Cycle':
-                if X < 0 : X += 407    #  ??????????????
-
-            Xi = int(floor ( X ))
-            if Xi < 0            : Xi = 0 
-            if Xi==self.A[0].Ub  : Xi=self.A[0].Ub-1
-            dX = X-Xi
-            if abs(dX) < 1e-10   :  
-#                if self.dim == 1 :  return  self.grd[Xi       ]
- #               print (self.name,Xi,self.A[0].Ub,X)
-                if self.dim == 1 :  return  gr[Xi       ]
-#                if self.dim == 2 :  return  self.grd[Xi ,Y    ]
-                if self.dim == 2 :  return  gr[Xi ,Y    ]
- #               if self.dim == 3 :  return  self.grd[Xi ,Y , Z]
-                if self.dim == 3 :  return  gr[Xi ,Y , Z]
-            if abs(dX-1) < 1e-10 :
-#                if self.dim == 1 :  return  self.grd[Xi+1       ]
-                if self.dim == 1 :  return  gr[Xi+1       ]
-#                if self.dim == 2 :  return  self.grd[Xi+1 ,Y    ]
-                if self.dim == 2 :  return  gr[Xi+1 ,Y    ]
-#                if self.dim == 3 :  return  self.grd[Xi+1 ,Y , Z]
-                if self.dim == 3 :  return  gr[Xi+1 ,Y , Z]
-            else                 :
-                if self.dim == 1 :  return  gr[Xi       ] * (1-dX) + gr[Xi+1       ] * dX
-                if self.dim == 2 :  return  gr[Xi ,Y    ] * (1-dX) + gr[Xi+1 ,Y    ] * dX
-                if self.dim == 3 :  return  gr[Xi ,Y , Z] * (1-dX) + gr[Xi+1 ,Y , Z] * dX
-
-
-    def Ftbl ( self, n ) :
-      if self.type[0] == 'g':      # 2407
-        if   self.dim==1 :
-            return self.interpol ( 1, self.A[0].dat[n]/self.A[0].step )
-        elif self.dim==2 :
-            return self.interpol ( 2, self.A[0].dat[n]/self.A[0].step,
-                                      self.A[1].dat[n]/self.A[1].step )
-        elif self.dim==3 :
-            return self.interpol ( 3, self.A[0].dat[n]/self.A[0].step,
-                                      self.A[1].dat[n]/self.A[1].step,
-                                      self.A[2].dat[n]/self.A[2].step )
 
 
     def F1 ( self, Ar_real ) :   return self.F ( [ Ar_real ] )
@@ -1669,24 +1568,15 @@ class Fun (Object) :
             return self.F ( [ Ar_real0, Ar_real1 ] )  
 
 
-    def F ( self, ArS_real ) :
-          if self.dim == 0:                           #  31
-                if SvF.Use_var: return self.var
-                else          : return self.grd
-          elif ( self.type[0] == 'g' ) and self.dim==1 :       # 2407
-            x = (ArS_real[0]-self.A[0].min)/self.A[0].step
-    #        print ('F (ArS_real) ', ArS_real, x)
-            return self.interpol ( 1, x )
-          elif ( self.type[0] == 'g' ) and self.dim==2 :       # 2407
-            x = (ArS_real[0]-self.A[0].min)/self.A[0].step
-            y = (ArS_real[1]-self.A[1].min)/self.A[1].step
-            return self.interpol ( 2, x, y )
-          elif self.type == 'g' and self.dim==3 :
-              x = (ArS_real[0]-self.A[0].min)/self.A[0].step
-              y = (ArS_real[1]-self.A[1].min)/self.A[1].step
-              z = (ArS_real[2]-self.A[2].min)/self.A[2].step
-    #          print x,y,z
-              return self.interpol ( 3, x, y, z )
+
+    def ArgsNorm_step ( self, ArS_real ) :    # нормализация аргументов
+        return [(ArS_real[a]-self.A[a].min)/self.A[a].step for a in range (self.dim) ]
+
+#        Args = []
+ #       for a in range (self.dim) : Args.append ((ArS_real[a]-self.A[a].min)/self.A[a].step)
+  #      return Args
+
+
 
     def F_or0 ( self, ArS_real0, ArS_real1 = None  ) :
         if ArS_real0 < self.A[0].min : return 0
@@ -1705,85 +1595,46 @@ class Fun (Object) :
      #   return self.F (ArS_real )
 
 
-    def sumX ( self ) :                                                                    # self.fneNDT(x) ??
-      if self.type == 'g' and self.dim==1 :
+    def INTx ( self ) :                                                                    # self.fneNDT(x) ??
+      if self.type[0] == 'g' and self.dim==1 :
         return  sum ( self.fneNDT(x-1) * self.fneNDT(x) * self.fneNDT(x+1) * self.f_gap(x) *
                      ( self.grd[x+1] - self.grd[x-1] )**2  
 		    for x in self.A[0].mNodSm )
-      elif self.type == 'g' and self.dim==2 :
+      elif self.type[0] == 'g' and self.dim==2 :
         return  sum ( self.fneNDT(x-1,y) * self.fneNDT(x,y) * self.fneNDT(x+1,y) * self.f_gap(x,y) *
                      ( self.grd[x+1,y] - self.grd[x-1,y] )**2  
                     for y in self.A[1].NodS    for x in self.A[0].mNodSm )
 
-    def grdCycle (self, x) :
-        if self.param or not SvF.Use_var:  gr = self.grd
-        else:                              gr = self.var  # 29
-        if x==-1             : return gr[self.A[0].Ub]
-        if x==self.A[0].Ub+1 : return gr[0]
-        return gr[x]
-
-    def NDTCycle (self, x) :
-        if x==-1             : return self.fneNDT(self.A[0].Ub)
-        if x==self.A[0].Ub+1 : return self.fneNDT(0)
-        return self.fneNDT(x)
-
-    def sumXXcycle(self):
-            if self.type == 'g' :
-                if self.dim == 1:
-                    return sum(self.NDTCycle(x - 1) * self.NDTCycle(x) * self.NDTCycle(x + 1) * self.f_gap(x) *
-                               (self.grdCycle(x - 1) - 2 * self.grdCycle(x) + self.grdCycle(x + 1)) ** 2
-                               for x in self.A[0].NodS) / (self.Nxx+2) / (1. / self.A[0].Ub) ** 4
-            print ("SumXX:  No cycle")
-            exit (-1)
+    def derivXX (self, xy ) :
+        if self.param or not SvF.Use_var:   gr = self.grd
+        else:                               gr = self.var  # 29
+        if self.dim == 1:
+            return   (gr[xy - 1] - 2 * gr[xy] + gr[xy + 1]) / self.A[0].step**2
 
 
-    def grdCyc0E (self, x) :
-        if self.param or not SvF.Use_var:  gr = self.grd
-        else:                              gr = self.var  # 29
-        if x==self.A[0].Ub+1 : return gr[1]
-        if x==-1             : return gr[self.A[0].Ub]  #  не нужно
-        return gr[x]
 
-    def NDTCyc0E (self, x) :
-        if x==self.A[0].Ub+1 : return self.fneNDT(1)
-        if x==-1             : return self.fneNDT(self.A[0].Ub)   #  не нужно
-        return self.fneNDT(x)
-
-    def sumXXcyc0E(self):
-            if self.type == 'g':
-                if self.dim == 1:
-                    return sum(self.NDTCyc0E(x - 1) * self.NDTCyc0E(x) * self.NDTCyc0E(x + 1) * self.f_gap(x) *
-                               (self.grdCyc0E(x - 1) - 2 * self.grdCyc0E(x) + self.grdCyc0E(x + 1)) ** 2
-                               for x in self.A[0].mNodS) / (self.Nxx+1) / (1. / self.A[0].Ub) ** 4
-            print ("SumXX:  No cycle")
-            exit (-1)
-
-
-    def sumXX ( self ) :
-#      print ('gG sumXX', self.type)
-      if self.type[0] == 'g' :     # 2407
+    def INTxx ( self ) :
+#      print ('gG INTxx', self.type)
+       if self.type[0] == 'g' :     # 2407
           if self.param or not SvF.Use_var:     gr = self.grd
           else:                                 gr = self.var  # 29
 #          print ("Use", SvF.Use_var)
           if   self.dim==1 :
-#              (self.grd[x - 1] - 2 * self.grd[x] + self.grd[x + 1]) ** 2
+          #   return  sum ( self.fneNDT(x-1) * self.fneNDT(x) * self.fneNDT(x+1) * self.f_gap(x) *
+           #                ( gr[x-1]-2*gr[x]+gr[x+1] )**2   for x in self.A[0].mNodSm
+            #             )  /self.Nxx  /(1./self.A[0].Ub)**4
              return  sum ( self.fneNDT(x-1) * self.fneNDT(x) * self.fneNDT(x+1) * self.f_gap(x) *
-                           ( gr[x-1]-2*gr[x]+gr[x+1] )**2   for x in self.A[0].mNodSm
-                         )  /self.Nxx  /(1./self.A[0].Ub)**4
+                          ( self.derivXX ( x ) )**2   for x in self.A[0].mNodSm
+                       )  /self.Nxx  *  self.A[0].ma_mi**4  #self.A[0].Ub**4 * self.A[0].step**4
+
           elif self.dim==2 :
-             if self.param or not SvF.Use_var:           #   * NaN
+ #            if self.param or not SvF.Use_var:           #   * nan
                  summa = 0
                  for x in self.A[0].mNodSm :
                      for y in self.A[1].NodS :
-                         if self.fneNDT(x-1,y) * self.fneNDT(x,y) * self.fneNDT(x+1,y)  != 0 :
+                         if self.fneNDT(x-1,y) * self.fneNDT(x,y) * self.fneNDT(x+1,y) * self.f_gap(x,y) != 0 :
                              summa +=  self.f_gap(x,y) * ( gr[x-1,y]-2*gr[x,y]+gr[x+1,y] )**2
- #                        print( summa)
-                 summa *= float(self.A[0].Ub**4) / self.Nxx
- #                print ('S', summa)
-                 return summa
-             return  sum ( self.fneNDT(x-1,y) * self.fneNDT(x,y) * self.fneNDT(x+1,y) * self.f_gap(x,y) *
-                           ( gr[x-1,y]-2*gr[x,y]+gr[x+1,y] )**2 for y in self.A[1].NodS for x in self.A[0].mNodSm
-                         ) / self.Nxx  / (1./self.A[0].Ub)**4
+                 return summa * float(self.A[0].Ub**4) / self.Nxx
 
           elif self.dim==3 :
   #           return  sum ( self.fneNDT(x-1,y) * self.fneNDT(x,y) * self.fneNDT(x+1,y) * self.f_gap(x,y) *
@@ -1791,8 +1642,6 @@ class Fun (Object) :
                        * sum ( 
                         ( gr[x-1,y,z]-2*gr[x,y,z]+gr[x+1,y,z] )**2
                        for z in self.A[2].NodS   for y in self.A[1].NodS    for x in self.A[0].mNodSm ) 
-
-
 
 
     def  SetVal ( self, val = 0 ) :
@@ -1828,12 +1677,12 @@ class Fun (Object) :
         for n in nb :
             x = n[0]
             y = n[1]
-            if isnan(self.grd[x,y]): continue
+            if np.isnan(self.grd[x,y]): continue
             self.grd[x, y] = Val
 
     def Neighbors (self,x,y,dist=1,plus = False) :  # plus  сама точка
         Neighb = []
-        idist = int(ceil(dist))
+        idist = int(np.ceil(dist))
         for i in range( -idist, idist + 1, 1):
             if x+i < 0: continue
             if x+i > self.A[0].Ub: continue
@@ -1843,15 +1692,11 @@ class Fun (Object) :
                 if i==0 and j==0  and not plus: continue
                 if i**2 + j**2 > dist**2 : continue
                 Neighb.append([x+i, y+j])
-#        if x != 0 :            Neighb.append([x-1,y])
- #       if x != self.A[0].Ub : Neighb.append([x+1,y])
-  #      if y != 0 :            Neighb.append([x,y-1])
-   #     if y != self.A[1].Ub : Neighb.append([x,y+1])
         return Neighb
 
 
     def FloodFillReal (self, xy, BordVal,FillVal) :
-        self.FloodFill([self.A[0].getPointNum (xy[0]), self.A[1].getPointNum (xy[1])], BordVal, FillVal)
+        self.FloodFill([self.A[0].ValToInd (xy[0]), self.A[1].ValToInd (xy[1])], BordVal, FillVal)
 
 
     def FloodFill (self, xy_in, BordVal,FillVal) :
@@ -1861,7 +1706,7 @@ class Fun (Object) :
             xy = quer[pos]
             if     self.grd[xy[0], xy[1]] != BordVal \
                and self.grd[xy[0], xy[1]] != FillVal \
-               and  not isnan(self.grd[xy[0], xy[1]]) :
+               and  not np.isnan(self.grd[xy[0], xy[1]]) :
                     self.grd[xy[0], xy[1]] = FillVal
                     quer = quer + self.Neighbors (xy[0],xy[1])
             pos += 1
@@ -1871,7 +1716,7 @@ class Fun (Object) :
         print ('FF', xy, self.grd[xy[0],xy[1]])
         if     self.grd[xy[0],xy[1]] == BordVal \
             or self.grd[xy[0],xy[1]] == FillVal \
-            or isnan(self.grd[xy[0],xy[1]]) :
+            or np.isnan(self.grd[xy[0],xy[1]]) :
             return
         star += 1
         if star >= 998: return
@@ -1884,26 +1729,26 @@ class Fun (Object) :
 
 
 
-    def getVal (self, x, y=NaN) :                        #  если все ОК возвращает значение
-        if x < 0:  return NaN
-        if x > self.A[0].Ub:  return NaN
+    def getVal (self, x, y=nan) :                        #  если все ОК возвращает значение
+        if x < 0:  return nan
+        if x > self.A[0].Ub:  return nan
         if self.dim == 1 :  return self.grdNaN (x)                  # real ???
-#            if self.fneNDT(x) == 0: return NaN
+#            if self.fneNDT(x) == 0: return nan
  #           if self.param:  return self.grd[x]
   #          else:           return self.grd[x]()
         else :
-            if y < 0:  return NaN
-            if y > self.A[1].Ub:  return NaN
+            if y < 0:  return nan
+            if y > self.A[1].Ub:  return nan
             return self.grdNaN(x,y)                     # real ???
- #           if self.fneNDT(x,y) == 0 : return NaN
+ #           if self.fneNDT(x,y) == 0 : return nan
   #          if self.param :   return self.grd[x,y]
    #         else          :   return self.grd[x,y]()
 
 
-    def Smoothing (self, dh=NaN, max_ang_grad=NaN, mask=None, mVal=None) :     # усреднение по 9 точкам  для точек mask=mVal
+    def Smoothing (self, dh=nan, max_ang_grad=nan, mask=None, mVal=None) :     # усреднение по 9 точкам  для точек mask=mVal
         print ("Smoothing start ")
         num_change = 0
-        if not isnan(max_ang_grad) :
+        if not np.isnan(max_ang_grad) :
             max_ang_rad = max_ang_grad /180.*pi
             print (max_ang_grad, max_ang_rad)
 #        XYs = []
@@ -1912,7 +1757,7 @@ class Fun (Object) :
         #for xy in XYs :
     #            x = xy[0]
      #           y = xy[1]
-                if isnan(self.grd[x, y]) : continue
+                if np.isnan(self.grd[x, y]) : continue
                 if not mask.grd[x,y] is None :
                     if mask.grd[x,y] != mVal: continue
                 sum = 0
@@ -1922,24 +1767,24 @@ class Fun (Object) :
                     for j in range(-1, 2, 1):
  #                       print 'j', j
                         v = self.getVal(x+i,y+j)
-                        if isnan(v) : continue
-                        if (not isnan(max_ang_grad)) and i!=0 and j!=0 :         # по углу
-                            ang = abs((v-self.grd[x,y])/sqrt((i*self.A[0].step)**2+(j*self.A[0].step)**2))
+                        if np.isnan(v) : continue
+                        if (not np.isnan(max_ang_grad)) and i!=0 and j!=0 :         # по углу
+                            ang = abs((v-self.grd[x,y])/np.sqrt((i*self.A[0].step)**2+(j*self.A[0].step)**2))
                             if ang >= max_ang :
                                 max_ang = ang
                                 v_ang = v
                                 v_mask = mask.grd[x+i,y+j]
-                        if not isnan(dh):
+                        if not np.isnan(dh):
                             num += 1
                             sum += v
-                if not isnan(max_ang_grad):
+                if not np.isnan(max_ang_grad):
                     if max_ang > max_ang_rad :
                         print ('SrezaemAng: ', max_ang, v_ang, self.grd[x, y], x, y, x + i, y + j,)
                         self.grd[x, y] = 0.7 * self.grd[x, y] + 0.3 * v_ang
                         print (self.grd[x, y], v_mask)
                         num_change += 1
 
-                if not isnan(dh):
+                if not np.isnan(dh):
                     if num <= 1: continue
                     new = sum/num
                     if abs (new-self.grd[x, y]) < dh: continue
@@ -1949,28 +1794,28 @@ class Fun (Object) :
                     num_change += 1
         print  ("num_change",    num_change)
 
-    def d_dx(self,x,y=NaN): #  на границе  левая и правая  иначе центральная
+    def d_dx(self,x,y=nan): #  на границе  левая и правая  иначе центральная
             i1 = max ( x-1, 0)
             i2 = min ( x+1, self.A[0].Ub )
-            if self.type == 'g' and self.dim == 1:
+            if self.type[0] == 'g' and self.dim == 1:
                 v1 = self.getVal(i1)
                 v2 = self.getVal(i2)
-            elif self.type == 'g' and self.dim == 2:
+            elif self.type[0] == 'g' and self.dim == 2:
                 v1 = self.getVal(i1,y)
                 v2 = self.getVal(i2,y)
-            if isnan (v1) : return NaN
-            if isnan (v2) : return NaN
+            if np.isnan (v1) : return nan
+            if np.isnan (v2) : return nan
 
             return (v2 - v1)/(i2 - i1) / self.A[0].step
 
     def d_dy(self, x, y):  # на границе  левая и правая  иначе центральная
         i1 = max(y - 1, 0)
         i2 = min(y + 1, self.A[1].Ub)
-        if self.type == 'g' and self.dim == 2:
+        if self.type[0] == 'g' and self.dim == 2:
             v1 = self.getVal(x, i1)
             v2 = self.getVal(x, i2)
-        if isnan(v1): return NaN
-        if isnan(v2): return NaN
+        if np.isnan(v1): return nan
+        if np.isnan(v2): return nan
 
         return (v2 - v1) / (i2 - i1) / self.A[1].step
 
@@ -1980,9 +1825,9 @@ class Fun (Object) :
         if SvF.printL: print   ('MakeDeriv1')
         ret = self.gClone()
 #        ret = self.Clone()
-        if self.type == 'g' and self.dim == 1:
+        if self.type[0] == 'g' and self.dim == 1:
             for i in self.A[0].NodS: ret.grd[i] = self.d_dx (i)
-        elif self.type == 'g' and self.dim == 2:
+        elif self.type[0] == 'g' and self.dim == 2:
             for i in self.A[0].NodS:
                 for j in self.A[1].NodS:
                     if der=='x' :   ret.grd[i,j] = self.d_dx(i,j)
@@ -1990,18 +1835,18 @@ class Fun (Object) :
         return ret
 
     def TiltAngle (self) :
-        if self.type == 'g' and self.dim == 2:
+        if self.type[0] == 'g' and self.dim == 2:
             X = self.Make_1_Deriv ()
             Y = self.Make_1_Deriv ('y')
             for i in self.A[0].NodS:
                 for j in self.A[1].NodS:
-                    X.grd[i,j] = sqrt (X.grd[i,j]**2+Y.grd[i,j]**2)
+                    X.grd[i,j] = np.sqrt (X.grd[i,j]**2+Y.grd[i,j]**2)
             return X
         return None
 
     def makeMtrParamVnameSetG ( self, Vname, gr_value = 0 ) :
         ret = gFun2(self)   #  Устарело
-        ret.grd = zeros((ret.A[0].Ub + 1, ret.A[1].Ub + 1), float64)
+        ret.grd = np.zeros((ret.A[0].Ub + 1, ret.A[1].Ub + 1), np.float64)
         if gr_value != 0:
             for i in ret.A[0].NodS:
                 for j in ret.A[1].NodS:
@@ -2011,58 +1856,85 @@ class Fun (Object) :
         ret.V.avr = 0   # 19.12.19
         return ret
 
-    def sumY ( self ) :
+    def INTy ( self ) :
         return  sum ( self.fneNDT(x,y-1) * self.fneNDT(x,y) * self.fneNDT(x,y+1) * self.f_gap(x,y) *
                      ( self.grd[x,y+1] - self.grd[x,y-1] )**2 
                     for y in self.A[1].mNodSm  for x in self.A[0].NodS )
 
 
-    def sumYY ( self ) :
+    def INTyy ( self ) :
         if self.param or not SvF.Use_var:   gr = self.grd
         else:                               gr = self.var  # 29
 
         if   self.dim==2 :
-            if self.param or not SvF.Use_var:
+ #           if self.param or not SvF.Use_var:
                 summa = 0
                 for x in self.A[0].NodS:
                     for y in self.A[1].mNodSm:
-                        if self.fneNDT(x,y-1) * self.fneNDT(x,y) * self.fneNDT(x,y+1) != 0:
+                        if self.fneNDT(x,y-1) * self.fneNDT(x,y) * self.fneNDT(x,y+1) * self.f_gap(x,y) != 0:
                             summa += self.f_gap(x,y) * ( gr[x,y-1]-2*gr[x,y]+gr[x,y+1] )**2
                 #                        print( summa)
-                summa *= float(self.A[1].Ub ** 4) / self.Nyy
+     #           summa *= float(self.A[1].Ub ** 4) / self.Nyy
 #               print('SYY', summa)
-                return summa
-
-            return  sum ( self.fneNDT(x,y-1) * self.fneNDT(x,y) * self.fneNDT(x,y+1) * self.f_gap(x,y) *
-                     ( gr[x,y-1]-2*gr[x,y]+gr[x,y+1] )**2
-                    for y in self.A[1].mNodSm  for x in self.A[0].NodS )   / self.Nyy  / (1./self.A[1].Ub)**4
+                return summa * float(self.A[1].Ub ** 4) / self.Nyy
+#            return  sum ( self.fneNDT(x,y-1) * self.fneNDT(x,y) * self.fneNDT(x,y+1) * self.f_gap(x,y) *
+ #                    ( gr[x,y-1]-2*gr[x,y]+gr[x,y+1] )**2
+  #                  for y in self.A[1].mNodSm  for x in self.A[0].NodS )   / self.Nyy  / (1./self.A[1].Ub)**4
         elif self.dim==3 :
              return  1 / ((self.A[2].Ub+1)*(self.A[1].Ub-1)*(self.A[0].Ub+1)) / (1./self.A[1].Ub)**4        \
                        * sum ( 
                         ( gr[x,y-1,z]-2*gr[x,y,z]+gr[x,y+1,z] )**2
                        for z in self.A[2].NodS   for y in self.A[1].mNodSm    for x in self.A[0].NodS ) 
 
-    
-    def sumXY ( self ) :
+
+    def INTzz ( self ) :
+        if self.param or not SvF.Use_var:   gr = self.grd
+        else:                               gr = self.var  # 29
+        if self.dim==3 :
+             return  1 / ((self.A[2].Ub+1)*(self.A[1].Ub-1)*(self.A[0].Ub+1)) / (1./self.A[2].Ub)**4        \
+                       * sum (
+                        ( gr[x,y,z-1]-2*gr[x,y,z]+gr[x,y,z+1] )**2
+                       for z in self.A[2].mNodSm   for y in self.A[1].NodS    for x in self.A[0].NodS )
+
+    def INTxz ( self ) :
+        if self.param or not SvF.Use_var:  gr = self.grd
+        else:                              gr = self.var  # 29
+        if self.dim==3 :
+             return   2. / ((self.A[2].Ub-1)*(self.A[1].Ub+1)*(self.A[0].Ub-1)) * 0.25 / (1./self.A[0].Ub)**2 / (1./self.A[2].Ub)**2   \
+                       * sum (
+                        ( gr[x+1,y,z+1]-gr[x+1,y,z-1]-gr[x-1,y,z+1]+gr[x-1,y,z-1] )**2
+                       for z in self.A[2].mNodSm   for y in self.A[1].NodS    for x in self.A[0].mNodSm )
+
+    def INTyz ( self ) :
+        if self.param or not SvF.Use_var:  gr = self.grd
+        else:                              gr = self.var  # 29
+        if self.dim==3 :
+             return   2. / ((self.A[2].Ub-1)*(self.A[1].Ub-1)*(self.A[0].Ub+1)) * 0.25 / (1./self.A[1].Ub)**2 / (1./self.A[2].Ub)**2   \
+                       * sum (
+                        ( gr[x,y+1,z+1]-gr[x,y+1,z-1]-gr[x,y-1,z+1]+gr[x,y-1,z-1] )**2
+                       for z in self.A[2].mNodSm   for y in self.A[1].mNodSm    for x in self.A[0].NodS )
+
+
+
+    def INTxy ( self ) :
         if self.param or not SvF.Use_var:  gr = self.grd
         else:                              gr = self.var  # 29
 
         if   self.dim==2 :
-            if self.param or not SvF.Use_var:
+#            if self.param or not SvF.Use_var:
                 summa = 0
                 for x in self.A[0].mNodSm:
                     for y in self.A[1].mNodSm:
-                        if self.fneNDT(x+1,y+1) * self.fneNDT(x+1,y-1) * self.fneNDT(x-1,y+1) * self.fneNDT(x-1,y-1) != 0:
+                        if self.fneNDT(x+1,y+1) * self.fneNDT(x+1,y-1) * self.fneNDT(x-1,y+1) * self.fneNDT(x-1,y-1) *self.f_gap(x, y) != 0:
                             summa += self.f_gap(x, y) * ( gr[x+1,y+1]-gr[x+1,y-1]-gr[x-1,y+1]+gr[x-1,y-1] )**2
                 #                        print( summa)
-                summa *= 2 / self.Nxy * 0.25 * self.A[0].Ub**2 * self.A[1].Ub**2
+ #               summa *= 2 / self.Nxy * 0.25 * self.A[0].Ub**2 * self.A[1].Ub**2
 #                print('SYY', summa)
-                return summa
-
-            return  sum ( self.fneNDT(x+1,y+1) * self.fneNDT(x+1,y-1) * self.fneNDT(x-1,y+1) * self.fneNDT(x-1,y-1) * self.f_gap(x,y) *
-                     ( gr[x+1,y+1]-gr[x+1,y-1]-gr[x-1,y+1]+gr[x-1,y-1] )**2
-                    for y in self.A[1].mNodSm  for x in self.A[0].mNodSm )                \
-                                    * 2. / self.Nxy * 0.25 / (1./self.A[0].Ub)**2 / (1./self.A[1].Ub)**2
+                return summa * 2 / self.Nxy * 0.25 * self.A[0].Ub**2 * self.A[1].Ub**2
+  #          return  sum ( self.fneNDT(x+1,y+1) * self.fneNDT(x+1,y-1) * self.fneNDT(x-1,y+1) * self.fneNDT(x-1,y-1) * self.f_gap(x,y) *
+   #                  ( gr[x+1,y+1]-gr[x+1,y-1]-gr[x-1,y+1]+gr[x-1,y-1] )**2
+    #                for y in self.A[1].mNodSm  for x in self.A[0].mNodSm )                \
+     #                               * 2. / self.Nxy * 0.25 / (1./self.A[0].Ub)**2 / (1./self.A[1].Ub)**2
         elif self.dim==3 :
              return   2. / ((self.A[2].Ub+1)*(self.A[1].Ub-1)*(self.A[0].Ub-1)) * 0.25 / (1./self.A[0].Ub)**2 / (1./self.A[1].Ub)**2   \
                        * sum ( 
@@ -2127,8 +1999,8 @@ class Fun (Object) :
 
 
 
-    def SaveGrid ( self, fn, TranspGrid = 'N' ) :
-        if TranspGrid == 'N':
+    def SaveSet ( self, fn, TranspSet = 'N' ) :
+        if TranspSet == 'N':
             Ax = self.A[0]
             Ay = self.A[1]
         else :
@@ -2147,18 +2019,87 @@ class Fun (Object) :
         for y in range(Ay.Ub+1) :
           f.write( "\n" )
           for x in range(Ax.Ub+1) :
-            if TranspGrid == 'N':
-                if self.type == 'g' :
+            if TranspSet == 'N':
+                if self.type[0] == 'g' :
                     f.write(" " + str(self.grdNDTreal(x, Ay.Ub-y)))
             else :
               f.write(" " + str(self.grdNDTreal(Ay.Ub-y,x)))
         f.close()
-        print ("END of SaveGrid")
+        print ("END of SaveSet")
 
 
 
-        
+# ********************************************************************************************** #
+class Fun (BaseFun) :
+    def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 1, DataReadFrom = '',Data=[],
+                  Type='g', Domain = None, ReadFrom = '' ) :
+        BaseFun.__init__ (self, Vname,  As, param, Degree,  Finitialize, DataReadFrom, Data,
+                  Type, Domain, ReadFrom)
+
+    def F ( self, ArS_real ) :
+          if self.dim == 0:                           #  31
+                if SvF.Use_var: return self.var
+                else          : return self.grd
+          ar =  self.ArgsNorm_step ( ArS_real )
+          if ( self.type[0] == 'g' ) and self.dim==1 :       # 2407
+            return self.interpol ( 1, ar[0] )
+          elif ( self.type[0] == 'g' ) and self.dim==2 :       # 2407
+            return self.interpol ( 2, ar[0], ar[1] )
+          elif self.type[0] == 'g' and self.dim==3 :
+              return self.interpol ( 3, ar[0], ar[1], ar[2] )
+
+    def Ftbl ( self, n ) :
+      if self.type[0] == 'g':      # 2407
+        if   self.dim==1 :
+   #         print ( self.V.name,n)
+  #          print (self.A[0].dat)
+   #         print (self.A[0].dat[n])
+            return self.interpol ( 1, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step )
+        elif self.dim==2 :
+            return self.interpol ( 2, self.A[0].dat[n]/self.A[0].step,
+                                      self.A[1].dat[n]/self.A[1].step )
+        elif self.dim==3 :
+            return self.interpol ( 3, self.A[0].dat[n]/self.A[0].step,
+                                      self.A[1].dat[n]/self.A[1].step,
+                                      self.A[2].dat[n]/self.A[2].step )
+
+    def interpol ( self, lev, X,Y=0,Z=0 ) :   # X,Y,Z  в шагах
+        if self.param or not SvF.Use_var: gr = self.grd
+        else                            : gr = self.var            # 29
+ #       print ("Use", SvF.Use_var)
+        if lev == 3 :
+            Zi = int(floor ( Z ))
+            if Zi < 0            : Zi = 0
+            if Zi==self.A[2].Ub  : Zi=self.A[2].Ub-1
+            dZ = Z-Zi
+            if abs(dZ) < 1e-10   :  return  self.interpol ( lev-1, X,Y,Zi )
+            if abs(dZ-1) < 1e-10 :  return  self.interpol ( lev-1, X,Y,Zi+1 )
+            else                 :  return  self.interpol ( lev-1, X,Y,Zi ) * (1-dZ) + self.interpol ( lev-1, X,Y,Zi+1 ) * dZ
+        if lev == 2 :
+            Yi = int(floor ( Y ))
+            if Yi < 0            : Yi = 0
+            if Yi==self.A[1].Ub  : Yi=self.A[1].Ub-1
+            dY = Y-Yi
+            if abs(dY) < 1e-10   :  return  self.interpol ( lev-1, X,Yi,Z )
+            if abs(dY-1) < 1e-10 :  return  self.interpol ( lev-1, X,Yi+1,Z )
+            else                 :  return  self.interpol ( lev-1, X,Yi,Z ) * (1-dY) + self.interpol ( lev-1, X,Yi+1,Z ) * dY
+        if lev == 1 :
+            Xi = ifloor (X)      #int(floor ( X ))
+            if Xi < 0            : Xi = 0
+            if Xi==self.A[0].Ub  : Xi=self.A[0].Ub-1
+            dX = X-Xi
+            if abs(dX) < 1e-10   :
+                if self.dim == 1 :  return  gr[Xi       ]
+                if self.dim == 2 :  return  gr[Xi ,Y    ]
+                if self.dim == 3 :  return  gr[Xi ,Y , Z]
+            if abs(dX-1) < 1e-10 :
+                if self.dim == 1 :  return  gr[Xi+1       ]
+                if self.dim == 2 :  return  gr[Xi+1 ,Y    ]
+                if self.dim == 3 :  return  gr[Xi+1 ,Y , Z]
+            else                 :
+                if self.dim == 1 :  return  gr[Xi       ] * (1-dX) + gr[Xi+1       ] * dX
+                if self.dim == 2 :  return  gr[Xi ,Y    ] * (1-dX) + gr[Xi+1 ,Y    ] * dX
+                if self.dim == 3 :  return  gr[Xi ,Y , Z] * (1-dX) + gr[Xi+1 ,Y , Z] * dX
 
 
-        
-        
+

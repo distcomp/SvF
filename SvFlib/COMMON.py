@@ -2,6 +2,15 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
+#Sets = []
+#Funs = []    #  Проблеммы с Funs
+#Tbls = []
+#Objects = []
+
+feasibleSol = None          #  function feasibleSol(Peal) - перед оптимизацией
+OptMode = 'SvF'
+ObjectiveFun = None
+
 UsePrime = False
 
 max_workers = 3
@@ -11,6 +20,7 @@ maxJobs = 0
 
 DrawMode = 'Screen&File'
 Resources = [ "pool-scip-ipopt" ]
+#Resources = [ "vvvolDellDocker" ]
 
 Substitude = True
 Default_step = -50
@@ -31,9 +41,9 @@ platform = 'Lin'
 
 ModelBuf    = None   #  if  ==1 :  >> Null
 SModelFile  = None
+LogOutFile  = None
 
-
-Compile = False  # True      # 30 при подготовке модели включен, при рассчетах выключен
+Compile = True      # 30 при подготовке модели включен, при рассчетах выключен
 
 addStrToRes = ''
 
@@ -79,9 +89,9 @@ subplots_top    =0.9
 subplots_bottom =0.1
 graphic_file_type = 'png'
 
-#TranspGrid  = 'N'
+#TranspSet  = 'N'
 #SaveDeriv   = False
-#SaveGrid    = 'N'
+#SaveSet    = 'N'
 
 optEstim = float_info.max
 
@@ -99,27 +109,33 @@ SavePoints   = False
 Version  = 31
 DataPath = ''
 
-mngF = ''
-resF = ''
 
 ExitStep     =   1e-7
 OptStep      = '0.01'
 
-lenPenalty   = 0
-Penalty      = [.1,.1,.1,.1,.1,.1,.1,.1,.1,.1,.1,.1,.1,.1,.1,.1]
-mngPenalty   = []
+mngF = ''
+
+resF = ''    #      #resF = None - not read Penalty
+
+#lenPenalty   = 0   25 02 10
+Penalty      = []
+OptNames = []
+#fromPenalty = None
+
+#  mngPenalty   = []        ???
 
 #CVproc       = ''
 CVNumOfIter  =   20
 CV_Iter  =   0
 
 curentTabl  = None
+
 numCV      = -1
 CV_NoRs     = []     # 23.11    = 0
-testSet     = []
-teachSet    = []           #  teachSet содержит кого выбрасываем
+ValidationSets      = []
+notTrainingSets     = []           #  notTrainingSets содержит кого выбрасываем
+TrainingSets        = []           #  TrainingSets содержит точки обучени
 fun_with_mu = []
-
 CVparam      = ''
 #CVmargin     = 0
 CVpartSize   = 0
@@ -140,10 +156,10 @@ token      =  ''
 optFile    =  'peipopt.opt'
 
 #LocalSolverName  = 'ipopt' #3_11_1'
-LocalSolverName  = '/opt/solvers/bin/ipopt'
+LocalSolverName  = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'
 
 #SolverName       = 'ipopt'
-SolverName       = '/opt/solvers/bin/ipopt'  # 3.14.09
+SolverName       = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'  # 3.14.09
 #RunSolver   = 'Local'   #   LocalParallel   ServerParallel
 
 solverOptVal =  {  "linear_solver"              : 'ma57'\
@@ -189,5 +205,5 @@ lat_center_rad = None
 sin_lat_center_rad = None
 cos_lat_center_rad = None
 
-LastGrid = None
+LastSet = None
 

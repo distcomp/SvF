@@ -1,20 +1,63 @@
 # -*- coding: UTF-8 -*-
 
-from   sys    import *
-from Object import *
-
-from   GridArgs  import *
-from   Pars   import *
-from   Lego   import *
-from   Parser import *
 from   ModelFiles import *
 from Table import *
 
-def grids_add ( all_grids, from_ ) :    # пополняет из from_,  если уже нет в  all_grids
+def splitByEq (buf ):
+    buf_sp = buf.split('=')
+    if len (buf_sp) == 1:  return buf_sp[0], None
+    else:                  return buf_sp[0], buf_sp[1]
+
+
+def WriteCV(buf):
+            arg = ','.join(buf.split(';'))
+            Swr('CVmakeSets ( ' + arg + ' )')
+#            Swr('make_CV_Sets ( ' + arg + ' )')
+            SvF.numCV += 1
+            wr('\n    if len (SvF.CV_NoRs) > 0 :')  # 23.11
+            wr('        Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
+
+
+def WritePenalty ( buf ):       # Penalty:   [Inf.Period, Imm.Period]=0.999; RR=7;    SvF.resF = None
+        def wrOptName (on) :
+            if on[1] == '' :           #  нет присвоения
+                Swr('try: ' + on[0])
+                Swr('except NameError: ' + on[0] + ' = None')
+            else :
+                Swr(on[0] + ' = ' + on[1] )
+            wr('    ' + on[0] + ' = Penal[' + str(on[2]) + ']')
+        #        print ( 'b', buf )
+        OptParLen = -1
+        if len(SvF.OptNames) > 0: OptParLen = SvF.OptNames[-1][2]       #  если несколько строк   Penalty:
+        for s in buf.split (';') :
+ #           print ('s', s)
+            if len(s) == 0: continue
+            if s.find ('SvF.resF') == 0:  Swr(s)
+            else :
+                ss = s.split('=')
+                if len (ss)==1: ss.append('')
+                OptParLen += 1
+
+                ss.append (OptParLen)
+                if ss[0][0] == '[' :                   #   [Inf.Period, Imm.Period]=0.999
+                    for pss in ss[0][1:-1].split(',') :
+  #                      print ("pss", pss)
+                        opt_name = [pss, ss[1], ss[2]]
+                        SvF.OptNames.append(opt_name)
+                        wrOptName(SvF.OptNames[-1])
+                else :
+                    SvF.OptNames.append(ss)
+                    wrOptName(SvF.OptNames[-1])
+                Swr ( 'SvF.Penalty.append('+SvF.OptNames[-1][0]+')' )
+   #     print (SvF.OptNames)
+        return
+
+
+def Sets_add ( all_Sets, from_ ) :    # пополняет из from_,  если уже нет в  all_Sets
         for g in from_:                                           
-            if findGridByName ( all_grids, g.name) == None :       # если еще нет 
-                    all_grids.append(g)
-        return all_grids
+            if findSetByName ( all_Sets, g.name) == None :       # если еще нет
+                    all_Sets.append(g)
+        return all_Sets
 
 
 def WriteSelectTable(leftName, Fields, FileName, AsName, where):  #  запись в файл
@@ -72,12 +115,13 @@ def WriteSelect30(buf):  ##  разбор  Select
     WriteSelectTable( leftName, Fields, FileName, AsName, where )
     return
 
-def WriteGridString30(g):
-        if g.className == 'Grid':
-            if is_nan(g.min):   g.min = 'SvF.curentTabl.dat(\'' + g.oname + '\')[:].min()'
-            if is_nan(g.max):   g.max = 'SvF.curentTabl.dat(\'' + g.oname + '\')[:].max()'
+def WriteSetString30(g):
+        if g.className == 'Set':
+            if is_nan(g.min):   g.min = 'SvF.curentTabl.dat(\'' + g.fld_name + '\')[:].min()'
+            if is_nan(g.max):   g.max = 'SvF.curentTabl.dat(\'' + g.fld_name + '\')[:].max()'
             if is_nan(g.step):  g.step = SvF.Default_step  #-50
-            ret = 'Grid(\'' + g.name + '\',' + str(g.min) + ',' + str(g.max) + ',' + str(g.step) + ',\'' + g.ind + '\',\'' + g.oname + '\')'
+#            ret = 'Set(\'' + g.name + '\',' + str(g.min) + ',' + str(g.max) + ',' + str(g.step) + ',\'' + g.ind + '\',\'' + g.oname + '\')'
+            ret = 'Set(\'' + g.name + '\',' + str(g.min) + ',' + str(g.max) + ',' + str(g.step) + ',\'' + g.ind + '\''')'
         else:
             ret = 'Domain (\'' + g.name + '\',' + g.A[0].name + ',' + str(g.visX)
             if g.dim == 1:
@@ -88,28 +132,283 @@ def WriteGridString30(g):
         return ret
 
 
-def WriteGrid27 ( buf ):
+def WriteSet27 ( buf ):
             if buf == '': return
-            g = getGRID26(buf, SvF.Task.Grids)
+            print ('buf',buf)
+            g = getSet26(buf, SvF.Task.Sets)
+            print (g)
             if g is None : return None
 #            print ('WWWWWWWWWWW', buf, g.className )
-            str = g.name + '=' + WriteGridString30(g)
+            str = g.name + '=' + WriteSetString30(g)
             Swr(str)
             return g
 
-#            Task = SvF.Task
- #           g = getGRID26(buf, Task.Grids)
-  #          if g.className == 'Grid' :
-   #             if is_nan (g.min):   g.min = 'SvF.curentTabl.dat(\''+g.oname+'\')[:].min()'
-    #            if is_nan (g.max):   g.max = 'SvF.curentTabl.dat(\''+g.oname+'\')[:].max()'
-     #           if is_nan (g.step):  g.step = -50
-      #          Swr(g.name+'=Grid(\''+g.name+'\','+str(g.min)+','+str(g.max)+','+str(g.step)
-       #                          +',\''+g.ind+'\',\''+g.oname+'\')')
-        #    else :
-         #       Swr(g.name+'=Domain (\''+g.name+'\','+g.A[0].name+','+str(g.visX))
-          #      if g.dim==1: Swrs(')')
-           #     else       : Swrs(','+g.A[1].name+','+str(g.visY)+')')
-## 30            Swr('Task.AddGrid('+g.name+')')
+def WriteDomain_24_12(buf):
+    buf = buf.replace(' ','')    #  пробел после  '\\inn'
+    if buf == '': return
+    print('buf', buf)
+    buf_sp = buf.split ('=')
+    if len(buf_sp) < 2: buf_sp = buf.split ('\\inn')
+    if len(buf_sp) < 2: print ('No ='); exit (-1)
+    name = buf_sp[0]
+    print (buf)
+    a1 = '';   a2 = '';   a3 = '';    a4 = ''
+    buff = '='.join (buf_sp[1:])                    #  могут быть и другие =
+    for part in buff.split(';') :
+        if '(' in part:  # (   )
+        #    pars = parser(part)
+            args = parser(part).Args(0)  # here  '['
+            print(args)
+            for i,a in enumerate (args) :
+                if i == 0:  a1 = a
+                if i == 1:  a2 = a
+                if i == 2:  a3 = a
+                if i == 3:  a4 = a
+    Swr(name + ' = Domain(\'' + name +'\','+a1+','+a2+','+a3+','+a4+')')
+    Domain (name,a1,a2,a3,a4)
+
+
+
+def WriteSet_24_12(buf):        #  в память и в файл
+    buf = buf.replace(' ','')    #  пробел после  '\\inn'
+    if buf == '': return
+    print('buf', buf)
+    buf_sp = buf.split ('=')
+    if len(buf_sp) < 2: buf_sp = buf.split ('\\inn')
+    if len(buf_sp) < 2: print ('No ='); exit (-1)
+    name = buf_sp[0]
+    step = '-50'
+    ind = ''
+    Data = '\''+ name + '\''
+    mi = ''
+    ma = ''
+
+    buff = '='.join (buf_sp[1:])                    #  могут быть и другие =
+    for parts in buff.split(';') :
+       if '[' in parts :             #  [   ]
+           set = parts
+           pars = parser(set)
+     #      pars.myprint()
+           args = pars.Args(0)   # here  '['
+           print (args)
+
+           mi = args[0]
+           ma = args[1]
+
+           if  len(args) > 2 :
+               if args[2] != '': step = args[2]
+           if  len(args) > 3 :
+               if args[3] != '': ind = args[3]
+           if  len(args) > 4 :
+               if args[4] != '': Data = args[4]
+       elif ('Data' in parts) : Data = parts.split('=')[1]
+       elif ('Index' in parts) : ind = parts.split('=')[1]
+
+    if mi == '':
+        if '.' in Data : mi =  Data + '[:].min()'
+        else           : mi = 'SvF.curentTabl.dat(' + Data + ')[:].min()'
+    if ma == '':
+        if '.' in Data : ma =  Data + '[:].max()'
+        else           : ma = 'SvF.curentTabl.dat(' + Data + ')[:].max()'
+    ind = ind.strip ('\'')                                              #   'i' -> i
+    Swr(name + ' = Set(\'' + name +'\','+mi+','+ma+','+step+',\''+ind+'\','+Data+')')
+    Set (name,mi,ma,step,ind,Data)    #  нужен индекс при формир StartModel
+    return
+
+
+
+
+import sympy as sy
+#from itertools import combinations_with_replacement
+
+
+def make_Polynome (smbF, fun) :             #  Polynome (6, c, X, V) ####################
+    degr = 5
+    coef = 'c_' + fun.name
+    args = [a for a in fun.A]
+
+    beg = smbF.find('Polynome')
+    if len(smbF)>=beg+9 and smbF[beg+8] == '(' :        #  Polynome (
+        end = smbF.find(')', beg)
+        parts = smbF[beg+9:end].split(',')
+#        print (parts)
+        for ip,p in enumerate (parts):
+            if   ip==0:
+                if p!='': degr = int(p)                 #  Polynome ()
+            elif ip==1: coef = p
+            else:       args = [a for a in parts[2:]]
+    else :                                              #  Polynome
+        end = beg + 8
+
+    def find_combinations(N, S):
+        result = []
+
+        def backtrack(current, remaining, depth):
+            if depth == N:
+                if remaining == 0:
+                    result.append(current[:])
+                return
+            for i in range(remaining + 1):
+                current.append(i)
+                backtrack(current, remaining - i, depth + 1)
+                current.pop()
+
+        backtrack([], S, 0)
+        return result
+
+    pol = ''
+    coef_num = 0
+    for d in range(degr + 1):
+        for comb in find_combinations(len(args), d):
+            if pol !='': pol += '+'
+            pol += coef + '[' + str(coef_num) + ']'
+            coef_num += 1
+            for iarg, arg in enumerate(comb) :
+                if   arg >= 2: pol += '*' + args[iarg] + '**' + str(arg)
+                elif arg == 1: pol += '*' + args[iarg]
+        print (pol)
+#        print (find_combinations(len(args), d))
+ #   1/0
+
+
+
+ #   pol = ''
+  #  for p in range (degr+1) :
+   #     if p >= 1: pol += '+'
+    #    pol += coef + '[' + str(p) + ']'
+     #   if p >=1: pol += '*'+args[0]+'**' + str(p)
+  #  print (pol)
+
+    print (smbF[0:beg]+pol+smbF[end+1:])
+    if getFun (coef) is None :         #  coef  is not defined
+        WriteVarParam26 ( coef + '[' + str(coef_num) + ']' , False)
+        to_logOut('Var:  ' + coef + '[' + str(coef_num) + '] was added')
+#        WriteVarParam26 ( coef + '[' + str(degr+1) + ']' , False)
+ #       to_logOut('Var:  ' + coef + '[' + str(degr+1) + '] was added')
+
+    return smbF[0:beg]+pol+smbF[end+1:]
+
+
+
+
+def make_Fourier (smbF, fun) :        # Fourier (t, 5, T, c)
+    pars = parser(smbF)
+#    pars.myprint()
+    i_pol = pars.find_part('Fourier')
+#    print (i_pol)
+    lenAgs = len (pars.items[i_pol+1].etc)-1
+    if lenAgs >=1 \
+       and pars.items[i_pol+1].etc[1] - pars.items[i_pol+1].etc[0] == 2:       #  ( 5 ...
+            ncoef = int ( pars.items[i_pol+2].part )
+    else :          ncoef = 5                                                    #  ( )  -> (8)
+    if lenAgs >=2 : ω = pars.items[i_pol+4].part                #  ω
+    else :          ω = 'ω_' + fun.name
+    if lenAgs >=3 : coef = pars.items[i_pol+6].part             #  c
+    else :          coef = 'c_' + fun.name
+    if lenAgs >=4 : arg = pars.items[i_pol+8].part             # t     x,y ???
+    else :          arg = fun.A[0]
+
+#    ncoef = pars.items[i_pol+2].part            #   6
+ #   ω = pars.items[i_pol+4].part             #  c
+  #  coef = pars.items[i_pol+6].part             #  c
+   # arg = pars.items[i_pol + 8].part  # 6
+    pol = ''
+    for p in range (int(ncoef)) :
+        n = int((p+1)/2)
+     #   print (p, n)
+        if p >= 1: pol += '+'
+        if   p == 0:    pol += coef +'[0]/2'
+        elif p%2 == 1:  pol += coef +'['+str(p)+']*cos('+ ω +'*'+str(n)+'*'+arg+')'
+        else :          pol += coef +'['+str(p)+']*sin('+ ω +'*'+str(n)+'*'+arg+')'
+    print (pol)
+    pars.items[i_pol].part = pol
+    for i in pars.items[i_pol + 1:i_pol+lenAgs*2+2]: i.part = ''
+#    for i in pars.items[i_pol + 1:i_pol+10]: i.part = ''  # убираем лишнее
+    print ('JV',ω )
+    if getFun (ω) is None :         #  coef  is not defined
+        WriteVarParam26 ( ω , False)
+        to_logOut('Var:  ' + ω  + ' was added')
+    if getFun (coef) is None :         #  coef  is not defined
+        WriteVarParam26 ( coef + '[' + str(ncoef) + ']' , False)
+        to_logOut('Var:  ' + coef + '[' + str(ncoef) + '] was added')
+
+#    print (pars.join())
+    return  pars.join()
+
+def make_smbFun(smbF, fun):
+    print('make_smbFun', smbF);
+    if smbF.find('Polynome') >= 0: smbF = make_Polynome (smbF, fun)
+    if smbF.find('Fourier') >= 0:   smbF = make_Fourier (smbF, fun)
+ #   1/0
+    if fun.dim == 1:
+        variables = sy.symbols(fun.A[0] + ',')
+    else:
+        variables = sy.symbols(fun.A[0] + ',' + fun.A[1])
+    """"
+    def gr_add_brack(txt):  # add  []  ДЛЯ ПО
+        part = txt.split(Coeff_name)
+        ret = part[0]
+        for p in part[1:]:
+ #           print (p)
+            for i, char in enumerate(p):
+                if not char.isdigit() :
+                    ret += Coeff_name + '[' + p[:i] + ']' + p[i:]
+                    break
+                elif i == len(p) - 1 :
+                    ret += Coeff_name + '[' + p + ']'
+                    break
+        return ret
+    """
+#
+    smbF = smbF.replace('[', '(').replace(']', ')')  # Заменяем  []  ->  ()
+    smbFx  = str(sy.diff(smbF,  variables[0])) + ' '   #   for  last gr7 ->gr[7]?
+    smbFxx = str(sy.diff(smbFx, variables[0])) + ' '
+    print('smbF  ', smbF)
+    print('smbFx ', smbFx)
+    print('smbFxx', smbFxx)
+    smbFxx_2 = '('+smbFxx+')**2'
+    print('smbFxx_2', smbFxx_2)
+    if fun.Int_smbFxx_2 is None :
+        Int_smbFxx_2 = str(sy.integrate(smbFxx_2, variables[0]))
+        ######
+    else :  Int_smbFxx_2 = None
+    print('\nIntegral', Int_smbFxx_2)
+
+    py_names = dir(py)
+    def Write_def_smbFun(f_name, f_txt):
+        if f_txt is None : return
+        obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION(f_txt, [])
+        for fu in SvF.Task.Funs:
+            if fu.dim != 0:
+                eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name)
+            else:
+                eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name + '()')
+        f_txt = eqPars.join()
+        Swr('def ' + fun.name + '_' + f_name + '(Args) :')
+        Swr('   ' + fun.A[0] + ' = Args[0]')
+        if fun.dim == 2: Swr('   ' + fun.A[1] + ' = Args[1]')
+        for f_nam in py_names: f_txt = f_txt.replace(f_nam,'py.'+f_nam)    #  добавляем к функциям py.
+#        Swr('   return ' + gr_add_brack(f_txt))
+        Swr('   return ' + f_txt)
+        Swr(fun.name + '.' + f_name + ' = ' + fun.name + '_' + f_name + '')
+#    obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION(smbF, [])
+
+    Write_def_smbFun('smbF', smbF)
+    Write_def_smbFun('smbFx', smbFx)
+    Write_def_smbFun('smbFxx', smbFxx)
+    Write_def_smbFun('Int_smbFxx_2', Int_smbFxx_2)
+
+    if fun.dim == 2:
+        smbFy  = str(sy.diff(smbF,  variables[1])) + ' '
+        smbFxy = str(sy.diff(smbFx, variables[1])) + ' '
+        smbFyy = str(sy.diff(smbFy, variables[1])) + ' '
+        print('smbFy',  smbFy)
+        print('smbFxy', smbFxy)
+        print('smbFyy', smbFyy)
+        Write_def_smbFun('smbFy', smbFy)
+        Write_def_smbFun('smbFxy', smbFxy)
+        Write_def_smbFun('smbFyy', smbFyy)
+
 
 
 def WriteVarParam26 ( buf, param ) :
@@ -119,19 +418,31 @@ def WriteVarParam26 ( buf, param ) :
 #        print('VarParam26:', buf, param)
         strInitBy = ''
         strFuncDomain = ''
+        f_name = ''
+        fun_args = []
+        fun_args_str = ''       #  't,v'
+        dim = 0
+        dop_args = ''
+        PolyPow  = -1
+        Type     = ''
+        Period   = ''
+        Domain   = ''
+        ReadFrom = ''
+        Data     = ''
+        smbFun   = ''
+        f_type = 'g'
         Lbound = None
         Ubound = None
-        Finitialize = '1' #'0'
-        FromFile = ''
+        Finitialize = '' #'0'
         AddGap = False
-        fun = None
 
+        fun = None
         parts = buf.split(';')
         p = -1                                              #  вставляем ';'
-        if   parts[0].find('<') > 0 : p=parts[0].find('<')   #    X(t) <= 0
-        elif parts[0].find('>') > 0 : p=parts[0].find('>')   #   X(t) >= 0
-        elif parts[0].find('=') > 0 : p=parts[0].find('=')   # Param:  H(X,Y) = DEM_Kostica.asc
-        elif parts[0].find('\\inn')>0: p=parts[0].find('\\inn')   # Param:  H(X,Y) \\in [0,1]
+        if   parts[0].find(')<') > 0 : p=parts[0].find(')<')+1   #    X(t) <= 0
+        elif parts[0].find(')>') > 0 : p=parts[0].find(')>')+1   #   X(t) >= 0
+        elif parts[0].find(')=') > 0 : p=parts[0].find(')=')+1   # Param:  H(X,Y) = DEM_Kostica.asc
+# ??        elif parts[0].find(')\\inn')>0: p=parts[0].find(')\\inn')+1   # Param:  H(X,Y) \\in [0,1]
         if p > 0 :
             parts[0] = parts[0][:p] + ';' + parts[0][p:]
  #           print('P0', parts[0])
@@ -144,84 +455,130 @@ def WriteVarParam26 ( buf, param ) :
                 part = part.replace(' ','')
                 if part == '' :   continue
                 up_part = part.upper()
+                print('PART:', part, up_part)
                 pars = parser ( part )
-                if SvF.printL:  print ('PART:', part)
- #               print('PART:', part, up_part, i)
+         #       pars.myprint()
+                print ('PART:', part )
+        #        print ('PART1{:', pars.items[1].part )
 
-                if i==0 :                                       #  Функция  X(t)
-                    fun = Fun(pars.items[0].part ,pars.Args(1), param )
-                elif part[0] == '=' :             # Param:  H(X,Y) = DEM_Kostica.asc   H(Y,Y) = 1
-                            Finitialize = part[1:]
+                if i==0 :                                       #  Функция VAR:    x ( t, Degree=8 )
+                    f_name = pars.items[0].part
+                    if len (pars.items) > 1:
+                        if pars.items[1].part == '[' :              #  tensor  dim > 0
+                            f_type = 'tensor'
+                    for a in pars.Args(1) :
+                        if '=' in a :
+                            dop_p = a.split('=')[0]
+                            if dop_p == 'Degree' :
+                                PolyPow = int(a.split('=')[1])
+       #                         type = "p"
+                                continue                            # not adding to  dop_arg
+                            if dop_p == 'Type' :
+                                Type = a.split('=')[1]
+                                continue
+                            dop_args += ',' + a
+                        else :
+                            fun_args.append (a)
+                    fun_args_str = ','.join(fun_args)
+                    dim = len (fun_args)
+                    if dim == 0 :   f_type = 'tensor'
+                    print (pars.Args(1), dop_args, fun_args, fun_args_str)
+                    fun = Fun(pars.items[0].part ,fun_args, param, PolyPow )     # here  '('
+                elif part.find('Degree')==0 :                        #  Функция VAR:    x ( t ); Degree=8
+                            PolyPow = int(part.split('=')[1])
+                            fun.PolyPow = PolyPow
+                            fun.type = 'p'
+                elif part.find('Type')==0 :
+                            Type = part.split('=')[1]
+                elif part.find('Period')==0 :
+                            Period = part.split('=')[1]
+                elif part.find('Domain') == 0:
+                            Domain = part.split('=')[1]
+                elif part.find('Data')==0 :
+                            Data = part
+                elif part[0] == '=' :
+                            smbFun = part[1:]
+                elif part.find('Int_smbFxx_2=False') == 0:
+                            fun.Int_smbFxx_2 = ''
+        #        elif part.find('Coeff')==0 :
+         #                   Coeff = part.split('=')[1][1:-1]      #  убираем кавычки
+      #          elif part.find('Fun')==0 :
+       #                     smbFun = part.split('=')[1][1:-1]
+                elif part.find('Finitialize=') == 0:   # Param:  H(X,Y) = DEM_Kostica.asc?   or H(X,Y) = 1
+                            Finitialize = part.split('=')[1]
+#                elif part[0] == '=' :             # Param:  H(X,Y) = DEM_Kostica.asc   or H(X,Y) = 1
+ #                           Finitialize = part[1:]
                 elif part.find('<<') == 0:
                         if len (part[2:]) > 0:
-                            FromFile = part[2:]
+                            ReadFrom = part[2:]
                         else:
-                            FromFile = fun.NameArds() + '.sol'
+                            ReadFrom = fun.NameArds() + '.sol'
+                        if ReadFrom[0] != '\'' and ReadFrom[0] != '\"' : ReadFrom = '\"' + ReadFrom + '\"'
+                elif part.find('ReadFrom')==0 :
+                            ReadFrom = part.split('=')[1]
+                elif part.find('>') == 0:  # > 3
+                        p = max(part.find('>'), part.find('>=') + 1)
+                        Lbound = part[p + 1:]
+                elif part.find('<') == 0:                                   # <6        # elif <  after  <<
+                    p = max(part.find('<'), part.find('<=') + 1)
+                    Ubound = part[p + 1:]
+                elif part.find('ReadFrom')==0 :
+                            ReadFrom = part.split('=')[1]
+                elif part.find('\\inn') > 0:
+                        args, SetOrDom = part.split('\\inn')
+                        print (args, SetOrDom);
+                        g = findSetByName ( Task.Sets,SetOrDom )  #getSet26(SetOrDom, Task.Sets)
+                #        print (g.name)
+                        if args == fun_args_str and g is None:  Domain = SetOrDom   # Q,VPD ∈ QV - Domain
+                        elif args in fun_args and isnotNone (g) :                 # t ∈ T  - Set
+                            num_arg = fun_args.index(args)
+                            fun_args[num_arg] = SetOrDom
+                            fun_args_str = ','.join(fun_args)
+                        else:
+                            print('**************** Cant understand :', part)
+                            exit(-1)
 
-                elif getGRID26 ( pars, Task.Grids ) != None :   #  Грид
-                        gr = SvF.LastGrid
-#                        print('PART1:', part,  gr.name, gr.className)
-                        if SvF.printL:  print ('gr.name:', gr.name, gr.className)
-                        if gr.name == '__No__Name__' : gr.name = fun.V.name
-                        if gr.name == fun.V.name :              #  bounds     for x(t)    x ∈ [ -10.,10 ];
-                            Lbound = gr.min
-                            Ubound = gr.max
-                            if SvF.printL:  print ('LG:', Lbound)                         #   Polynome  не проверено !!!!!!!!!!!!!!!!!!!!!!!!!!
-                            if SvF.printL:  print ('UG:', Ubound)
-                        else :
-                            if gr.className == 'Domain' :    #  PHqt  ( Q, T );  Q,T ∈ QT;
-                                fun.domain = gr
-                                args = part.split('\\in')[0].split(',')
-                             #   print (args)
-                             #   1/0
-                                for ia,a in enumerate(fun.A) :
-                                    gri = Grid (findGridByName ( Task.Grids, gr.A[args.index(a)].name ))
-                                    gri.name = a
-                                    fun.A[ia] = gri
-                                continue
-                            for ia, a in enumerate(fun.A):
-                                if SvF.printL:  print ('Arg:', a, type(a), type('abc'),)
-                                if type(a) != type('abc') : continue
-#                                print gr.name, a
-                                if gr.name == a :
-#                                    fun.A[ia] = Grid (gr)
-                                    fun.A[ia] = (gr)
+                #                elif getSet26 ( pars, Task.Sets ) != None :   #  Грид
+ #                       gr = SvF.LastSet
+  #                      print('PART1:', part,  gr.name, gr.className)
+                #        1/0
+   #                     if SvF.printL:  print ('gr.name:', gr.name, gr.className)
+    #                    if gr.name == '__No__Name__' : gr.name = fun.V.name
+     #                   if gr.name == fun.V.name :              #  bounds     for x(t)    x ∈ [ -10.,10 ];
+      #                      Lbound = gr.min
+       #                     Ubound = gr.max
+        #                    if SvF.printL:  print ('LG:', Lbound)                         #   Polynome  не проверено !!!!!!!!!!!!!!!!!!!!!!!!!!
+         #                   if SvF.printL:  print ('UG:', Ubound)
+          #              else :
+           #                 if gr.className == 'Domain' :    #  PHqt  ( Q, T );  Q,T ∈ QT;
+            #                    fun.domain = gr
+             #                   args = part.split('\\in')[0].split(',')
+              #               #   print (args)
+               #              #   1/0
+                #                for ia,a in enumerate(fun.A) :
+                 #                   gri = Set (findSetByName ( Task.Sets, gr.A[args.index(a)].name ))
+                  #                  gri.name = a
+                   #                 fun.A[ia] = gri
+                    #            continue
+                     #       for ia, a in enumerate(fun.A):
+                      #          if SvF.printL:  print ('Arg:', a, type(a), type('abc'),)
+                       #         if type(a) != type('abc') : continue
+#                       #         print gr.name, a
+                         #       if gr.name == a :
+#                                    fun.A[ia] = Set (gr)
+                          #          fun.A[ia] = (gr)
 #                                    fun.A[ia] = Arg (gr)
-                                    if SvF.printL: print ('ArgName:', fun.A[ia].name)
-                                    break
-                            else :
-                                    print ('********  NO USE FOR ARG GRID ', gr.name, '*********************')
-                                    exit(-1)
+                           #         if SvF.printL: print ('ArgName:', fun.A[ia].name)
+                            #        break
+                  #          else:
+                   #                 print ('********  NO USE FOR ARG GRID ', gr.name, '*********************')
+                    #                exit(-1)
 
 #                elif part.find('\\in')==0 :
  #                           p = max (part.find('>'), part.find('>=')+1)
   #                          Lbound = getfloat(part[p+1:])
    #                         if SvF.printL:  print ('Lbound=', Lbound)
-                elif part.find('>') == 0:
-                            p = max(part.find('>'), part.find('>=') + 1)
-#                            Lbound = getfloat(part[p + 1:])
-                            Lbound = part[p + 1:]
-                            if SvF.printL:  print('Lbound=', Lbound)
-                elif part.find('<')==0 :
-                            p = max (part.find('<'), part.find('<=')+1)
-#                            Ubound = getfloat(part[p+1:])
-                            Ubound = part[p+1:]
-                            if SvF.printL:  print ('Ubound=', Ubound)
 
-                elif up_part.find('POLYPOW')==0 :
-                            fun.PolyPow = int(part.split('=')[1])
-                            fun.type = 'p'
-                            fun.sizeP = PolySize(fun.dim, fun.PolyPow )
-
-                elif up_part.find('VARTYPE')==0 :
-                        fun.type = part.split('=')[1]
-                        if    fun.type == 'SPWL':   fun.type = 'gSPWL'
-                        elif  fun.type == 'G7':     fun.type = 'gSPWL'
-                        elif  fun.type == 'G_ind':  fun.type = 'gSPWLi'
-                        elif  fun.type == 'SPWLi':  fun.type = 'gSPWLi'
-                        elif  fun.type == 'G':      fun.type = 'gG'       #  Там что-то не так
-                        elif  fun.type == 'Cycle':  fun.type = 'gCycle'
-                        elif  fun.type == 'G_Cycle': fun.type = 'gCycle'
                 elif up_part.find('DATAFILE')>=0 :    fun.DataReadFrom = 'Select * from '+ part.split('=')[1]
                 elif up_part.find('SELECT')>=0 :      fun.DataReadFrom = part_blanck
 #                elif up_part.find('INITIALIZE')>=0 :  Finitialize = part.split('=')[1]   # 22.12.19
@@ -234,7 +591,10 @@ def WriteVarParam26 ( buf, param ) :
                             strInitBy = up_part[6:]
                 elif up_part == 'ADDGAP' :
                     AddGap = True
-#############################################################   ПРАВИТЬ !!!!!!!!!!!
+#                elif part.find (fun.V.name+'=') ==0 \
+ #                 or part.find (fun.V.name+'('+fun_args_str+')=') ==0 :   #  smbFun !!!!!!!!!!!!!!!!!!!!!!!
+  #                  smbFun = part.split('=')[1]
+                    #############################################################   ПРАВИТЬ !!!!!!!!!!!
                 elif part.find (fun.V.name) >=0:    #  Нужно искать  ИМЯ а не подстроку !!!!!!!!!!!!!!!!!!!!!!!
                     parts[i] = 'EQ:' + part
                     if SvF.printL:  print ('treated as EQ:',  parts[i])
@@ -242,84 +602,132 @@ def WriteVarParam26 ( buf, param ) :
                     print ('**************** Cant understand :', part)
                     exit (-1)
 
-        if fun.dim == 1 and type(fun.A[0]) == type('abc') :        # Domain
- #           print ('11111111111111111', fun.A[0]);  1/0
-            if not findGridByName ( Task.Grids,fun.A[0] ) is None:
+        if f_type != 'tensor' :
+            for a in fun_args:          #  проверяем Аргументы
+                if findSetByName ( Task.Sets,a ) is None:
+                    WriteSet_24_12(a + '=[,,]')   #WriteGrid27 ( a + '=[,,]')              #    Дописываем  Set
+
+        if f_type != 'tensor' :
+          if dim == 1 and type(fun.A[0]) is str :        # Domain  <class 'str'>
+            if not findSetByName ( Task.Sets,fun.A[0] ) is None:
 #                print 'LL'
-                gr = SvF.LastGrid
+                gr = SvF.LastSet
  #               print '2', gr.name
                 if gr.className == 'Domain':  # PHqt  ( QT );
                     fun.domain = gr
-                    fun.A[0] = Grid(gr.A[0])
+                    fun.A[0] = Set(gr.A[0])
                     if len (gr.A) == 2:
-                        fun.A.append (Grid(gr.A[1]))
+                        fun.A.append (Set(gr.A[1]))
                         fun.dim = 2
 
-        f_name = fun.V.name
-        Prefix_name = SvF.funPrefix + f_name
-        dim = fun.dim
 
-        if FromFile != '' :                 #
-            st = f_name + ' = FunFromFileNew (\'' + FromFile + '\',1,True).Rename (\''+fun.V.name+'\''
-            for a in fun.A :  st += ',\''+a+'\''
-            st += ')'
-            Swr ( st )
-        else :
-          f_str = 'Fun(\''+fun.V.name+'\',['        #    write  into the  StastModel
- #         if fun.DataReadFrom != '' :
-  #          Swr (f_name+'.DataReadFrom = \'' + fun.DataReadFrom + '\'' )
-          for ia, a in enumerate (fun.A) :          #  Аргументы
-            if ia!=0 : f_str += ','
-            if type(a) == type('abc'):
-                if findGridByName ( Task.Grids,a ) is None:
-                    WriteGrid27 ( a + '=[,,]')              #    Дописываем  Grid
-                f_str += a
-            else :
-                f_str += WriteGridString30(a)
-  #              f_str += 'Grid(\''+a.name+'\','+str(a.min)+','+str(a.max)+','+str(a.step)\
-   #                            +',\''+a.ind+'\',\''+a.oname+'\')'
-  ###              print(WriteGridString30(a))
-    #            print ('Grid(\''+a.name+'\','+str(a.min)+','+str(a.max)+','+str(a.step)\
-     #                          +',\''+a.ind+'\',\''+a.oname+'\')')
-          f_str += '],' + str(fun.param)+','+str(fun.PolyPow)+','+Finitialize+', \'' + fun.DataReadFrom + '\') '
-          if fun.PolyPow < 0 :
-#            Swr (fun.V.name+' = '+f_str+',-1,'+Finitialize+'); ')
-            Swr (fun.V.name+' = '+f_str)                                                #  Fun
-#            if fun.type[0] == 'G':  Swr (fun.V.name+'.type = \''+fun.type+'\'; ')
-            if len(fun.type) > 1:  Swr (fun.V.name+'.type = \''+fun.type+'\'; ')    # SPWL ...
-          else :
-            Swr (fun.V.name+' = p'+f_str)                                               #  pFun
-          if not fun.domain is None :
-            Swr(fun.V.name + '.domain = ' + fun.domain.name )
-##30          Swr ('Task.InitializeAddFun ( '+fun.V.name+ ', \''+ Finitialize +'\' )')
-  #        Swr ('Task.InitializeAddFun ( '+fun.V.name )
-   #       if Finitialize is None : Swrs (' )')
-    #      else :                   Swrs ( ', \''+ Finitialize +'\' )')
-## 30g+          Swr( fun.V.name + '__f = ' + fun.V.name)
-          if AddGap :   Swr ( fun.V.name+'.AddGap( )'); #AddGap=False
+#        if FromFile != '' :                 #
+ #           st = f_name +' = FunFromFileNew (\'' +FromFile + '\',1,True).Rename (\''+fun.V.name+'\','+fun_args_str +')'
+  #          Swr ( st )
+   #     else :
+    #      f_str = 'Fun(\''+f_name+'\',['+ fun_args_str + ']'       #    write  into the  StartModel
 
-        if dim == 0:
-            Swr(f_name + '.grd = ' + Finitialize)
-                                                    # def fE (t) : return E.F([t])
-        def_part = 'def ' + Prefix_name + '('
-        ret_part = 'return ' + f_name + '.F(['
-        for i, a in enumerate( fun.A ) :
-            if i>0: arg = ','+getName(a)
-            else  : arg =     getName(a)
-            def_part += arg
-            ret_part += arg
-        def_part += ') : '
-        ret_part += '])'
-        Swr(def_part + ret_part)                     # def fE (t) : return E.F([t])
+        #if dim == 0 :  f_str = 'Tensor(\''+f_name+'\',['+ fun_args_str + ']'
+        #else :
+        if  f_type == 'tensor':   f_str = 'Tensor(\'' + f_name + '\',[' + fun_args_str + ']'
+        else :                  f_str = 'Fun(\''+f_name+'\',['+ fun_args_str + ']'       #    write  into the  StartModel
 
+        if param == True : f_str += ', param='  + str(param)                #  добавление аргументов
+        if PolyPow  != -1 and not ('Degree' in dop_args):   f_str += ', Degree='   + str(PolyPow)
+        if Type     != '' and Type != 'Cycle' and not ('Type' in dop_args):     f_str += ', Type=\''   + Type+ '\''
+        if Period   != '' and not ('Period' in dop_args):   f_str += ', Period='   + Period
+        if Domain   != '' and not ('Domain' in dop_args):   f_str += ', Domain='   + Domain
+        if ReadFrom != '' and not ('ReadFrom' in dop_args): f_str += ', ReadFrom=' + ReadFrom
+        if Data     != '' and not ('Data'     in dop_args): f_str += ', ' + Data
+        if Finitialize != '' and not ('Finitialize' in dop_args): f_str += ', Finitialize=' + Finitialize
+#       if smbFun != '' :  f_str += ', smbFun=\''+smbFun+'\', Coeff=\''+Coeff+'\''
+        if dop_args != '' : f_str += dop_args
+        f_str += ')'
+
+        if   Type == 'Cycle' :    Swr (f_name+' = Cycle' + f_str)
+        elif Type == 'SPWLi' or Type == 'SPWL' : Swr (f_name+' = SPWL' + f_str)
+        elif smbFun != '' :     Swr (f_name+' = smb'+f_str)
+        elif PolyPow < 0  :     Swr (f_name+' = '+f_str)
+        else :                  Swr (f_name+' = p'+f_str)                                  #  pFun
+
+        if AddGap :   Swr ( f_name+'.AddGap( )'); #AddGap=False
+
+        #if dim == 0:      Swr(f_name + '.grd = ' + Finitialize)
+
+        if f_type == 'tensor' :
+            if   dim==1 : fun_args_str = 'i'
+            elif dim==2 : fun_args_str = 'i,j'
+
+        def_part = 'def ' + SvF.funPrefix + f_name + '(' + fun_args_str + ') : '    # def fE (t) : return E.F([t])
+        ret_part = 'return ' + f_name + '.F([' + fun_args_str + '])'
+        Swr(def_part + ret_part)
+
+        if smbFun != '':
+            #            print (smbFun, Coeff)
+            make_smbFun(smbFun, fun)
+#            1 / 0
+        #       if fun.PolyPow >=0 :
+  #          make_smbF(fun)                          ############  24.11
         #       if fun.PolyPow >=0:     fun = pFun(fun)
-
  #       SvF.ReadFrom = ''
-
 ## 30        Task.AddFun ( fun )
         Task.Funs[-1].Oprint()
 
-        if 0:   #not SvF.Preproc :   30
+ #       if Finitialize == '': Finitialize = '1'   #  ????????????
+        if not param:  # Param
+            if PolyPow >= 0:  # Poly
+                wr('\n    ' + f_name + '.var = py.Var ( range (' + f_name + '.sizeP' + ') )' ) #, initialize =  ' + Finitialize + ')') # ?? Finitialize copy from grd
+                wr('    Gr.' + f_name + ' =  ' + f_name + '.var')
+            else:  # Set
+  ##              if not fun.param:  # Var
+                    wr('\n    ' + f_name + '.var = py.Var ( ')
+                    for di in range(dim):
+                        if f_type == 'tensor':
+                            wrs('range (' + f_name + '.Sizes[' + str(di) + ']),')
+
+                        else :
+                            wrs(f_name + '.A[' + str(di) + '].NodS,')
+                    #                      wrs ( 'domain='+str(fun.domain_)+',' )
+                    wrs('domain=Reals')
+      #              wrs('domain=complex,')
+                    if not (Lbound is None and Ubound is None):
+                        wrs(', bounds=(' + str(Lbound) + ',' + str(Ubound) + ')')
+                    wrs(' )')
+#                    wrs(' initialize = ' + Finitialize + ' )')
+                    wr('    Gr.' + f_name + ' =  ' + f_name + '.var')
+
+ #24           if PolyPow < 0:  # Set
+    #            wr('    ' + f_name + '.InitByData()')
+#            if not fun.neNDT is None:  # 27
+            if  Domain != '':  # 2412
+                    wr('    ' + f_name + '.Fix()')
+            if  Type == 'Cycle' :
+                if Period == '' :
+                    WriteModelEQ31( f_name + '.var[0] = '  + f_name + '.var['+f_name+'.A[0].Ub]' )
+                else :
+                    WriteModelEQ31(f_name + '.var[0] = ' + SvF.funPrefix + f_name + '(' + f_name + '.Period)' )
+#                    WriteModelEQ31(f_name + '.var[0] = ' + SvF.funPrefix + f_name + '(' + Period + ')' )
+#                wr('    ' + f_name + '.var[0] = ' + f_name + '.var[' + f_name + '.A[0].Ub]')
+
+            #      if isnotNone(fun.domain):  # 27
+       #         wr('    ' + f_name + '.Fix()')
+
+            if SvF.numCV >= 0:
+                wr('    ' + f_name + '.mu = Gr.mu' + str(SvF.numCV) + ';')
+     #24       if PolyPow >= 0 :  # Poly
+        #        wr('    ' + f_name + '.var[0].value = ' + Finitialize)
+        # EQ:
+            if PolyPow >= 0:  # Poly
+                if not Lbound is None:      WriteModelEQ31(f_name+'('+fun_args_str + ')>=' + str(Lbound))
+                if not Ubound is None:      WriteModelEQ31(f_name+'('+fun_args_str + ')<=' + str(Ubound))
+
+
+
+            for part in parts:
+                if part.find('EQ:') == 0:    WriteModelEQ31(part[3:])
+
+
+""""
             if strInitBy != '' :
                         print ('strInitBy', readListFloat19 (strInitBy,'(',cut2=')' ) )
                         ar = readListFloat19 (strInitBy,'(',cut2=')' )
@@ -332,9 +740,9 @@ def WriteVarParam26 ( buf, param ) :
                                 SvF.Task.Funs[-1].neNDT[a0,a1] = Fdomain.grd[a0,a1]
                         SvF.Task.Funs[-1].calcNDTparam()
             if AddGap : SvF.Task.Funs[-1].AddGap()
-
+"""
 #        if not SvF.MakeModel : return
-
+"""""
         f_num = len ( Task.Funs ) -1
         d = Task.Funs[f_num]
 #        f_str = 'Funs['+str(f_num)+ ']'
@@ -349,46 +757,23 @@ def WriteVarParam26 ( buf, param ) :
                    #   wr ( '    '+ f_name + '__i = ' + f_str+'.grd' )   ###### 30g+
         else :
             if d.PolyPow >= 0:   # Poly
-#                  wr ( '    ' + f_name + '__i = Var ( range (PolySize(' + str(d.dim)+','+str(d.PolyPow)+') ), initialize = 0 )' )
-                  wr ( '\n    ' + f_name + '.var = py.Var ( range (' + str(d.sizeP) + '), initialize = 0 )' )
+                  wr ( '\n    ' + f_name + '.var = py.Var ( range (' + f_name +'.sizeP' + '), initialize = 0 )' )
                   wr('    Gr.' + f_name + ' =  ' + f_name + '.var')
-            else :            # Grid
+            else :            # Set
                   if not d.param :                                                 # Var
-#                      wr ( '    ' + f_name + '__i = Var ( ' )          # 30g+
                       wr ( '\n    ' + f_name + '.var = py.Var ( ' )
                       for di in range (d.dim) :
-#                          wrs ( f_str+'.A['+str(di)+'].NodS,' )        # 30g+
                           wrs ( f_name+'.A['+str(di)+'].NodS,' )
-#                          f.write(f_str + '.A[' + str(di) + '].NodS,')
-                      wrs ( 'domain='+str(d.domain_)+',' )
-#                      f.write( 'domain='+str(d.domain_)+',' )
+#                      wrs ( 'domain='+str(d.domain_)+',' )
+                      wrs ( 'domain=Reals,' )
                       if not (Lbound is None and Ubound is None):
                           wrs ( ' bounds=('+str(Lbound)+','+str(Ubound)+'),')
                       wrs ( ' initialize = '+Finitialize+' )' )
-          #            f.write(' initialize = ' + Finitialize + ' )')
                       wr ( '    Gr.'+f_name+' =  ' + f_name + '.var' )
-          ##            wr('    ' + f_name + '.var = ' + f_name + '__i ; Gr.' + f_name + ' =  ' + f_name + '__i') # 30g+
 
-            if d.PolyPow < 0:   # Grid
+            if d.PolyPow < 0:   # Set
                       wr( '    '+f_name+'.InitByData()' )
-        if not d.neNDT is None:                     #27
-            wr( '    '+f_name+'.Fix()' )
-
-        if not d.param :                                                 # 30g+
-#          if   dim == 0  :  wr('    ' + Prefix_name + ' = ' + f_name + '__i')  # =  __i   # 30g+
-          if   dim == 0  :  #wr('    ' + Prefix_name + ' = ' + f_name + '.var')  # =  __i
-              wr('    def ' + Prefix_name + '() : return ' + f_name + '.F([])')  # def fE () : return E.F([])
-          elif dim == 1:
-            wr('    def ' + Prefix_name + '(' + getName(fun.A[0]) + ') : return '
-                        + f_name + '.F([' + getName(fun.A[0]) + '])')  # def fE (t) : return E.F([t])
-          elif dim == 2:
-#            wr('    def ' + SvF.funPrefix + f_name + '(' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + ') : return '
-            wr('    def ' + Prefix_name + '(' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + ') : return '
-                        + f_name + '.F([' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + '])')
-          elif dim == 3:
-#            wr('    def ' + SvF.funPrefix + f_name + '(' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + ',' + getName(fun.A[2]) + ') : return '
-            wr('    def ' + Prefix_name + '(' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + ',' + getName(fun.A[2]) + ') : return '
-                        + f_name + '.F([' + getName(fun.A[0]) + ',' + getName(fun.A[1]) + ',' + getName(fun.A[2]) +'])')
+ 
         if not d.param:
           if SvF.numCV >= 0:
             wr('    ' + f_name + '.mu = Gr.mu'+str(SvF.numCV)+';')
@@ -403,7 +788,7 @@ def WriteVarParam26 ( buf, param ) :
                 
         for part in parts :
             if part.find('EQ:') == 0:    WriteModelEQ31 ( part[3:] )
-
+"""
 
 def fromTEXplus(equation) :
 #    print ('TEXsubst', equation)
@@ -435,7 +820,8 @@ def fromTEXplus(equation) :
                     repars = True
                     it.type = 'int'
                     lim_min = it.part.split('_')[1]
-  ##                  print ('lim_min', lim_min)
+      #              print ('lim_min', lim_min)
+       #             1/0
 #                    UTF8replace (it.part,'\\int_','\\int(')
    #                 print (it.part)
                     it.part=it.part[0:4]+'('+lim_min
@@ -545,7 +931,7 @@ def fromTEXplus(equation) :
     return equation
 
 
-def ParseEQUATION ( equation, all_grids, Mode = 'EQ' ) :
+def ParseEQUATION ( equation, all_Sets, Mode = 'EQ' ) :
         Task = SvF.Task
         Funs = Task.Funs
 
@@ -579,30 +965,30 @@ def ParseEQUATION ( equation, all_grids, Mode = 'EQ' ) :
           if reparse :  eqPars   = parser ( eqPars.join() )
         if SvF.printL:  eqPars.myprint()
 
-   #     print ('ALL_Grids B', len(all_grids))
-  #      for g in all_grids : print (g.name)
+   #     print ('ALL_Sets B', len(all_Sets))
+  #      for g in all_Sets : print (g.name)
 
  #       if Mode == 'EQ' :
-        for g in Task.Grids:                                       # пополняем  all_grids  из общих Гридов
-            if findGridByName ( all_grids, g.name) == None :       # если еще нет 
+        for g in Task.Sets:                                       # пополняем  all_Sets  из общих Гридов
+            if findSetByName ( all_Sets, g.name) == None :       # если еще нет
                 if eqPars.find_part_type_but_point( g.name, 'name' ) >= 0 :  # чтобы исключить   x.min   x.step  tab.t
-                    all_grids.append(g)
+                    all_Sets.append(g)
 
-        eqPars.funs( all_grids )                                        #  ... name -> grid
-        dif_minus, dif_plus  = eqPars.dif1 ( dif_minus, dif_plus, all_grids )
-        dif_minus, dif_plus  = eqPars.dif2 ( dif_minus, dif_plus, all_grids )
-        eqPars.summa(all_grids)
-        integral_grids = eqPars.integral( all_grids )                  # лучше оставить последним - там всякие for и sum
+        eqPars.funs( all_Sets )                                        #  ... name -> Set
+        dif_minus, dif_plus  = eqPars.dif1 ( dif_minus, dif_plus, all_Sets )
+        dif_minus, dif_plus  = eqPars.dif2 ( dif_minus, dif_plus, all_Sets )
+        eqPars.summa(all_Sets)
+        integral_Sets = eqPars.integral( all_Sets )                  # лучше оставить последним - там всякие for и sum
         equation = eqPars.join()
         if SvF.printL : print ('END PARSE', equation)
 
-        constraint_grids=[]                         #  фигурируют в EQ  но не как  d(t)
-        for g in all_grids :
+        constraint_Sets=[]                         #  фигурируют в EQ  но не как  d(t)
+        for g in all_Sets :
             if SvF.printL : print (g.name)
-            if findGridByName ( integral_grids, g.name) == None :            #  
-                constraint_grids.append(g)
+            if findSetByName ( integral_Sets, g.name) == None :            #
+                constraint_Sets.append(g)
 
-        return  equation, eqPars, constraint_grids, dif_minus, dif_plus
+        return  equation, eqPars, constraint_Sets, dif_minus, dif_plus
 
 
 
@@ -615,8 +1001,8 @@ def ParseEQplus31 ( buf, Mode = 'EQ' ):
 
     buf = fromTEXplus(buf)
 
-    all_grids = []  # local (заданные в EQ  после ; and global grids    explicit
-    explicit_grids =[]  # explicit Sets  for String
+    all_Sets = []  # local (заданные в EQ  после ; and global Sets    explicit
+    explicit_Sets =[]  # explicit Sets  for String
 
     if buf.find('\\inn') < 0 :
         equation = buf
@@ -631,29 +1017,29 @@ def ParseEQplus31 ( buf, Mode = 'EQ' ):
             part = part_blanc.replace(' ', '')
             p = part.find('\\inn')
             if p >= 0:
-                grid_n = part[p + 4:]
+                Set_n = part[p + 4:]
             else: break                         #
             ind_n = part[:p]
-            gr = findGridByName(Task.Grids, grid_n)
-            #            print (':', part, p, ind_n, grid_n)
+            gr = findSetByName(Task.Sets, Set_n)
+            #            print (':', part, p, ind_n, Set_n)
             if gr is None:
-                grid_n = '_g' + str(SvF._Num);  SvF._Num += 1  # новое имя грида   _g0
-                part = grid_n + part[p:]
-                gr = WriteGrid27(part)
+                Set_n = '_g' + str(SvF._Num);  SvF._Num += 1  # новое имя грида   _g0
+                part = Set_n + part[p:]
+                gr = WriteSet27(part)
                 if gr is None:                                      #  t ∈ [0, tMax,  st, tt]
                     print('Can\'t treat  |' + part + '|  in  ' + buf)
                     exit(-1)
-            all_grids.append(gr)
-            explicit_grids.append(gr)
+            all_Sets.append(gr)
+            explicit_Sets.append(gr)
             eqPars = parser(equation)
-            eqPars.substAllNames_but_dot(ind_n, grid_n)
+            eqPars.substAllNames_but_dot(ind_n, Set_n)
             equation = eqPars.join()
 #    print("EE", equation)
 
-    equation, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION(equation, all_grids, Mode)
+    equation, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION(equation, all_Sets, Mode)
 
- #   print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation, len(all_grids) )
-    for g in constraint_grids:
+ #   print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation, len(all_Sets) )
+    for g in constraint_Sets:
         eqPars.substAllNames_but_dot(g.name, g.ind)  ## 30g+
         eqPars.substAllNames(g.name + '__p', g.name)
  #       print('substAllNames', eqPars.join())
@@ -667,24 +1053,20 @@ def ParseEQplus31 ( buf, Mode = 'EQ' ):
     equation = eqPars.join()
 #    print('2EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation)
     if SvF.printL: print('EQAFTER', equation)
-    return equation, constraint_grids, dif_plus, dif_minus, explicit_grids
+    return equation, constraint_Sets, dif_plus, dif_minus, explicit_Sets
 
 eqNUM = 0
 
 def WriteModelEQ31 ( buf ):
         if buf == '': return
 
-        equation, constraint_grids, dif_plus, dif_minus, explicit_grids = ParseEQplus31(buf, 'EQ')
+        equation, constraint_Sets, dif_plus, dif_minus, explicit_Sets = ParseEQplus31(buf, 'EQ')
         b_if = ''                                                           # Constraint.Skip
         if equation[:3] == 'if ':
- #           print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation)
             colon = equation.split(':')
             if len(colon) > 1:
                  b_if = 'if not (' + colon[0][2:] + ') : '
                  equation = ''.join(colon[1:])
-  #          print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation)
-#            1/0
-
 
         for i, e in enumerate( equation ):      #    ,<   ->   <=
             if e in ['!', '=', '<', '>']:
@@ -702,7 +1084,7 @@ def WriteModelEQ31 ( buf ):
 
         wr(' \t\t\t\t\t\t\t\t# '+buf )
         wr ( '    def '+eqName+' (Gr' )                   # def EQ*(Gr,t) :
-        for g in constraint_grids :
+        for g in constraint_Sets :
             wrs ( ','+g.ind )
         wrs ( ') :' )
 #        if b_if != '' :  wr('        if not ('+b_if+') : return Constraint.Skip')         #  Constraint.Skip
@@ -711,7 +1093,7 @@ def WriteModelEQ31 ( buf ):
         wr('          '+equation)
         wr('        )')
         wr('    Gr.con'+eqName+' = py.Constraint(')
-        for ng, g in enumerate(constraint_grids) :
+        for ng, g in enumerate(constraint_Sets) :
             if SvF.printL:  g.Gprint()
             my_range = 'FlNodS'
             if g.name in dif_plus:  my_range  = 'm' + my_range
@@ -725,7 +1107,7 @@ def WriteModelEQ31 ( buf ):
 
 def WriteString31(buf):
     if buf == '': return
-#    print ('WriteString31________________', buf, SvF.Substitude, (not SvF.Substitude) )
+ #   print ('WriteString31________________', buf, SvF.Substitude, (not SvF.Substitude) )
     if SvF.Substitude == False :
         Swr( buf )
         return
@@ -746,7 +1128,7 @@ def WriteString31(buf):
     elif buf[i:].find('Draw') == 0:
         Swr(' ' * i + 'Task.Draw (\'\')');      return
 
-    equation, constraint_grids, dif_plus, dif_minus, explicit_grids = ParseEQplus31(buf, 'String')
+    equation, constraint_Sets, dif_plus, dif_minus, explicit_Sets = ParseEQplus31(buf, 'String')
 #    if equation.find('dayVac')>=0:     1/0
     equation = Treat_FieldNames(equation)
     eqPars = parser(equation)
@@ -768,7 +1150,7 @@ def WriteString31(buf):
                 if fun.dim == 0:                  #  не понятно
                     pass
                 elif (fun.type[0] == 'g') and fun.dim == 1:       # 2407
-                    eqPars.items[p_fname].part = part_plus + '[' + fun.name + '.A[0].indByVal ('
+                    eqPars.items[p_fname].part = part_plus + '[' + fun.name + '.A[0].IndByVal ('
                     eqPars.items[bracket_ope].part = ''
                     eqPars.items[bracket_clo].part = ')]'
 
@@ -788,9 +1170,9 @@ def WriteString31(buf):
  #           1/0
 
     level = 0                                   # уровень (сдвиг) в тексте
-#    for ng, g in enumerate(constraint_grids):
+#    for ng, g in enumerate(constraint_Sets):
 
-    for ng, g in enumerate(explicit_grids):
+    for ng, g in enumerate(explicit_Sets):
         if SvF.printL:  g.Gprint()
         my_range = 'FlNodS'
         if g.name in dif_plus:  my_range = 'm' + my_range
@@ -799,8 +1181,8 @@ def WriteString31(buf):
         level += 4
 
     Swr(level*' '+ equation)
-#    if len (constraint_grids) > 0:
-    if len (explicit_grids) > 0:
+#    if len (constraint_Sets) > 0:
+    if len (explicit_Sets) > 0:
    #     print (equation)
     #    eqPars.myprint()
         p_eq = eqPars.find_part_type ('=', 'oper')
@@ -813,7 +1195,7 @@ def WriteModelDef26 ( code ):                       #   DEF:
         if code == '' : return
 #        code = SvF.Task.substitudeDef (code)
 
-        code, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION ( code, SvF.Task.Grids )
+        code, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION ( code, SvF.Task.Sets )
         
         parts = code.split('==')
         wr ( '    def '+parts[0]+': return '+parts[1]+'\n' )    # Code  for r in T.A[0].NodS:  T.gap[r,21]=0
@@ -825,11 +1207,29 @@ def WriteModelCode26 ( code ):                      #   CODE:
 
 
 def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
-#        print ('************OBJ', obj)
+        print ('************OBJ', obj)
+ #       if len(SvF.OptNames) > 0 :
+#            Swr ('def fromPenalty():')      # в параметры оптимизации
+  #          for  on in SvF.OptNames:
+#                Swr ('    ' + on[0] + ' = SvF.Penalty['+str(i)+']')
+   #             print (on)
+    #            wr('    ' + on[0] + ' = SvF.Penalty[' + str(on[2]) + ']')
+  #          Swr('if SvF.fromPenalty is None :  SvF.fromPenalty = fromPenalty')
+#
+ #           def fromPenalty():
+  #              Inf.Period = SvF.Penalty[0]
+   #             RR = SvF.Penalty[1]
+    #            print('Inf.Period', Inf.Period)
+
+ #           SvF.fromPenalty = fromPenalty
         if SvF.ObjToReadSols :
             Swr('Task.ReadSols()')
             return
-#        if not SvF.MakeModel : return
+        if SvF.OptMode == 'SurMin' :
+            Swr ('SvF.ObjectiveFun = ' + obj)
+            Swr('\nfrom SvFstart62 import SvFstart19')
+            Swr('\nSvFstart19 ( Task )')  # 27   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            return
         Task = SvF.Task
         Funs = Task.Funs
 
@@ -847,12 +1247,16 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
         MsdType = ''
         Delta_Formula = 'Gr.F[fNum].Ftbl(n)-tbl[n]'  #  ПРОВЕРИТЬ  !!!!  заменить   Gr.F ->  Task.Funs
 
-        obj, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION ( obj, [] )
+        obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION ( obj, [] )
 
 ####################################################  ЗАПЛАТКА ###############   ∫(t_min,t_max,dT∙(d2/dT2(x(T)))**2)
-        for g in Task.Grids:
+        for g in Task.Sets:
                 eqPars.substAllNames(g.name + '__p', g.name)
 ####################################################
+
+  #      for n, name  in enumerate( SvF.PenaltyNames ):
+   #             eqPars.substAllNames(name, 'Penal['+str(n)+']')
+
 
         for fu in Task.Funs:
             eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name)
@@ -876,15 +1280,12 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
             obj = begi + '([' + in_br + '])' + end
         if SvF.printL:  print ('OBJ:', obj)
 
-        obj, eqPars, constraint_grids, dif_minus, dif_plus = ParseEQUATION ( obj, [] )
+        obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION ( obj, [] )
 
-        SvF.lenPenalty = 0
-        for itn, it in enumerate (eqPars.items) :
-            if it.part == 'Penal' :
-                SvF.lenPenalty = max (SvF.lenPenalty, int(eqPars.items[itn+2].part)+1 )
-
- #       if not SvF.MakeModel : return
-
+#        SvF.lenPenalty = 0
+ #       for itn, it in enumerate (eqPars.items) :
+  #          if it.part == 'Penal' :
+   #             SvF.lenPenalty = max (SvF.lenPenalty, int(eqPars.items[itn+2].part)+1 )
 
         if obj == 'N' :
           obj = ''
@@ -900,7 +1301,7 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
                 penNum += 1
             obj += '])/' + fu.V.name + '.V.sigma2'
             obj += ' + ' + fu.V.name + '.MSDnan()'
-            SvF.lenPenalty = penNum
+#            SvF.lenPenalty = penNum
         else :
           objP = obj.split('defMSD')
           if len(objP) == 2 :  #>1
@@ -927,30 +1328,29 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
 #            print '********C', obj.count('Penal[')
             for p in range(obj.count('Penal[')) : SvF.Penalty.append (.1)
 
-        if SvF.numCV == -1 :   # CV по умолчанию  2023.11
-            wr('\n    SvF.testSet, SvF.teachSet = MakeSets_byParts(SvF.curentTabl.NoR, SvF.CVstep)')  # CV_Sets (fu )
-            wr('\n    Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )')  # 23.11
+        if SvF.numCV == -1 and SvF.OptMode == 'SvF':   # CV по умолчанию  2023.11
+#            wr('\n    SvF.ValidationSets, SvF.notTrainingSets = MakeSets_byParts(SvF.curentTabl.NoR, SvF.CVstep)')  # CV_Sets (fu )
+#            wr('\n    MakeSets_byParts(SvF.curentTabl.NoR, SvF.CVstep)')  # CV_Sets (fu )
+            #wr('\n    make_CV_Sets(0, 7)')  # CV_Sets (fu )
+            wr('\n    make_CV_Sets(0, SvF.CVstep)')  # CV_Sets (fu )    -   25.05
+#make_CV_Sets ( NoR =0, NoSubSets =7, Param ='', Data =None ) :
+#            wr('\n    Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )')  # 23.11
+            wr('\n    if len (SvF.CV_NoRs) > 0 :')  # 23.11
+            wr('\n       Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )')  # 23.11
 
         for itn, it in enumerate(eqPars.items):        #  2023.11
             if it.part == 'MSD' or it.part == 'MSDnan' or it.part == 'MSDrel' : # or it.part == 'MSDcheck'
                 fn = (eqPars.items[itn-2].part)
                 wrs('\n    SvF.fun_with_mu.append(getFun(\''+fn+'\'))')
-                if SvF.numCV == -1 :
-                    wr('    ' + fn + '.mu = Gr.mu0')
-                    wr('    ' + fn + '.testSet = SvF.testSet')
-                    wr('    ' + fn + '.teachSet = SvF.teachSet')
+#                if SvF.numCV == -1 :
+                if 1 :
+                    wr('    if ' + fn + '.mu is None : '+ fn + '.mu = Gr.mu0')
+                    wr('    ' + fn + '.ValidationSets = SvF.ValidationSets')
+                    wr('    ' + fn + '.notTrainingSets = SvF.notTrainingSets')
+                    wr('    ' + fn + '.TrainingSets = SvF.TrainingSets')
             elif it.part[0:3] == 'MSD':
                 fn = (eqPars.items[itn-2].part)
                 wr( '    ' + fn + '.mu = None' )
-
-
-            # f = getFun(fn)
-        #        print ('FFF', fn, f.name)
-  #              SvF.fun_with_mu.append(f)
-  #              fn = (eqPars.items[itn-2].part)
-   #             wr('\n    ' + fn + '.mu = Gr.mu;')
-#                wrs(' ' + fn + '.testSet = SvF.testSet;')
-#                wrs(' ' + fn + '.teachSet = SvF.teachSet;')
 
         wr(' \t\t\t\t\t\t\t\t\t\t\t# ' + obj)
         wr('    def obj_expression(Gr):  \n        return (')
@@ -966,6 +1366,9 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
 #        f.write( '\ndef print_res(Task, Penal, f__f):\n' )                            #  print_res
  #       f.write( '\n    Gr = Task.Gr' )
         wr( 'def print_res(Task, Penal, f__f):\n' )                            #  print_res
+        if len(SvF.OptNames) > 0 :                      # to OptPar
+            for i, on in enumerate (SvF.OptNames):
+                wr('    ' + on[0] + ' = Penal[' + str(on[2]) + ']')
         wr( '    Gr = Task.Gr' )
         for nf, fu in enumerate( Task.Funs ) :
             if obj.find(fu.V.name+'.') >= 0 :

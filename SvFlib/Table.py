@@ -1,7 +1,8 @@
 # -*- coding: cp1251 -*-
 
 #from   numpy import *
-import   numpy as np
+#import   numpy as np
+import numpy as np
 from   os.path  import *
 import openpyxl
 import sys
@@ -11,8 +12,21 @@ from   Pars   import *
 from Parser    import *
 from Object    import *
 
-#def  TblFldV ( TblFld ) : return getTbl_tbl ( TblFld )
-#def  Tbl     ( nTbl ) :   return getTbl     ( nTbl   )
+
+#def WriteSvFtbl ( FileName='tmp.txt', fields=[], cols ):
+ #   with open(FileName, 'w') as f:
+  #      for fld in fields:  f.write(fld + '  ')
+   #     f.write('#SvFver_62_tbl')
+    #    for r in range(self.NoR):
+     #       f.write('\n')
+      #      for fld in self.Flds:  f.write('\t' + str(fld.tb[r]))
+#    if printL: print("Write to", OutName)
+
+
+def getCurrentFieldData (f_name) :
+    if SvF.curentTabl is None: return None
+    return SvF.curentTabl.getFieldData (f_name)
+
 
 def ParseSelect30(buf):  ##  разбор  Select
     buf = buf.strip().replace(', ',",")
@@ -43,13 +57,15 @@ def  Treat_FieldNames (raw_line) :
         for itb, tb in enumerate ( SvF.Task.Objects ) :  #  from Tbls   Dat.X -> Dat.dat('X')
             if tb.Otype == 'Table' :
  #               tb.Oprint()
- #               print ('tb.name',tb.name)
+  #              print ('tb.name',tb.name, ' in ', raw_line)
                 if findNamePos(raw_line, tb.name ) < 0 : continue
-                print('\nTABB ' + raw_line, tb.name)
+                tb_name = tb.name
+                if tb_name == 'SvF.curentTabl' : tb_name = 'curentTabl'    # ЗАПЛАТКА для обработки  SvF.curentTabl
+    #            print('\nTABB ' + raw_line, tb_name)
                 pars = parser (raw_line)
                 itn = 0
                 while True :
-                    itn = pars.find_part(tb.name, itn)
+                    itn = pars.find_part(tb_name, itn)
                     if itn < 0 : break;
                     if itn+2 >= len (pars.items) : break
                     if pars.items[itn+1].part != '.' : break
@@ -144,9 +160,7 @@ def appendTab(*Tabs):
                 for ifld, rfld in enumerate(ret.Flds):
                     rfld.tb = append (rfld.tb, tbl.Flds[ifld].tb)
         ret.NoR = ret.Flds[0].tb.size
-        self.sR = range (self.NoR)
-## 30        SvF.Task.KillTbl(ret.name)  # kill the same name
-##        SvF.Task.AddTbl(ret)
+        ret.sR = range (ret.NoR)
         ret.Add()
         SvF.curentTabl = ret
         return ret
@@ -196,14 +210,14 @@ def  TblOperation (buf):
         SvF.Task.Tbls[tb_num].Flds[fld_num].tb = eval (right)
    #     print ('Operation', parts)
         return
-       
+
 
 class Field :
     def __init__ ( self, name, src_name ): 
         self.name     = name
         self.tb       = None
         self.src_name = src_name
-        self.src_num  = NaN
+        self.src_num  = nan
 
     def Mprint ( self ) :  print ('Field :', self.name, self.src_name, self.src_num)
 
@@ -211,6 +225,7 @@ class Field :
 class Table (Object):
     def __init__ ( self, fromFile, AsName='', fields='*', where_condition=None ): #
         Object.__init__( self, AsName, 'Table')
+#        if fromFile == '' :  return
         if SvF.Compile :  return
         self.fromFile = fromFile
         self.FileType  = 'tbl'
@@ -227,7 +242,7 @@ class Table (Object):
         if self.name == '' : self.name = 'curentTabl'
         if SvF.printL : print ('\nSelect', fields, '\n  from', fromFile, 'name:'+self.name+'|')
 #        print('*Table*', fields, ' from', fromFile, 'name:'+self.name+'|')
-        ff_nn = SplitIgnor ( fromFile, ' AS ' )     # Имя файла и таблицы
+##?        ff_nn = SplitIgnor ( fromFile, ' AS ' )     # Имя файла и таблицы
 
         _fields = self.fields_str.split(',')                   # Fields
         if SvF.printL : print (_fields)
@@ -239,6 +254,14 @@ class Table (Object):
             self.Flds.append ( Field ( name, src_name ) )
             if src_name.upper() == 'ROWNUM' :  self.Flds[-1].src_num = -1
             if SvF.printL : self.Flds[-1].Mprint()
+#            self.Flds[-1].Mprint()
+ #       print (self.Flds)
+
+        if fromFile == '':
+            self.sR = 0
+            self.NoR = 0
+            SvF.curentTabl = self
+            return
 
         root, ext = splitext(self.fromFile.upper())
 #        if   getTblNum(self.fromFile) !=-1 :  self.Read30_TBL ( )
@@ -259,9 +282,6 @@ class Table (Object):
 
         self.sR = range (self.NoR)
 
-
-## 30        SvF.Task.KillTbl ( self.name )   # kill the same name
-## 30        SvF.Task.AddTbl ( self )
         SvF.curentTabl = self
 
     def Oprint(self):
@@ -271,10 +291,10 @@ class Table (Object):
     def AddField( self, name, pos = -1 ) :
         if pos == -1:
             self.Flds.append ( Field ( name, '' ) )
-            self.Flds[-1].tb = zeros ( (self.NoR), float64 )
+            self.Flds[-1].tb = np.zeros ( (self.NoR), np.float64 )
         else :
             self.Flds.insert ( pos, Field ( name, '' ) )
-            self.Flds[pos].tb = zeros ( (self.NoR), float64 )
+            self.Flds[pos].tb = np.zeros ( (self.NoR), np.float64 )
 
 
     def Evaluate ( self, evalFld, byFld, byVal ) :   # оесортировано
@@ -303,14 +323,17 @@ class Table (Object):
             if ofi.name == name:   return ofi
         return None
 
-    def getField_tb (self, name) :
+    def getFieldData (self, f_name) :
         for ofi in self.Flds:
-            if ofi.name == name:   return ofi.tb
+            if ofi.name == f_name:   return deepcopy(ofi.tb)
         return None
 
     def dat (self, name) :              #  the same
+#        print ('B')
         for ofi in self.Flds:
+ #           print (ofi.name,name)
             if ofi.name == name:   return ofi.tb
+#        print ('ret None')
         return None
 
 
@@ -320,7 +343,7 @@ class Table (Object):
 
     def KillRow (self, num) :
         for ofi in self.Flds:
-           ofi.tb = delete(ofi.tb, num)
+           ofi.tb = np.delete(ofi.tb, num)
         self.NoR -= 1
         self.sR = range (self.NoR)
 
@@ -329,16 +352,30 @@ class Table (Object):
         yind = self.getFieldNum (y_name)
         NoR = 0
         for i in self.sR:
-            mask_i = Mask.A[0].getPointNum (self.Flds[xind].tb[i])
-            mask_j = Mask.A[1].getPointNum (self.Flds[yind].tb[i])
+            mask_i = Mask.A[0].ValToInd (self.Flds[xind].tb[i])
+            mask_j = Mask.A[1].ValToInd (self.Flds[yind].tb[i])
             if Mask.grd[mask_i,mask_j] == MaskVal : continue
             for ofi in self.Flds:
                 ofi.tb[NoR] = ofi.tb[i]
             NoR += 1
         for ofi in self.Flds:
-            ofi.tb = resize(ofi.tb, NoR)
+            ofi.tb = np.resize(ofi.tb, NoR)
         self.NoR = NoR
         self.sR = range(self.NoR)
+
+    def SortBy (self, f_name, reverse=False) :   #  от меньшего к большему
+        arr = self.getField( f_name ).tb
+        indexed_arr = [(i, arr[i]) for i in range(self.NoR)]
+        sorted_indexed_arr = sorted(indexed_arr, key=lambda x: x[1], reverse=reverse)
+        sorted_indices = [x[0] for x in sorted_indexed_arr]
+#        print("Индексы исходных элементов:", sorted_indices)
+  #      for x in sorted_indexed_arr:  print (x[1],arr[x[0]])
+        for i in sorted_indices:  print (arr[i])
+        for f in self.Flds :
+            tb = np.zeros( self.NoR )
+            for i, ind in enumerate(sorted_indices): tb[i] = f.tb[ind]
+            f.tb = tb
+#            print (f.name, f.tb)
 
     def AppendRec(self, *Parts):   # parts of Rec   ? что-то странное
             for i_part, part in enumerate(Parts):
@@ -349,9 +386,13 @@ class Table (Object):
             self.sR = range (self.NoR)
 
     def AppendRec1(self, Vals):  # последовательно список значений для новой записи
-        for i_part, part in enumerate(Vals):
-            #                print (i_part, part, self.Flds[i_part].tb)
-            self.Flds[i_part].tb = append(self.Flds[i_part].tb, part)
+        for iVal, f in enumerate (self.Flds):
+#        for i_part, part in enumerate(Vals):
+            if self.NoR == 0 :      # нет таблиц
+                f.tb = np.zeros ( 1, np.float64 )
+                f.tb = Vals[iVal]
+            else :
+                f.tb = np.append(f.tb, Vals[iVal])
         #                print(i_part, part, self.Flds[i_part].tb)
         self.NoR += 1
         self.sR = range(self.NoR)
@@ -428,7 +469,7 @@ class Table (Object):
 ##            for fld in self.Flds : fld.Mprint()
 
 #            for fld in self.Flds :
- #               if isnan(fld.src_num) :              # not  ROWNUM
+ #               if np.isnan(fld.src_num) :              # not  ROWNUM
   #                try :
    #                 fld.src_num = names.index ( fld.src_name )
     #              except :
@@ -440,7 +481,7 @@ class Table (Object):
 
             self.NoC = len(self.Flds)  #(self.cols)
             maxNoR = ws.max_row  #50000
-            for fld in self.Flds : fld.tb = zeros ( maxNoR, float64 ) 
+            for fld in self.Flds : fld.tb = np.zeros ( maxNoR, np.float64 )
 
             NoR = 0
             ro = nameRow
@@ -466,8 +507,8 @@ class Table (Object):
                         fld.tb[NoR] = float(str(pceil.value).replace('-',''))
                     else:
                         fld.tb[NoR] = floatGradNaN(ws.cell(row=ro,column=fld.src_num+1).value)
-                    if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break    #continue
-                    if not isnan(fld.tb[NoR]):  AllNaN = False                 #2024.3.10
+                    if not self.useNaN and np.isnan(fld.tb[NoR]) : OK = False; break    #continue
+                    if not np.isnan(fld.tb[NoR]):  AllNaN = False                 #2024.3.10
                 if AllNaN : continue                                            #2024.3.10
                 if not OK: continue
                 if self.CheckWhere ( NoR) == False : continue    #   30
@@ -480,8 +521,8 @@ class Table (Object):
                 if NoR >= maxNoR :                          # resize
                     maxNoR *= 2
    #                 print ('resize to',  maxNoR)
-                    for fld in self.Flds : fld.tb = resize (fld.tb, maxNoR ) 
-            for fld in self.Flds : fld.tb = resize (fld.tb, NoR ) 
+                    for fld in self.Flds : fld.tb = np.resize (fld.tb, maxNoR )
+            for fld in self.Flds : fld.tb = np.resize (fld.tb, NoR )
             
             self.NoR = NoR
             print (NoR)
@@ -511,7 +552,7 @@ class Table (Object):
  ##           for fld in self.Flds : fld.Mprint()
             srcNoR = 1
             for a in srcFun.A: srcNoR *= (a.Ub + 1)
-            for fld in self.Flds : fld.tb = zeros ( srcNoR, float64 )
+            for fld in self.Flds : fld.tb = np.zeros ( srcNoR, np.float64 )
 
             self.where_con_list()   ############### 30
 
@@ -526,7 +567,7 @@ class Table (Object):
                         elif fld.src_num== 0 :  fld.tb[NoR] = Ax.min + Ax.step * x
                         else :
                             fld.tb[NoR] = srcFun.grdNaNreal(r)
-                            if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break
+                            if not self.useNaN and np.isnan(fld.tb[NoR]) : OK = False; break
                     if not OK: continue
                     if self.CheckWhere(NoR) == False: continue  ############### 30
 #                    if len (where) >= 3 :                       #check  where
@@ -547,7 +588,7 @@ class Table (Object):
                         elif fld.src_num== 1 :  fld.tb[NoR] = Ay.min + Ay.step * y
                         else :
                             fld.tb[NoR] = srcFun.grdNaNreal(x,y)
-                            if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break
+                            if not self.useNaN and np.isnan(fld.tb[NoR]) : OK = False; break
                     if not OK: continue
                     if self.CheckWhere(NoR) == False: continue  ############### 30
 #                    if len (where) >= 3 :                       #check  where
@@ -556,7 +597,7 @@ class Table (Object):
    #                         wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
     #                    if eval (wher,{}) == False : continue
                     NoR += 1
-            for fld in self.Flds : fld.tb = resize (fld.tb, NoR )
+            for fld in self.Flds : fld.tb = np.resize (fld.tb, NoR )
             self.NoR = NoR
 
 
@@ -569,7 +610,7 @@ class Table (Object):
 #            for fld in self.Flds : fld.Mprint()
 
             self.NoC = len(self.Flds)
-            for fld in self.Flds : fld.tb = zeros ( source_tb.NoR, float64 ) 
+            for fld in self.Flds : fld.tb = np.zeros ( source_tb.NoR, np.float64 )
 
             self.where_con_list()   ############### 30
 
@@ -579,12 +620,12 @@ class Table (Object):
                 for c, fld in enumerate(self.Flds) :
                     if fld.src_num==-1 :  fld.tb[NoR] = NoR
                     else:                 fld.tb[NoR] = source_tb.Flds[fld.src_num].tb[r]
-                    if (not self.useNaN) and isnan(fld.tb[NoR]) : OK = False; break    #continue
+                    if (not self.useNaN) and np.isnan(fld.tb[NoR]) : OK = False; break    #continue
                 if not OK: continue
                 if self.CheckWhere(NoR) == False: continue   ############### 30
 
                 NoR += 1
-            for fld in self.Flds : fld.tb = resize (fld.tb, NoR )
+            for fld in self.Flds : fld.tb = np.resize (fld.tb, NoR )
             self.NoR = NoR
 
 
@@ -625,7 +666,7 @@ class Table (Object):
 
 
             self.NoC = len(self.Flds)
-            for fld in self.Flds : fld.tb = zeros ( srcNoR, float64 ) 
+            for fld in self.Flds : fld.tb = np.zeros ( srcNoR, np.float64 )
 
             NoR = 0;
             for r in range (srcNoR) :
@@ -634,7 +675,7 @@ class Table (Object):
                 for c, fld in enumerate(self.Flds) :
                     if fld.src_num==-1 :  fld.tb[NoR] = NoR
                     else:                 fld.tb[NoR] = srcFlds[fld.src_num].tb[r]
-                    if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break    #continue
+                    if not self.useNaN and np.isnan(fld.tb[NoR]) : OK = False; break    #continue
                 if not OK: continue
                 if len (where) >= 3 :                       #check  where
                     wher = where.replace('ROWNUM',str(NoR))
@@ -642,7 +683,7 @@ class Table (Object):
                         wher = SubstitudeName ( wher, fld.name, str(fld.tb[NoR]) )
                     if eval (wher,{}) == False : continue    
                 NoR += 1
-            for fld in self.Flds : fld.tb = resize (fld.tb, NoR )
+            for fld in self.Flds : fld.tb = np.resize (fld.tb, NoR )
             self.NoR = NoR
 
 
@@ -682,7 +723,7 @@ class Table (Object):
 
             self.NoC = len(self.Flds)
             maxNoR = 50000;
-            for fld in self.Flds : fld.tb = zeros ( maxNoR, float64 ) 
+            for fld in self.Flds : fld.tb = np.zeros ( maxNoR, np.float64 )
 
             self.where_con_list()       # 30
 
@@ -699,15 +740,15 @@ class Table (Object):
                     if fld.src_num == -1 :   fld.tb[NoR] = NoR
                     else:
                         fld.tb[NoR] = floatGradNaN( nums_row[fld.src_num] )
-                        if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break    #continue
+                        if not self.useNaN and np.isnan(fld.tb[NoR]) : OK = False; break    #continue
                 if not OK: continue
                 if self.CheckWhere(NoR) == False: continue      # 30
 
                 NoR += 1
-                if NoR >= maxNoR :                          # resize
+                if NoR >= maxNoR :                          # np.resize
                     maxNoR *= 2
-#                    print ('resize to',  maxNoR)
-                    for fld in self.Flds : fld.tb = resize (fld.tb, maxNoR ) 
+#                    print ('np.resize to',  maxNoR)
+                    for fld in self.Flds : fld.tb = np.resize (fld.tb, maxNoR )
             else :                                                          # == 'matr2'
               XX = fi.readline().split()                      # x1
 #              print len(XX), XX
@@ -727,8 +768,8 @@ class Table (Object):
                             try :
                                 fld.tb[NoR] = float ( num )
                             except :
-                                fld.tb[NoR] = NaN
-                            if not self.useNaN and isnan(fld.tb[NoR]) : OK = False; break    #continue
+                                fld.tb[NoR] = nan
+                            if not self.useNaN and np.isnan(fld.tb[NoR]) : OK = False; break    #continue
                     if not OK: continue
                     if len (where) >= 3 :                       #check  where
                       wher = where.replace('ROWNUM',str(NoR))
@@ -739,11 +780,11 @@ class Table (Object):
 
                       if eval (wher,{}) == False : continue
                     NoR += 1
-                    if NoR >= maxNoR :                          # resize
+                    if NoR >= maxNoR :                          # np.resize
                         maxNoR *= 2
- #                       print ('resize to',  maxNoR)
-                        for fld in self.Flds : fld.tb = resize (fld.tb, maxNoR ) 
-            for fld in self.Flds : fld.tb = resize (fld.tb, NoR ) 
+ #                       print ('np.resize to',  maxNoR)
+                        for fld in self.Flds : fld.tb = np.resize (fld.tb, maxNoR )
+            for fld in self.Flds : fld.tb = np.resize (fld.tb, NoR )
 #            print self.Flds[2].tb
             self.NoR = NoR
                 
@@ -770,24 +811,24 @@ class Table (Object):
             if SvF.printL: print ("ReadGrig from", self.fromFile)  ###, self.cols  ###, self.nums
             if SvF.printL: print (grdX, grdY, XLLCORNER, YLLCORNER, CELLSIZE, NDT)
 
-            x1 = zeros(grdX, float64)
-            x2 = zeros(grdY, float64)
+            x1 = np.zeros(grdX, np.float64)
+            x2 = np.zeros(grdY, np.float64)
             for i in range(grdX): x1[i] = XLLCORNER + CELLSIZE * (i + 0.5)
             for j in range(grdY): x2[j] = YLLCORNER + CELLSIZE * (grdY-1 - j + 0.5)
 
 ###            self.NoC = len(self.cols)
             self.NoC = len(self.Flds)
             maxNoR = 50000;
-            tbl = zeros ( (maxNoR, self.NoC), float64 )
+            tbl = np.zeros ( (maxNoR, self.NoC), np.float64 )
             NoR = 0;
 
             r = where.split ('XYin')
             if len(r) == 2:  Rect = readListFloat19 (r[1])
             else          :  Rect = []
             if len (Rect) == 4 :
-                  xmi = int ( ceil( (Rect[0] - XLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10 ) )    # !!!!!!!!!!!
+                  xmi = int ( np.ceil( (Rect[0] - XLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10 ) )    # !!!!!!!!!!!
                   xma = int (floor( (Rect[2] - XLLCORNER - CELLSIZE/2 ) / CELLSIZE + 1e-10 ) )    # !!!!!!!!!!!
-                  yma = grdY - 1 - int ( ceil( (Rect[1] - YLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10 ))
+                  yma = grdY - 1 - int ( np.ceil( (Rect[1] - YLLCORNER - CELLSIZE/2 ) / CELLSIZE - 1e-10 ))
                   ymi = grdY - 1 - int (floor( (Rect[3] - YLLCORNER - CELLSIZE/2 ) / CELLSIZE + 1e-10 ))
             else :
                   xmi = 0
@@ -812,10 +853,10 @@ class Table (Object):
                     elif self.Flds[c].src_num== 1 : tbl[NoR,c] = float(x2[line_num])
                     else :
                                             tbl[NoR,c] = float(in_num[col])
-                                            if tbl[NoR,c] == NDT: tbl[NoR,c] = NaN
- #                                               in_num[col]= NaN
+                                            if tbl[NoR,c] == NDT: tbl[NoR,c] = nan
+ #                                               in_num[col]= nan
  #                                           tbl[NoR,c] = float(in_num[col])
-                                            if not self.useNaN and isnan(tbl[NoR,c]) : OK = False; break   
+                                            if not self.useNaN and np.isnan(tbl[NoR,c]) : OK = False; break
                   if not OK: continue
 #                  if len (where) >= 3 :                       #check  where
  #                   wher = where.replace('ROWNUM',str(NoR))   #  заменить на copy
@@ -826,10 +867,10 @@ class Table (Object):
                   if NoR >= maxNoR :                          # resize
                     maxNoR *= 2
    #                 print ('resize to',  maxNoR)
-                    tbl = resize (tbl, (maxNoR, self.NoC) )
+                    tbl = np.resize (tbl, (maxNoR, self.NoC) )
                 line_num += 1    
 ###            self.tbl = resize (tbl, (NoR, self.NoC) )
-            tbl = resize (tbl, (NoR, self.NoC) )
+            tbl = np.resize (tbl, (NoR, self.NoC) )
             for ifld, fld in enumerate(self.Flds): fld.tb = tbl[:, ifld]  ############### Kill ######
 #            for r in range (100) :
  #               print i, tbl[i,0], tbl[i,1], tbl[i,2]
@@ -870,14 +911,14 @@ class Table (Object):
             if SvF.printL: print ("ReadGrig from", self.fromFile, self.cols, self.nums)
             if SvF.printL: print (grdX, grdY, XLLCORNER, YLLCORNER, CELLSIZE, NDT)
 
-            x1 = zeros(grdX, float64)
-            x2 = zeros(grdY, float64)
+            x1 = np.zeros(grdX, np.float64)
+            x2 = np.zeros(grdY, np.float64)
             for i in range(grdX): x1[i] = XLLCORNER + CELLSIZE * (i + 0.5)
             for j in range(grdY): x2[j] = YLLCORNER + CELLSIZE * (grdY - 1 - j + 0.5)
 
             self.NoC = len(self.cols)
             maxNoR = 50000;
-            tbl = zeros((maxNoR, self.NoC), float64)
+            tbl = np.zeros((maxNoR, self.NoC), np.float64)
             NoR = 0;
 
             r = where.split('XYin')
@@ -886,9 +927,9 @@ class Table (Object):
             else:
                 Rect = []
             if len(Rect) == 4:
-                xmi = int(ceil((Rect[0] - XLLCORNER - CELLSIZE / 2) / CELLSIZE - 1e-10))  # !!!!!!!!!!!
+                xmi = int(np.ceil((Rect[0] - XLLCORNER - CELLSIZE / 2) / CELLSIZE - 1e-10))  # !!!!!!!!!!!
                 xma = int(floor((Rect[2] - XLLCORNER - CELLSIZE / 2) / CELLSIZE + 1e-10))  # !!!!!!!!!!!
-                yma = grdY - 1 - int(ceil((Rect[1] - YLLCORNER - CELLSIZE / 2) / CELLSIZE - 1e-10))
+                yma = grdY - 1 - int(np.ceil((Rect[1] - YLLCORNER - CELLSIZE / 2) / CELLSIZE - 1e-10))
                 ymi = grdY - 1 - int(floor((Rect[3] - YLLCORNER - CELLSIZE / 2) / CELLSIZE + 1e-10))
             else:
                 xmi = 0
@@ -913,7 +954,7 @@ class Table (Object):
                             tbl[NoR, c] = float(x2[line_num])
                         else:
                             tbl[NoR, c] = float(in_num[col])
-                            if not self.useNaN and isnan(tbl[NoR, c]): OK = False; break
+                            if not self.useNaN and np.isnan(tbl[NoR, c]): OK = False; break
                     if not OK: continue
                     #                  if len (where) >= 3 :                       #check  where
                     #                   wher = where.replace('ROWNUM',str(NoR))   #  заменить на copy
@@ -924,9 +965,9 @@ class Table (Object):
                     if NoR >= maxNoR:  # resize
                         maxNoR *= 2
      #                   print ('resize to', maxNoR)
-                        tbl = resize(tbl, (maxNoR, self.NoC))
+                        tbl = np.resize(tbl, (maxNoR, self.NoC))
                 line_num += 1
-            self.tbl = resize(tbl, (NoR, self.NoC))
+            self.tbl = np.resize(tbl, (NoR, self.NoC))
             #            self.tb_cols = names
             self.NoR = NoR
             return

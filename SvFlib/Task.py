@@ -9,8 +9,13 @@ from  pyomo.environ import *
 #from PyomoEverestEnv import *
 ##from InData    import *
 from Polynome  import * 
-from MakeModel import * 
+from MakeModel import *
+
 from Lego_pFun  import *
+from Lego_smbFun  import *
+from Lego_SPWLFun import *
+from Lego_CycleFun import *
+
 #import Lego
 from Pars  import *
 from Draw  import *
@@ -21,21 +26,33 @@ from shutil import move
 
 def Var_to_Grd():
     for f in SvF.Task.Funs:
-        if not f.param: f.var_to_grd()
+        if not f.param:
+            f.var_to_grd()
 
 def Grd_to_Var():
     for f in SvF.Task.Funs:
-        if not f.param: f.grd_to_var()
+        if not f.param:
+            f.grd_to_var()
+
+def FillNaNAll () :
+        for f in SvF.Task.Funs:
+            if not f.param:
+                f.FillNaN ()
+
 
 class TaskClass :
     def __init__ (self, Name='') :
         self.Mng = None
         self.Name = Name
         self.Gr      = ''
-        self.Grids   = []
+        self.Sets    = []
         self.Funs    = []
         self.Tbls    = []
         self.Objects = []
+#        self.Sets    = SvF.Sets
+ #       self.Funs    = SvF.Funs     #  ֿנמבכוללû ס Funs  ל.ב. ג Pyoma
+  #      self.Tbls    = SvF.Tbls
+   #     self.Objects = SvF.Objects
         self.createGr  = None
         self.Delta     = None
         self.DeltaVal  = None
@@ -44,6 +61,8 @@ class TaskClass :
         self.print_res = None
         self.OBJ_U     = None
 
+    #    Table('', 'SvF.curentTabl')
+
 
     def ReadSols (self, ext = '' ) : #, printL = 0 ) :
         for f in self.Funs :
@@ -51,13 +70,15 @@ class TaskClass :
             if ext == ''       :  f_n = ''
             elif f.type == 'p' :  f_n = f.nameFun() + '.p' + ext
             else               :  f_n = f.nameFun() + ext
-            f.ReadSol(f_n )
-#            print ('TTTTTTTTTTTTTTT')
+            if f.ReadSol(f_n ) == False :
+              if f.type != 'tensor' :
+                f.InitByData ()
         return
 
     def SaveSols (self, ext = '' ) : #, printL = 0 ) :
         for f in self.Funs :
             if f.param : continue
+            print ("E", ext)
             if ext == ''       :  f_n = ''
             elif f.type == 'p' :  f_n = f.nameFun() + '.p' + ext
             else               :  f_n = f.nameFun() + ext

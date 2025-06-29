@@ -1,25 +1,35 @@
 # -*- coding: cp1251 -*-
 
-from  numpy import *
+#from  numpy import *
+import numpy as np
 import sys
 from datetime import date
 from copy import deepcopy
 
 FLOMAX = sys.float_info.max
-RADpGRAD = pi/180
-GRADpRAD = 180/pi
+RADpGRAD = np.pi/180
+GRADpRAD = 180/np.pi
 
 CLASS_TXT = type('a')
 CLASS_INT = type(1)
+
+def Substract (from_list, lis) :
+    return  [x for x in from_list if x not in lis]
 
 def isnotNone (x):
     return not (x is None)
 
 def isnot_nan (x):
-    return not isnan(x)
+    return not np.isnan(x)
 
 def iround (flo):
-    return int(round(flo))
+    return int(np.round(flo))
+
+def ifloor (flo):
+    return int(np.floor(flo))
+
+def iceil (flo):
+    return int(np.ceil(flo))
 
 def Border (arr, vals):
     ret = deepcopy (arr)
@@ -34,7 +44,7 @@ def Border (arr, vals):
 def Interpolate ( ar ) :
     ib = -1
     for i, a in enumerate (ar) :
-        if not isnan(a) :
+        if not np.isnan(a) :
             if ib != -1 :
                 for ii in range(ib+1,i) :
                     ar[ii] = ar[ib] * (i-ii)/float(i-ib) + a * (ii-ib)/float(i-ib)    #a=ar[i]
@@ -45,15 +55,15 @@ def Extrapolate ( ar ) :                    #  предполагается что не заполнен то
     for i, a in enumerate (ar) :
 #        print (i,a)
         if ib == 0 :
-            if isnan(a) : continue             #  ищем не пустую
+            if np.isnan(a) : continue             #  ищем не пустую
             else : ib = 1
-        elif isnan (a) :        #  едем в конец ищем  nan
+        elif np.isnan (a) :        #  едем в конец ищем  nan
             ar[i] = ar[i-1] + ( ar[i-1] - ar[i-2] )
 #            print (ar[i])
 
 def tetta (x) :
     return 0.5 + 0.5 * x / (.001+x*x)**0.5
-#    return 0.5 + 0.5 * x / sqrt (.001+x*x)
+#    return 0.5 + 0.5 * x / np.sqrt (.001+x*x)
 
 def ind_0_1 (x) :
     return  0.5 * x / (.001+x*x)**0.5 - 0.5 * (x-1) / (.001+(x-1)*(x-1))**0.5
@@ -112,10 +122,10 @@ def floatGradNaN ( txt ) :
                     elif len(parts) == 3:
 #                        print ('************************PARTS3', parts)
                         return float(parts[0]) + (float(parts[1]+ '.' + parts[2]) / 60.) * sign(float(parts[0]))
-                    else: return NaN
+                    else: return np.nan
             except:
                 if not txt is None : print ('ERR TO FLOAT', txt)
-                return NaN
+                return np.nan
 
 
 def days_epoch (txt_date) :
@@ -153,7 +163,7 @@ def isfloat(value):
 def is_nan(value):
     if is_str(value): return False
     try:
-        return isnan(value)
+        return np.isnan(value)
     except ValueError:
         return False
 
@@ -186,7 +196,7 @@ def ReadSvF ( ReadFrom, printL=0 ) :      # return ftype, vers, cols, x1, tbl
             cols = fi.readline().split()
             if isfloat(cols[0]) :                       # это число а не имя - таблица без назв столбцов
                 fi.seek(0)
-                tbl = loadtxt (fi,'double')
+                tbl = np.loadtxt (fi,'double')
                 cols = ['name'+str(c) for c in range(tbl.shape[1]) ]
             else :
                 for c in cols :
@@ -195,15 +205,15 @@ def ReadSvF ( ReadFrom, printL=0 ) :      # return ftype, vers, cols, x1, tbl
                         vers = int(parts[0])
                         ftype = parts[1]
                 if vers == 0 :                          # file without '#SvFver_'
-                    tbl = loadtxt (fi,'double')
+                    tbl = np.loadtxt (fi,'double')
                 else :         
                     cols = cols[:-1]
                     if ftype == 'tbl' :                             # tbt
-                        tbl = loadtxt (fi,'double')
+                        tbl = np.loadtxt (fi,'double')
                     else :                                          # matr2
                         x1_txt = fi.readline().split()
                         x1 = [ float(x) for x in x1_txt ]
-                        tbl = loadtxt (fi,'double')
+                        tbl = np.loadtxt (fi,'double')
             if printL : print  (str(vers)+'_'+ftype, 'names:', cols, "shape", tbl.shape)
             return ftype, vers, cols, x1, tbl
 

@@ -2,21 +2,22 @@
 from __future__ import division
 
 import COMMON as SvF            #   общий импорт
-from  numpy import *            #    -- / ---
+#from  numpy import *            #    -- / ---
+import numpy as np
 
 class Object :
     def __init__ ( self, name='', Otype='NoType' ): #, object=None) :   #
         self.name = name
         self.Otype = Otype
+  #      print ('SSSSSSSSSS', self.name, self.Otype )
         if self.name != '' :  self.Add()
 
     def Add (self):
         SvF.Task.Objects.insert( 0, self )
-#        print ('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO', self.name, self.Otype )
+   #     print ('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO', self.name, self.Otype )
         if   self.Otype == 'Fun'   :  SvF.Task.Funs.append ( self )
         elif self.Otype == 'Table' :  SvF.Task.Tbls.insert (0, self )
-        elif self.Otype == 'Grid'  :  SvF.Task.Grids.append ( self )
-#        elif self.Otype == 'Grid'  :  SvF.Task.Grids.insert (0, self )
+        elif self.Otype == 'Set'   :  SvF.Task.Sets.append ( self )
 
     def Oprint (self):
         print ( self.Otype, self.name )
@@ -30,24 +31,24 @@ def getObject(name):
         if o.name == name: return o
     return None
 
-def getObjectNotGrid(name):
+def getObjectNotSet(name):
     for o in SvF.Task.Objects :
-        if o.Otype == 'Grid' : continue
+        if o.Otype == 'Set' : continue
 #        o.Oprint()
         if o.name == name: return o
     return None
-##################################################################            Grid
-def findGridByName(grids, name):   #  ищем в    grids  !!
-        for g in grids:
-            #            print 'Grid', g.name, name, g.step
+##################################################################            Set
+def findSetByName(Sets, name):   #  ищем в    Sets  !!
+        for g in Sets:
+            #            print 'Set', g.name, name, g.step
             if g.name == name:
-                SvF.LastGrid = g#
+                SvF.LastSet = g#
                 return g
         return None
 
-def getGridNum (gri) :
+def getSetNum (gri) :
         if gri[0] == ' ' : gri = gri[1:]
-        for nu, gr in enumerate (SvF.Task.Grids) :
+        for nu, gr in enumerate (SvF.Task.Sets) :
             if gr.name == gri:  return nu
         return -1
 ##################################################################            Fun

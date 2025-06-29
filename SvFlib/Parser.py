@@ -3,10 +3,12 @@
 from   sys import *
 
 #from   Pars import *
-from   Lego import *
-
+from   Lego  import *
+from   Tools import *
+#from   Pars  import *
 import COMMON as com
 
+from Pars import SubstitudeName
 
 NUM_SymbolStart = '1234567890.'
 NUM_Symbol      = '1234567890.e'
@@ -24,7 +26,7 @@ NAME_Aditional  = '1234567890_'
 
 
 #                 0 1   2 34  5 6   7 8   9
-#                 a \in [ -337, a_ma, h   ]
+#    part         a \in [ -337, a_ma, h   ]
 #            type       [                 ]
 #            lev        1                 1
 #            etc        2                 2
@@ -78,7 +80,8 @@ class  parser:
             for itn in range(beg, len(self.items) ) :
                     if self.items[itn].type == type and self.items[itn].part == part:
                         if itn == len(self.items)-1 :         pass            #   variant  dot after
-                        elif self.items[itn+1].part == '.' :  return -1
+#                        elif self.items[itn+1].part == '.' :  return -1
+                        elif self.items[itn+1].part == '.' :  continue      #  24.08
                         if itn == 0:                          return itn      # variant dot before
                         elif self.items[itn-1].part != '.':   return itn
             return -1
@@ -112,11 +115,11 @@ class  parser:
 
 
 
-    def reparse_funs ( self, grids = None ) :
+    def reparse_funs ( self, Sets = None ) :
             eq = self.join ()
             par = parser ( eq )
             self.items = par.items
-            self.funs ( grids )
+            self.funs ( Sets )
             
         
     def Args ( self, bracket ) :
@@ -203,8 +206,9 @@ class  parser:
         if name != '' : self.items.append (item(name, 'name', lev_br))
 
         if lev_br > 0:
-                print ("*****************  Not enapht )))))))) ****************  lev_br =", lev_br)
+                print ("*****************  Not enough )))))))) ****************  lev_br =", lev_br)
                 print('in', self.join())
+                self.myprint()
                 exit (-1)
                                                         #######  СКОБКИ   для (,[,),] in etc - номера скобок и запятых
         for itn, it in enumerate(self.items) :                                          
@@ -235,8 +239,8 @@ class  parser:
         if com.printL : print (self.join(),)
         if com.printL : print ('PARSE_END')
 
-    def funs ( self, grids ) :    #  заменяем на fun ( если '(' )  и вычисляем указатели на разделители аргументов (на ( , ) )  
-        Task = com.Task           #  заменяем name  на    var,  grid, int  - integral
+    def funs ( self, Sets ) :    #  заменяем на fun ( если '(' )  и вычисляем указатели на разделители аргументов (на ( , ) )
+        Task = com.Task           #  заменяем name  на    var,  Set, int  - integral
 
         for itn, it in enumerate(self.items) :
             if it.type == 'name' or it.type == 'fun' :
@@ -250,20 +254,18 @@ class  parser:
                         it.type = 'var'                                         #  заменяем  name  на  var#5
                         continue
                         
-                    if findGridByName ( grids, it.part ) == None : continue
-                    it.type = 'grid'                                        #  заменяем  name  на  grid
+                    if findSetByName ( Sets, it.part ) == None : continue
+                    it.type = 'Set'                                        #  заменяем  name  на  Set
 
         if com.printL : self.myprint()
         if com.printL : print (self.join())
         if com.printL : print ('FUN END')
-        return   # grids
+        return   # Sets
 
 
-    def integral ( self, all_grids ) :       #        ∫( 0,ta,d(t)*mu(-r*t,ap) )     or    ∫( 0,ta,dt*mu(-r*t,ap) )
-
-#        Task = com.Task
-        integral_grids = []
-
+    def integral ( self, all_Sets ) :       #        ∫( 0,ta,d(t)*mu(-r*t,ap) )     or    ∫( 0,ta,dt*mu(-r*t,ap) )
+        integral_Sets = []
+        self.myprint()
         int_type = 'int'
         p_int = self.find_type ( 'int' )          #
         if p_int == -1 :
@@ -272,32 +274,51 @@ class  parser:
         if p_int == -1 :     return []
         if com.printL : print ('START INTEGRAL')
         while p_int >= 0 :
-#            p_int = self.find_type ( 'int' )
- #           if p_int == -1 :    
-  #              p_int = self.find_type ( 'intr' )          #
             args = self.Args (p_int+1)
-            while args[-1][0] == ' ' : args[-1] = args[-1][1:]    #  убираем первые пробеля
-            if args[-1][0] != 'd' :
-               print ('**************** d(t)  or  dt  shoud be in the begining  ***************')
-               exit (-1)
-            p_mult = args[-1].find ( '*' )
-            dt = args[-1][1:p_mult]
-            dt = dt.replace ( '(', '' ).replace ( ')', '' )             #  (t)  -> t
-            body = args[-1][p_mult+1 : ]
-            dt_grid = findGridByName ( all_grids, dt )
-            print ('dt_grid', dt_grid, dt)
-            integral_grids.append ( dt_grid )                      #  ГРИДЫ ПО КОТОРЫМ ИДЕТ ИНТЕГРИРОВАНИЕ 
-            step = dt+'.step'       #  str(dt_grid.step)
- #           print ('STEP dt_grid.step=',step, dt_grid.min)
-            if len (args) == 3 :
-                mi = args[0]   
-                ma = args[1]
-            else:    
-                mi = str(dt_grid.min)   
-                ma = str(dt_grid.max)
-            dt__i = dt_grid.ind       # индекс грида
+            print ("Args", args)
+            if args[0].find ('\inn') > 0:                # ∫ ( t ∈ ImSet, N_ImmunF(t)*Inf(tt-t)*dt )
+                arg0 = args[0].replace( ' ','' )         # ∫ ( t ∈ ImSet, dt*N_ImmunF(t)*Inf(tt-t) )
+                p = arg0.find ('\inn')                   # ∫ ( t ∈ ImSet, N_ImmunF(t)*Inf(tt-t) )
+                print (arg0[0:p],arg0[p+4:])
+                t = arg0[0:p]
+                Set_name = arg0[p+4:]
+                dt_Set = findSetByName(all_Sets, Set_name)
+                body = args[1].replace ('*d'+t,'').replace ('d'+t+'*','')
+        #        body = args[1][ : args[1].find('*d'+t) ]
+                body = SubstitudeName(body, t, dt_Set.ind)  # подставляем set индекс
+                step = Set_name + '.step'  # str(dt_grid.step)
+                print ('BB', body)
+                mi = dt_Set.min
+                ma = dt_Set.max
+            else:
+                while args[-1][0] == ' ' : args[-1] = args[-1][1:]    #  убираем первые пробелы
+                if args[-1][0] != 'd' :
+                   print ('**************** d(?t?)  or  dt  shoud be in the begining  ***************')
+                   exit (-1)
+                p_mult = args[-1].find ( '*' )
+                dt = args[-1][1:p_mult]
+                dt = dt.replace ( '(', '' ).replace ( ')', '' )             #  (t)  -> t
+                body = args[-1][p_mult+1 : ]
+                dt_Set = findSetByName ( all_Sets, dt )
+                body = SubstitudeName(body, dt, dt_Set.ind)  # подставляем set индекс
+#                print ('dt_Set', dt_Set, dt)
+ #               integral_Sets.append ( dt_Set )                      #  ГРИДЫ ПО КОТОРЫМ ИДЕТ ИНТЕГРИРОВАНИЕ
+  #              step = dt+'.step'       #  str(dt_grid.step)
+     #           print ('STEP dt_grid.step=',step, dt_grid.min)
+                if len (args) == 3 :
+                    mi = args[0]
+                    ma = args[1]
+                else:
+                    mi = str(dt_Set.min)
+                    ma = str(dt_Set.max)
+                step = dt + '.step'
+
+                print('dt_Set', dt_Set, dt)
+            integral_Sets.append(dt_Set)  # ГРИДЫ ПО КОТОРЫМ ИДЕТ ИНТЕГРИРОВАНИЕ
+
+            dt__i = dt_Set.ind       # индекс грида
  #           print dt__i
-            body = SubstitudeName ( body, dt, dt__i )  # подставляем индекс грида
+ #           body = SubstitudeName ( body, dt, dt__i )  # подставляем индекс грида
 #            print 'BB', body
             if int_type == 'int' :
 #                txt = 'sum ( fromiter( (('+dt__i+'!='+mi +')+('+ dt__i+'!='+ma+'))/2*'+step + '*' + body + ' for ' + dt__i + ' in myrange (' + mi + ',' + ma + ',' + step + ') ) )'
@@ -307,7 +328,7 @@ class  parser:
                 txt = 'sum ( '+step + '*' + body + ' for ' + dt__i + ' in myrange (' + mi + ',' + ma + '-' + step + ',' + step + ') )'
             for j in range (self.items[p_int+1].etc[0], self.items[p_int+1].etc[-1]+1 ) :  self.items[j].part = ''   #  очишаем все
             self.items[p_int].part = txt                
-            self.reparse_funs ( all_grids )
+            self.reparse_funs ( all_Sets )
             int_type = 'int'
             p_int = self.find_type ( 'int' )          #
             if p_int == -1 :
@@ -318,11 +339,11 @@ class  parser:
  #               p_int = self.find_type ( 'intr' )          #
 
         if com.printL : print (self.join())
-        if com.printL : print ('INTEG END', len(integral_grids))
-        return integral_grids
+        if com.printL : print ('INTEG END', len(integral_Sets))
+        return integral_Sets
 
 
-    def summa(self, all_grids):  # Σ(i=0,20,mu[i]*(x.V.dat[i]-x(x.A[0].dat[i]))**2)
+    def summa(self, all_Sets):  # Σ(i=0,20,mu[i]*(x.V.dat[i]-x(x.A[0].dat[i]))**2)
         if com.printL : print ('START SUM')
 
         while self.find_type ( 'sum' ) >= 0 :
@@ -334,15 +355,15 @@ class  parser:
  #           print (body)
             for j in range (self.items[p_sum+1].etc[0], self.items[p_sum+1].etc[-1]+1 ) :  self.items[j].part = ''   #  очишаем все
             self.items[p_sum].part = body
-            self.reparse_funs ( all_grids )
+            self.reparse_funs ( all_Sets )
             return
 
 
 
 
-    def dif1  ( self, dif_minus, dif_plus, grids ) :       #  DIF 1      \d(t,H2O(t))
+    def dif1  ( self, dif_minus, dif_plus, Sets ) :       #  DIF 1      \d(t,H2O(t))
         if self.text.find ('\\d') == -1: return  dif_minus, dif_plus
-        self.reparse_funs ( grids ) 
+        self.reparse_funs ( Sets )
  ##       print (self.join())
 #        if self.find_type ( '\\d' ) == -1 :     return  dif_minus
         if com.printL : print ('DIF '+ com.SchemeD1[-1])
@@ -358,7 +379,7 @@ class  parser:
     #                dif1 = fun_name + '__f.dF_dX' + args[1][args[1].find('('):]
                 #                    print (dif1)
 #                    1/0
-                else :                                                      # grid func
+                else :                                                      # Set func
                     gr_name = args[0]
  ##                   print (args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')
                     plus_st  = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')  # t -> t+1
@@ -390,14 +411,14 @@ class  parser:
                     self.items[p].part = ''
                 self.items[p-1].part = dif1
 #                    dif_minus.append ( gr_name)
-        self.reparse_funs ( grids ) 
+        self.reparse_funs ( Sets )
 ##        self.myprint()
 #        1/0
         if com.printL : print (self.join ())
         if com.printL : print ('DIF END')
         return  dif_minus, dif_plus
             
-    def dif2 ( self, dif_minus, dif_plus, grids ) :       #  \d2(t,x(t))
+    def dif2 ( self, dif_minus, dif_plus, Sets ) :       #  \d2(t,x(t))
 #        if self.find_type ( '\d2' ) == -1 :     return  dif_minus, dif_plus
 #        find_d2 = False
 #        for ip in range( len(self.items)-3 ) :
@@ -408,7 +429,7 @@ class  parser:
      #           self.items[ip+3].part = ','                    #   (   ->  ,
       #          find_d2 = True
        # if not find_d2 : return  dif_minus, dif_plus
-        #self.reparse_funs ( grids )
+        #self.reparse_funs ( Sets )
 
         if com.printL : print ('DIF2', self.join())
         for itn, it in enumerate(self.items) :
@@ -418,12 +439,12 @@ class  parser:
                     args = self.Args (itn+1)
                     gr_name = args[0]  
   #                  print 'gr_name', gr_name
-####                    step = str( findGridByName ( grids, gr_name ).step )    #  ищем в глоб и лок
+####                    step = str( findSetByName ( Sets, gr_name ).step )    #  ищем в глоб и лок
 ############## НЕ ПРОВЕРЕНО №№№№№№№№№№№№№№№№№№№№№№№№
                     cop  = SubstitudeName ( args[1], gr_name, '('+gr_name+'+'+gr_name+'__p.step)' )   # t -> t+1
                     copM = SubstitudeName ( args[1], gr_name, '('+gr_name+'-'+gr_name+'__p.step)' )   # t -> t-1
                     dif2 = '(' + cop + '+' + copM + '-2*'+args[1]+ ')/'+gr_name+'__p.step**2'
-#                    step = str(findGridByName(grids, gr_name).step)  # ищем в глоб и лок
+#                    step = str(findSetByName(Sets, gr_name).step)  # ищем в глоб и лок
  #                   cop = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + step + ')')  # t -> t+1
   #                  copM = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + step + ')')  # t -> t-1
    #                 dif2 = '(' + cop + '+' + copM + '-2*' + args[1] + ')/' + step + '**2'
@@ -436,7 +457,7 @@ class  parser:
                     dif_minus.append ( gr_name)
                     dif_plus.append ( gr_name)
                     if com.printL : print (self.join ())
-        self.reparse_funs ( grids )
+        self.reparse_funs ( Sets )
 #        self.myprint()        
         if com.printL : print (self.join ())
         if com.printL : print ('DIF2 END')
@@ -445,7 +466,7 @@ class  parser:
 
 
                                         #  txt как строка так и parse
-def  getGRID26 ( txt, grids = []) :   #  if not list    # находим по имени и заменяем
+def  getSet26 ( txt, grids = []) :   #  if not list    # находим по имени и заменяем
     #            print ('T', txt)
                 if com.printL : print ('getGRID26', txt)
                 if type (txt) == type ('abc') :    pars = parser ( txt )
@@ -479,13 +500,14 @@ def  getGRID26 ( txt, grids = []) :   #  if not list    # находим по и
                         lis[0] = getfloatNaN ( lis[0] )   # min
                         lis[1] = getfloatNaN ( lis[1] )
                         lis[2] = getfloatNaN ( lis[2] )
- #                       if isnan(lis[3])  :  lis[3]= ''   #  for ind
+ #                       if np.isnan(lis[3])  :  lis[3]= ''   #  for ind
  #                       for l in range(4) :
   #                          if lis[l] == ''
  #                       print ('L', lis)
     #                    if not com.Preproc:
-#                            if isnan(lis[2]) :  lis[2]=-50
-                        return Grid ( name, lis[0], lis[1], lis[2], lis[3], lis[4] )
+#                            if np.isnan(lis[2]) :  lis[2]=-50
+#                        return Grid ( name, lis[0], lis[1], lis[2], lis[3], lis[4] )
+                        return Grid ( name, lis[0], lis[1], lis[2], lis[3] )
 
                 elif delim == '\\inn':                          #  looking for in other grids
                         p = pars.find_type ( 'name', p+1 )

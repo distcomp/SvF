@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 
-from  numpy import *
+#from  numpy import *
+import numpy as np
 import sys
 #from InData import * 
 from   GridArgs  import *
@@ -29,15 +30,15 @@ def addDataPath (InFile) :
          return InFile
 
 def getfloatNaN (st) :
-    if st is None : return NaN
+    if st is None : return nan
     if len(st) :
         if st[0] == '=' : st=st[1:]    #  =0
     try:
         ret = float(st)
         return ret
     except ValueError:
-        if len(st)==0 : return NaN
-        if st[0]=='*' : return NaN
+        if len(st)==0 : return nan
+        if st[0]=='*' : return nan
 
 ## 30        if com.Preproc: return st
         if com.Compile: return st
@@ -63,7 +64,7 @@ def getfloatNaN (st) :
             for a in fu.A :
                     st = SubstitudeName ( st, fu.V.name+'.'+a.name+'.min', str(a.min) ) 
                     st = SubstitudeName ( st, fu.V.name+'.'+a.name+'.max', str(a.max) ) 
-        for gri in com.Task.Grids :           # from Grid
+        for gri in com.Task.Sets :           # from Set
                     if gri.className == 'Domain' : continue
                     st = SubstitudeName ( st, gri.name+'.min',  str(gri.min)  ) 
                     st = SubstitudeName ( st, gri.name+'.max',  str(gri.max)  ) 
@@ -87,8 +88,8 @@ def getfloatNaN (st) :
             print ('evalERR', st)
 #            print com.Task.Tbls[0].Flds[1].tb.min(0)-10.0
             for to in com.Task.Tbls :  print ('Tbl:', to.name)  #   Tbls
-            return NaN
-        if ret is None : return NaN
+            return nan
+        if ret is None : return nan
         return ret
 
 
@@ -102,11 +103,11 @@ def getfloat (st) :
         if len(st)==0 : return FLOMAX
         if st[0]=='*' : return FLOMAX
 ## 30        if co.Preproc : return st
-        if co.Compile : return st
+        if SvF.Compile : return st
 
   #      print 'gf0', st
 #######        st = com.Task.substitudeDef ( st)
-        for itb, tb in enumerate ( co.Task.Tbls ) :  #  from Tbls
+        for itb, tb in enumerate ( SvF.Task.Tbls ) :  #  from Tbls
 #            print 'tb.name', tb.name
             st = SubstitudeName ( st, tb.name+'.NoR', str(com.Task.Tbls[itb].NoR) ) 
             for ifld, fld in enumerate (tb.Flds) :
@@ -126,7 +127,7 @@ def getfloat (st) :
             for a in fu.A :
                     st = SubstitudeName ( st, fu.V.name+'.'+a.name+'.min', str(a.min) ) 
                     st = SubstitudeName ( st, fu.V.name+'.'+a.name+'.max', str(a.max) ) 
-        for gri in com.Task.Grids :           # from Grid
+        for gri in com.Task.Sets :           # from Set
                     st = SubstitudeName ( st, gri.name+'.min',  str(gri.min)  ) 
                     st = SubstitudeName ( st, gri.name+'.max',  str(gri.max)  ) 
                     st = SubstitudeName ( st, gri.name+'.step', str(gri.step) )
@@ -171,11 +172,11 @@ def readListFloat19 (txt, cut1='[',cut2=']' ) :
      for r in range(len(ret)) :  ret[r] = getfloat(ret[r])   
      return ret
 
-#  def readGrid19 ( txt, eq_in ) :    kill in 27
+#  def readSet19 ( txt, eq_in ) :    kill in 27
 
 
 
-def findFunGridInExpr ( expr, grid_name, op_b=')' ) :
+def findFunSetInExpr ( expr, Set_name, op_b=')' ) :
             for fu in com.Task.Funs :
                 p_fu = findNamePos ( expr, fu.V.name )
                 if p_fu >= 0 :
@@ -184,7 +185,7 @@ def findFunGridInExpr ( expr, grid_name, op_b=')' ) :
 #                    tmp, in_br, tmp = getFromBrackets (expr[p_fu:],op_b)
  #                   arg = in_br.split(',')
                     for a_n, a_t in enumerate(arg) :
-                        if findNamePos ( a_t, grid_name ) >= 0 :
+                        if findNamePos ( a_t, Set_name ) >= 0 :
                             return fu.A[a_n], fu
             return None, None
 
