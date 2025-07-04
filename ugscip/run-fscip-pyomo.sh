@@ -18,13 +18,6 @@ if [ -z "$NUM_THREADS" ]; then
 fi
 echo "NUM_THREADS=$NUM_THREADS"
 
-echo "write problem $NAME.conv.cip write solution $NAME.cip.init.sol quit" | scip $NAME -AMPL -i
-if grep 'no solution available' $NAME.cip.init.sol > /dev/null; then
-    INITSOL=''
-    echo 'No initial solution in stub'
-else
-    INITSOL="-isol $NAME.cip.init.sol"
-fi
 LC_SET=''
 if [ -f presolv.set ]; then
     LC_SET='-sl presolv.set'
@@ -39,10 +32,10 @@ if [ -f scip.set ]; then
 fi
 
 touch ${NAME}-ug.set
-fscip ${NAME}-ug.set $NAME.conv.cip $INITSOL -sth $NUM_THREADS $LC_SET $ROOT_SET $SOLVER_SET > ${NAME}-fscip.log
-mv $BASE.conv.sol $NAME.conv.sol
-sed -i '/Final Solution/d' $NAME.conv.sol
-echo "read $NAME.conv.sol q" | scip $NAME -AMPL -i
+fscip ${NAME}-ug.set $NAME.nl -sth $NUM_THREADS $LC_SET $ROOT_SET $SOLVER_SET > ${NAME}-fscip.log
+mv $BASE.sol $NAME.sol
+sed -i '/Final Solution/d' $NAME.sol
+echo "read $NAME.sol q" | scip $NAME -AMPL -i
 
 STATUS=$(grep 'SCIP Status' ${NAME}-fscip.log | awk '-F[' '{print $2}' | sed 's/\]//')
 #echo "status" $STATUS
