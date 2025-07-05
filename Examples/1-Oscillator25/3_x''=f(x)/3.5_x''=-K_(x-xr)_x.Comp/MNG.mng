@@ -1,0 +1,22 @@
+CVNumOfIter     41
+
+Select x, t  from  Spring5.dat
+
+GRID:	
+        t  ∈ [ -1.,  2.5, 0.025 ]
+
+Var:    x ( t ) 
+	K   
+	xr
+
+SchemeD1 = Central          
+
+EQ:     d2/dt2(x) == - K * ( x - xr ) #- μ * v    
+
+CV:     CV_NumSets=21			# кол-во подмножеств для процедуры кросс-валидации
+OBJ:    x.Complexity ( Penal[0] ) + x.MSD()
+
+Draw
+
+EOF
+

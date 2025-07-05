@@ -1,0 +1,44 @@
+DAT = Select 	* from   Spring5.dat 	# считывание всех столбцов из файла  ../Spring5.dat
+
+SET:	t  = [ , ,  0.025]		# множество t от min до max значений t из файла с шагом 0.025
+
+VAR:    x ( t )		  	  	# неизвестная функция, заданная на множестве t
+
+CV:     CV_NumSets=21			# кол-во подмножеств для процедуры кросс-валидации
+
+CVNumOfIter  = 1			# максимальное кол-во итераций поиска весов регуляризации
+
+OBJ:   	x.MSD() + x.Complexity(Penal[0]) # целевая функция
+  
+  
+#Draw	x				# отображение нацденной функции x(t)
+
+:x.SaveSol ('xOpt(t).sol')
+
+SET:	t21  = [ , ,  0.175];  Data='t' 	# множество t исходное 
+Param:  x_f (t21)
+:x_f.grd=x_f.V.dat
+sqrt_x_f__x = sqrt ( sum (  (fx_f(va)-fx(va))**2 for va in x_f.A[0].Val  )/DAT.NoR) / x.V.sigma*100
+print ('\nsqrt_x_f__x',sqrt_x_f__x,   'NoR', DAT.NoR)	
+SvF.addStrToRes = 'sqrt_x_f-x= '+ str(sqrt_x_f__x)
+
+Param:  xOver(t) << xOver(t).sol
+Param:  xUnder(t) << xUnder(t).sol
+
+
+Reg = Polyline ([-1,-1,2.5,2.5,-1], [-0.1,2.2,2.2,-0.1,-0.1], None, 'Region')
+x.V.oname  = "Ballanced"
+xOver.V.oname  = "Overtrained"
+xUnder.V.oname  = "Undertrained "
+:x_f.V.leg_name  = "z(t)"
+x_f.V.dat = None
+
+Draw Region;LC:green;LSt:dashed  x_f;MS:0;DMS:0;LSt:solid;LC:green \
+     xOver;LC:b;MS:0;LW:1;LSt:dotted xUnder;LC:gray x;LC:r;LSt:solid;DMS:3;DLW:0;DC:b 	# отображение всех функции 
+
+
+EOF					# конец файла, все что дальше опускается
+
+
+
+

@@ -1,0 +1,5 @@
+
+Start at   2025-06-29 18:16:20.356842
+W:   Record  9  was deleted from data set of function   CV
+W:   Record  9  was deleted from data set of function   SD
+W:   Record  9  was deleted from data set of function   delta

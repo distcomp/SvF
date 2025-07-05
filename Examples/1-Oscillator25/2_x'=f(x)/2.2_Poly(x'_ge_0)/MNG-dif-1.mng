@@ -1,0 +1,42 @@
+CVNumOfIter   = 0			# максимальное кол-во итераций поиска весов регуляризации
+
+Select 	*  from  Spring5.dat 	# считывание всех столбцов из файла  Spring5.dat
+
+SET:	t = [   ,    , 0.025]  		# область определения функции x(t)
+	X = [  -0.1, 2.0, 0.1  ]  		# область значений (с запасом) функции x(t)
+
+VAR:    x ( t )   			# искомая функция
+	f ( X );  Degree = 5 		# искомая правая часть - полином 5-ой степени
+
+EQ:	d/dt(x) = f(x)			# дифференциальное ур-ие
+
+CV:     CV_NumSets=21			# кол-во подмножеств для процедуры кросс-валидации
+OBJ:   	x.MSD() + f.Complexity ( Penal[0] )  # целевая функция – смешанный критерий выбора x(t)
+
+#***************     SDz
+SET:	t21  = [ , ,  0.175]; Data = 't' 	#  множество t исходное 
+Param:  x_f (t21)
+sqrt_x_f__x = sqrt ( sum (  (fx_f(va)-fx(va))**2 for va in x_f.A[0].Val  )/SvF.curentTabl.NoR) / x.V.sigma*100
+print ('\nSDz=  ',sqrt_x_f__x,   'NoR', SvF.curentTabl.NoR)	
+SvF.addStrToRes = 'SDz= ' + str(sqrt_x_f__x)
+  
+Param:  x2(t) << x2(t).sol		# Это при x'<0
+SET:	X2 = [  1.2, 1.5, 0.1  ]  		# область значений (с запасом) функции x(t)
+
+
+Param:  f2(X2) << f2(X).sol
+
+
+Reg = Polyline ([-1,-1,2.5,2.5,-1], [-0.1,2.2,2.2,-0.1,-0.1], None, 'Region')
+x.V.oname  = "x1: (x'>0)"
+x2.V.oname = "x2: (x'<0)"
+x2.V.draw_name = 'x'
+
+Draw Region;LC:green;LSt:dashed x;LC:r;LSt:solid x2;LC:b		# отображение всех функции 
+
+f.V.oname  = "f1: (x'>0)"
+f2.V.oname = "f2: (x'<0)"
+f2.V.draw_name = 'f'
+f2.A[0].oname = "x"
+Line0 = Polyline ([-0.1, 2], [0, 0], None, 'f=0')
+Draw f=0;LC:green;LSt:dashed f;LC:r;LSt:solid f2;LC:b
