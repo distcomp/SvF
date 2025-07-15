@@ -291,15 +291,24 @@ class  parser:
                 mi = dt_Set.min
                 ma = dt_Set.max
             else:
-                while args[-1][0] == ' ' : args[-1] = args[-1][1:]    #  убираем первые пробелы
-                if args[-1][0] != 'd' :
-                   print ('**************** d(?t?)  or  dt  shoud be in the begining  ***************')
+#                while args[-1][0] == ' ' : args[-1] = args[-1][1:]    #  убираем первые пробелы
+                args[-1] = args[-1].strip()    #  убираем первые и последние пробелы
+                p_mult = args[-1].rfind ( '*' )
+                if args[-1][p_mult+1] != 'd' :
+                   print ('**************** d(t)  or  dt  shoud be in the end  ***************')
                    exit (-1)
-                p_mult = args[-1].find ( '*' )
-                dt = args[-1][1:p_mult]
+#                if args[-1][0] != 'd' :
+ #                  print ('**************** d(?t?)  or  dt  shoud be in the begining  ***************')
+  #                 exit (-1)
+  #              p_mult = args[-1].find ( '*' )
+#                dt = args[-1][1:p_mult]
+                dt = args[-1][p_mult+2:]
                 dt = dt.replace ( '(', '' ).replace ( ')', '' )             #  (t)  -> t
-                body = args[-1][p_mult+1 : ]
+#                body = args[-1][p_mult+1 : ]
+                body = args[-1][0:p_mult]
                 dt_Set = findSetByName ( all_Sets, dt )
+#                print (body, dt, dt_Set)
+ #               1/0
                 body = SubstitudeName(body, dt, dt_Set.ind)  # подставляем set индекс
 #                print ('dt_Set', dt_Set, dt)
  #               integral_Sets.append ( dt_Set )                      #  ГРИДЫ ПО КОТОРЫМ ИДЕТ ИНТЕГРИРОВАНИЕ

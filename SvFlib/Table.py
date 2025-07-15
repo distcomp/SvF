@@ -73,7 +73,8 @@ def  Treat_FieldNames (raw_line) :
  #                   print ('fld', fld)
                     if ( fld !='dat' and fld !='AddField' and fld !='sR' and fld !='NoR'  and
                          fld !='AppendRec' and fld !='AppendRec1' and
-                         fld != 'WriteSvFtbl' and fld != 'Flds' and fld != 'KillRowsByMask' and fld != 'KillField'
+                         fld != 'WriteSvFtbl' and fld != 'Flds' and fld != 'KillRowsByMask' and fld != 'KillField' and
+                         fld != 'KillRow'
                        ):
                         pars.items[itn+2].part = 'dat(\''+fld+'\')'
  #                       raw_line = SubstitudeName(raw_line, fld, 'dat(\''+fld+'\')')
@@ -742,8 +743,8 @@ class Table (Object):
                         fld.tb[NoR] = floatGradNaN( nums_row[fld.src_num] )
                         if not self.useNaN and np.isnan(fld.tb[NoR]) : OK = False; break    #continue
                 if not OK: continue
-                if self.CheckWhere(NoR) == False: continue      # 30
-
+             #   print (NoR)
+                if self.CheckWhere(NoR) == False:    continue      # 30
                 NoR += 1
                 if NoR >= maxNoR :                          # np.resize
                     maxNoR *= 2

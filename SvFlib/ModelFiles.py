@@ -109,6 +109,7 @@ def readMNGfile ( fName ):
                     start = True
                 continue
             ret = allText(odtParag, '')
+ #           print ("H",ret,"H")
 #           print_Child ( odtBody[parag] )
 #            print('MNGreadlineIn:' + ret + 'Len', len(ret))
             p = ret.find('TexMaths')
@@ -132,6 +133,7 @@ def readMNGfile ( fName ):
                 if len(ret) >= 3:
                     if ret[:3] == 'EOF': break
     ###            fi.close()  #  ???????       &&&&&&&&&&&&&&&
+  #      print('{*', lines_buf, "*}")
     elif fName.count('.docx'):
         with docx2python(fName) as docx_content:
             tmp = docx_content.text.split('\n')
@@ -172,7 +174,8 @@ def readMNGfile ( fName ):
         line_b = line_b.replace('\t', SvF.TabString )  # заменяем табы
         if len(line_b.replace(' ', '')): buf.append(line_b)  # не добавляем строки из пробелов
 #    lines_buf = buf
-
+   # print ('{',buf,"}")
+   # 1/0
     return buf
 
 

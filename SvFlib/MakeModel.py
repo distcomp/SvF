@@ -791,18 +791,29 @@ def WriteVarParam26 ( buf, param ) :
 """
 
 def fromTEXplus(equation) :
-#    print ('TEXsubst', equation)
+    equation = equation.replace('  ',' ')
+    equation = equation.replace(' _','_')     #  нижний предел интеграла
+    print ('TEXsubst', equation)
   #  if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
    # else :                      equation = UTF8replace(equation, '^', '')
-
     sel = parser(equation)
+    sel.myprint()
     repars = True
+    def del_figure (sel, pos):                      #  удаляет фигурные скобки
+        if  sel.items[pos].part != '{' :  return pos
+        sel.items[pos].part = ''                    # {  ->  ''
+        sel.items[sel.items[pos].etc[1]].part = ''  # }  ->  ''
+        return  sel.items[pos].etc[1]
+
     while (repars) :
+        equation = sel.join()
+        sel = parser(equation)
         repars = False
         for itn, it in enumerate(sel.items) :
+            print ('itn=', itn)
             if it.type == 'name' or it.type == 'fun' :
                 if it.part == '\\frac' :                    #  \frac{d}{dro}(Df) = Pdf
-                    repars = True
+#                    repars = True
                     it.part = ''
                     sel.items[itn+1].part = ''
                     pos = sel.items[itn+1].etc[1]
@@ -816,35 +827,85 @@ def fromTEXplus(equation) :
                         sel.items[pos].part = '('
                         pos = sel.items[pos].etc[1]
                         sel.items[pos].part = ')'
-                if it.part.find ('\\int_') == 0 :        # INTEGRAL  запись  ∫_{0}^{rp}{d(x)*expr} -> ∫(0,rp,d(x)*expr)
                     repars = True
-                    it.type = 'int'
-                    lim_min = it.part.split('_')[1]
-      #              print ('lim_min', lim_min)
+                    break
+                if it.part.find ('\\int_') == 0 :        # INTEGRAL  запись  ∫_{0}^{rp}{d(x)*expr} -> ∫(0,rp,d(x)*expr)
+#                    repars = True
+                    print(it.part)
+                    it.part = it.part.replace('_','(',1)               #   _ -> )
+                    if len (it.part) > 5:               #   ∫_0^{rp}{d(x)*expr}
+                        print (it.part)
+                        pos = itn
+                    else :                              # {lim_min}  in   int_{lim_min}
+                        pos_min = itn+1
+                        pos = del_figure(sel, itn+1)
+                        if pos == itn+1 :
+                            print ('Не хватает {    ', sel.myprint() )
+                            exit (33)
+                        pos += 1
+                        print ('KKK',sel.join())
+
+                    if sel.items[pos].part == '^' :      #      ^{rp}
+                        sel.items[pos].part = ','
+                        pos = del_figure(sel, pos+1)
+                        body_pos = pos+1
+    #                    print('AA', sel.join())
+                        pos = del_figure(sel, body_pos)               # { body }
+#                        print (pos, body_pos)
+                        if pos == body_pos :
+                            print ('Не хватает {    ', sel.myprint() )
+                            exit (33)
+                        sel.items[body_pos].part = ','
+                        sel.items[pos].part = ')'
+                    else :
+                        sel.items[pos-1].part = ','
+                        pos_in = sel.find_part('\inn',pos_min)
+                        print (sel.items[pos_in].part)
+                        d_name = 'd' + sel.items[pos_in-1].part
+                        pos_d_name = sel.find_part(d_name, pos_in)
+                        sel.items[pos_d_name].part = ')'
+                        if sel.items[pos_d_name-1].part == '*' : sel.items[pos_d_name-1].part = ''
+                    print ('BB',sel.join())
+ #                   1/0
+#                        if sel.items[itn+1].part == '{' :
+ #                       print(it.part, '{')
+  #                      sel.items[itn+1].part = ''                      #  {  ->  ''
+   #                     sel.items[sel.items[itn+1].etc[1]].part = ''    #  }  ->  ''
+    #                    pos = sel.items[itn+1].etc[1]+1
+     #               else :
+##                    it.type = 'int'
+         #           lim_min = it.part.split('_')[1]
+          #          print ('lim_min|'+ lim_min+'|')
        #             1/0
 #                    UTF8replace (it.part,'\\int_','\\int(')
    #                 print (it.part)
-                    it.part=it.part[0:4]+'('+lim_min
+       #             it.part=it.part[0:4]+'('+lim_min
   #                  print(it.part)
-                    pos = itn+1
-                    if len (lim_min) == 0 :                     # {lim_min}  in   int_{lim_min}
-                        sel.items[itn+1].part = ''
-                        sel.items[sel.items[itn+1].etc[1]].part = ''
-                        pos = sel.items[itn+1].etc[1]+1
-                    sel.items[pos].part = ','
-                    pos += 1                                    # lim_max
-                    if sel.items[pos].part == '{' :
-                        sel.items[pos].part = ''
-                        pos = sel.items[pos].etc[1]
-                        sel.items[pos].part = ''
-                    sel.items[pos].part += ','
-                    pos += 1                                    # { body }
-                    sel.items[pos].part = ''
-                    pos = sel.items[pos].etc[1]
-                    sel.items[pos].part = ')'
+    #                pos = itn+1
+     #               if len (lim_min) == 0 :                     # {lim_min}  in   int_{lim_min}
+      #                  sel.items[itn+1].part = ''
+       #                 sel.items[sel.items[itn+1].etc[1]].part = ''
+        #                pos = sel.items[itn+1].etc[1]+1
+         #           print ('min', itn, sel.join())
+#                    print (sel.items[pos].part)
+ #                   1/0
+  #                  sel.items[pos].part = ','
+   #                 pos += 1                                    # lim_max
+    #                if sel.items[pos].part == '{' :
+     #                   sel.items[pos].part = ''
+      #                  pos = sel.items[pos].etc[1]
+       #                 sel.items[pos].part = ''
+        #            sel.items[pos].part += ','
+         #           print (itn, sel.join())
+          #          pos += 1                                    # { body }
+           #         sel.items[pos].part = ''
+            #        pos = sel.items[pos].etc[1]
+             #       sel.items[pos].part = ')'
+                    repars = True
+                    break
 
                 if it.part.find('\\sum_') == 0:  # SUMMA  запись  ∫_{0}^{rp}{d(x)*expr} -> ∫(0,rp,d(x)*expr)
-                    repars = True
+#                    repars = True
                     it.type = 'sum'
 #                    print ('it.partTT', it.part, itn, sel.items[itn].part)
                     lim_min = it.part.split('_')[1]
@@ -871,13 +932,14 @@ def fromTEXplus(equation) :
                     sel.items[pos].part = ''
                     pos = sel.items[pos].etc[1]
                     sel.items[pos].part = ')'
-
-                if repars :
-                    equation = sel.join()
-    #                print (equation)
-                    sel = parser(equation)
-#                    print ('Tex', it.part, equation );  sel.myprint()
+                    repars = True
                     break
+
+    #                if repars :
+ #                   equation = sel.join()
+  #                  sel = parser(equation)
+   #                 break
+
 #    print ('@@@@@@@@@@@@', equation, SvF.UseHomeforPower)
     if SvF.UseHomeforPower:
         equation = UTF8replace(equation, '^', '**')
@@ -900,8 +962,8 @@ def fromTEXplus(equation) :
                 sel.items[ip].part = ""
         equation = sel.join()
         sel = parser(equation)
- #       print (equation)
-#        1/0
+    print ('>>>', equation)
+   # 1/0
 
                             #    d/dt(Vac(t))  ->  \d(t,Vac(t))
     if equation.find ('d/d') >= 0 :
@@ -978,6 +1040,7 @@ def ParseEQUATION ( equation, all_Sets, Mode = 'EQ' ) :
         dif_minus, dif_plus  = eqPars.dif1 ( dif_minus, dif_plus, all_Sets )
         dif_minus, dif_plus  = eqPars.dif2 ( dif_minus, dif_plus, all_Sets )
         eqPars.summa(all_Sets)
+        print ('555', eqPars.join())
         integral_Sets = eqPars.integral( all_Sets )                  # лучше оставить последним - там всякие for и sum
         equation = eqPars.join()
         if SvF.printL : print ('END PARSE', equation)
