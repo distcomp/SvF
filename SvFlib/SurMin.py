@@ -98,7 +98,8 @@ def cosFi ( v1, v2 ) :
         
 def angleV1V2 ( v1, v2 ) :
             try:
-                return  arccos ( cosFi ( v1, v2 ) )    * 180 / pi                      # угол поворота
+
+                return  np.arccos ( cosFi ( v1, v2 ) )    * 180 / np.pi                      # угол поворота
             except :
                 print ('cosFi', cosFi ( v1, v2 ))
                 exit(-1)
