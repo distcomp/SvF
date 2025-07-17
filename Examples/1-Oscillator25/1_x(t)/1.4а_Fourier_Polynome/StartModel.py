@@ -23,24 +23,22 @@ c = Tensor('c',[5])
 def fc(i) : return c.F([i])
 ω = Tensor('ω',[])
 def fω() : return ω.F([])
+b = Tensor('b',[6])
+def fb(i) : return b.F([i])
 x = smbFun('x',[t])
 def fx(t) : return x.F([t])
 def x_smbF(Args) :
    t = Args[0]
-   return fc(0)/2+fc(1)*py.cos(fω()*1*t)+fc(2)*py.sin(fω()*1*t)+fc(3)*py.cos(fω()*2*t)+fc(4)*py.sin(fω()*2*t)
+   return fc(0)/2+fc(1)*py.cos(fω()*1*t)+fc(2)*py.sin(fω()*1*t)+fc(3)*py.cos(fω()*2*t)+fc(4)*py.sin(fω()*2*t)+fb(0)+fb(1)*t+fb(2)*t**2+fb(3)*t**3+fb(4)*t**4+fb(5)*t**5
 x.smbF = x_smbF
 def x_smbFx(Args) :
    t = Args[0]
-   return -fω()*fc(1)*py.sin(t*fω()) + fω()*fc(2)*py.cos(t*fω()) - 2*fω()*fc(3)*py.sin(2*t*fω()) + 2*fω()*fc(4)*py.cos(2*t*fω()) 
+   return 5*t**4*fb(5) + 4*t**3*fb(4) + 3*t**2*fb(3) + 2*t*fb(2) - fω()*fc(1)*py.sin(t*fω()) + fω()*fc(2)*py.cos(t*fω()) - 2*fω()*fc(3)*py.sin(2*t*fω()) + 2*fω()*fc(4)*py.cos(2*t*fω()) + fb(1) 
 x.smbFx = x_smbFx
 def x_smbFxx(Args) :
    t = Args[0]
-   return -fω()**2*fc(1)*py.cos(t*fω()) - fω()**2*fc(2)*py.sin(t*fω()) - 4*fω()**2*fc(3)*py.cos(2*t*fω()) - 4*fω()**2*fc(4)*py.sin(2*t*fω()) 
+   return 20*t**3*fb(5) + 12*t**2*fb(4) + 6*t*fb(3) - fω()**2*fc(1)*py.cos(t*fω()) - fω()**2*fc(2)*py.sin(t*fω()) - 4*fω()**2*fc(3)*py.cos(2*t*fω()) - 4*fω()**2*fc(4)*py.sin(2*t*fω()) + 2*fb(2) 
 x.smbFxx = x_smbFxx
-def x_Int_smbFxx_2(Args) :
-   t = Args[0]
-   return t*fω()**4*fc(1)**2*py.sin(t*fω())**2/2 + t*fω()**4*fc(1)**2*py.cos(t*fω())**2/2 + t*fω()**4*fc(2)**2*py.sin(t*fω())**2/2 + t*fω()**4*fc(2)**2*py.cos(t*fω())**2/2 + 8*t*fω()**4*fc(3)**2*py.sin(2*t*fω())**2 + 8*t*fω()**4*fc(3)**2*py.cos(2*t*fω())**2 + 8*t*fω()**4*fc(4)**2*py.sin(2*t*fω())**2 + 8*t*fω()**4*fc(4)**2*py.cos(2*t*fω())**2 + fω()**3*fc(1)**2*py.sin(t*fω())*py.cos(t*fω())/2 - fω()**3*fc(1)*fc(2)*py.cos(t*fω())**2 - 8*fω()**3*fc(1)*fc(3)*py.sin(t*fω())*py.cos(2*t*fω())/3 + 16*fω()**3*fc(1)*fc(3)*py.sin(2*t*fω())*py.cos(t*fω())/3 - 8*fω()**3*fc(1)*fc(4)*py.sin(t*fω())*py.sin(2*t*fω())/3 - 16*fω()**3*fc(1)*fc(4)*py.cos(t*fω())*py.cos(2*t*fω())/3 - fω()**3*fc(2)**2*py.sin(t*fω())*py.cos(t*fω())/2 + 16*fω()**3*fc(2)*fc(3)*py.sin(t*fω())*py.sin(2*t*fω())/3 + 8*fω()**3*fc(2)*fc(3)*py.cos(t*fω())*py.cos(2*t*fω())/3 - 16*fω()**3*fc(2)*fc(4)*py.sin(t*fω())*py.cos(2*t*fω())/3 + 8*fω()**3*fc(2)*fc(4)*py.sin(2*t*fω())*py.cos(t*fω())/3 + 4*fω()**3*fc(3)**2*py.sin(2*t*fω())*py.cos(2*t*fω()) + 8*fω()**3*fc(3)*fc(4)*py.sin(2*t*fω())**2 - 4*fω()**3*fc(4)**2*py.sin(2*t*fω())*py.cos(2*t*fω())
-x.Int_smbFxx_2 = x_Int_smbFxx_2
 CVmakeSets ( CV_NumSets=21 )
 import  numpy as np
 
@@ -57,6 +55,9 @@ def createGr ( Task, Penal ) :
 
     ω.var = py.Var ( domain=Reals )
     Gr.ω =  ω.var
+
+    b.var = py.Var ( range (b.Sizes[0]),domain=Reals )
+    Gr.b =  b.var
 
     x.var = py.Var ( x.A[0].NodS,domain=Reals )
     Gr.x =  x.var
@@ -81,7 +82,7 @@ def print_res(Task, Penal, f__f):
 
     Gr = Task.Gr
 
-    x = Task.Funs[2]
+    x = Task.Funs[3]
 
     OBJ_ = Gr.OBJ ()
     print (  '    OBJ =', OBJ_ )
