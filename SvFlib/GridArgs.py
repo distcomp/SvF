@@ -1,5 +1,3 @@
-# -*- coding: cp1251 -*-
-
 #from  numpy import *
 import numpy as np
 #from  GaKru import *
@@ -18,8 +16,8 @@ def  getName ( obj ) :
         if type (obj) == type ('abc') : return obj
         return obj.name
 
-                               #  Для интегрирования
-def myrange(mi_, ma_, st):  # mi <= ret  <= ma   ret[0] = mi  ret[-1] = ma  возможно округление 1е-10. Последний шаг - остаток.
+                               #  Р”Р»СЏ РёРЅС‚РµРіСЂРёСЂРѕРІР°РЅРёСЏ
+def myrange(mi_, ma_, st):  # mi <= ret  <= ma   ret[0] = mi  ret[-1] = ma  РІРѕР·РјРѕР¶РЅРѕ РѕРєСЂСѓРіР»РµРЅРёРµ 1Рµ-10. РџРѕСЃР»РµРґРЅРёР№ С€Р°Рі - РѕСЃС‚Р°С‚РѕРє.
         if mi_ > ma_:  return []    # 08/07/2021
         mi = float(mi_)        #    conflict    float <-> np.float64   ???????????????????  #########################
         ma = float(ma_)
@@ -35,7 +33,7 @@ def myrange(mi_, ma_, st):  # mi <= ret  <= ma   ret[0] = mi  ret[-1] = ma  возм
                 ret.append(ma)
                 break
         else:
-            ret.append(ma)  # приращение неполное !
+            ret.append(ma)  # РїСЂРёСЂР°С‰РµРЅРёРµ РЅРµРїРѕР»РЅРѕРµ !
         return ret
 
 class Set (Object):
@@ -78,7 +76,7 @@ class Set (Object):
         if SvF.Compile : return      ##############################################################
 
 
-        self.Ub     =-1         # сетка от [0 до Ub]
+        self.Ub     =-1         # СЃРµС‚РєР° РѕС‚ [0 РґРѕ Ub]
         self.NodS   = [] #0
         self.mNodSm = 0
         self.mNodS  = 0
@@ -103,15 +101,15 @@ class Set (Object):
         if self.dat is None:
             self.dat = getCurrentFieldData(self.fld_name)
 
-    def set_Ub_max(self):       #  вычисляем Ub и возможно увеличиваем max
+    def set_Ub_max(self):       #  РІС‹С‡РёСЃР»СЏРµРј Ub Рё РІРѕР·РјРѕР¶РЅРѕ СѓРІРµР»РёС‡РёРІР°РµРј max
         #           if self.step == 0: self.step = 1
         floatUb = (self.max - self.min) / float(self.step)
         self.Ub = int(np.ceil(floatUb))
         if self.Ub > 0:
-            if abs(floatUb - (self.Ub - 1)) / self.Ub < 1e-10:  self.Ub -= 1  ###################  Округление Уточнить -13 #######
+            if abs(floatUb - (self.Ub - 1)) / self.Ub < 1e-10:  self.Ub -= 1  ###################  РћРєСЂСѓРіР»РµРЅРёРµ РЈС‚РѕС‡РЅРёС‚СЊ -13 #######
         old_max = self.max
         self.max = self.min + self.Ub * self.step
-        if self.max > old_max :  print (self.name+'.max был увеличен c', old_max, ' до ', self.max)
+        if self.max > old_max :  print (self.name+'.max Р±С‹Р» СѓРІРµР»РёС‡РµРЅ c', old_max, ' РґРѕ ', self.max)
 
     def makeSets  (self) :
  #       if self.Ub == -1 : return
@@ -130,7 +128,7 @@ class Set (Object):
  #       print('_____________________________________________', self.FlNodS)
 
 
-    def ValToInd(self, val):         # узел снизу
+    def ValToInd(self, val):         # СѓР·РµР» СЃРЅРёР·Сѓ
         ret = int ( (val-self.min ) / self.step + 0.5 )
         if ret < 0 :
             print ("\n\n\n\n Out of range", ret)
@@ -143,19 +141,19 @@ class Set (Object):
     def IndToVal(self, ind):
         return self.min + ind * self.step
 
-    def IndByVal ( self, val ):  # ближайший
+    def IndByVal ( self, val ):  # Р±Р»РёР¶Р°Р№С€РёР№
         if np.isnan( val ) :       # 29
             return val
         else :
             return iround( (val-self.min)/self.step )
 
-    def FlIndByVal ( self, val ):  # ближайший
+    def FlIndByVal ( self, val ):  # Р±Р»РёР¶Р°Р№С€РёР№
         if np.isnan( val ) :       # 29
             return val
         else :
             return ifloor( (val-self.min)/self.step )
 
-    def CeIndByVal ( self, val ):  # ближайший
+    def CeIndByVal ( self, val ):  # Р±Р»РёР¶Р°Р№С€РёР№
         if np.isnan( val ) :       # 29
             return val
         else :
