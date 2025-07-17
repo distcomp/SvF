@@ -15,13 +15,22 @@ from GIS import *
 
 SvF.Task = TaskClass()
 Task = SvF.Task
-SvF.mngF = 'MNG-0.1166-Opt.mng'
-DAT = Table ( 'Spring5.dat','DAT','*' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+SvF.mngF = '3-Oscillator_K_Mu_xr.odt'
+SvF.CVNumOfIter = 1
+Table ( 'Spring5.dat','curentTabl','x,t' )
+t = Set('t',-1.,2.5,0.025,'','t')
 x = Fun('x',[t])
 def fx(t) : return x.F([t])
+v = Fun('v',[t])
+def fv(t) : return v.F([t])
+K = Tensor('K',[])
+def fK() : return K.F([])
+muu = Tensor('muu',[])
+def fmuu() : return muu.F([])
+xr = Tensor('xr',[])
+def fxr() : return xr.F([])
+SvF.SchemeD1 = "Central"
 CVmakeSets ( CV_NumSets=21 )
-SvF.CVNumOfIter = 1
 import  numpy as np
 
 from Lego import *
@@ -35,6 +44,30 @@ def createGr ( Task, Penal ) :
     x.var = py.Var ( x.A[0].NodS,domain=Reals )
     Gr.x =  x.var
 
+    v.var = py.Var ( v.A[0].NodS,domain=Reals )
+    Gr.v =  v.var
+
+    K.var = py.Var ( domain=Reals )
+    Gr.K =  K.var
+
+    muu.var = py.Var ( domain=Reals )
+    Gr.muu =  muu.var
+
+    xr.var = py.Var ( domain=Reals )
+    Gr.xr =  xr.var
+ 								# \frac{d^2}{dt^2}(x)==-K*(x-xr)-muu*v
+    def EQ0 (Gr,_it) :
+        return (
+          ((fx((_it+t.step))+fx((_it-t.step))-2*fx(_it))/t.step**2)==-fK()*(fx(_it)-fxr())-fmuu()*fv(_it)
+        )
+    Gr.conEQ0 = py.Constraint(t.mFlNodSm,rule=EQ0 )
+ 								# v==\frac{d}{dt}(x)
+    def EQ1 (Gr,_it) :
+        return (
+          fv(_it)==((fx((_it+t.step))-fx((_it-t.step)))/t.step *0.5)
+        )
+    Gr.conEQ1 = py.Constraint(t.mFlNodSm,rule=EQ1 )
+
     if len (SvF.CV_NoRs) > 0 :
         Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )
     SvF.fun_with_mu.append(getFun('x'))
@@ -42,10 +75,10 @@ def createGr ( Task, Penal ) :
     x.ValidationSets = SvF.ValidationSets
     x.notTrainingSets = SvF.notTrainingSets
     x.TrainingSets = SvF.TrainingSets
- 											# x.MSD()+x.Complexity([Penal[0]])
+ 											# x.Complexity([Penal[0]])+x.MSD()
     def obj_expression(Gr):  
         return (
-             x.MSD()+x.Complexity([Penal[0]])
+             x.Complexity([Penal[0]])+x.MSD()
         )  
     Gr.OBJ = py.Objective(rule=obj_expression)  
 
@@ -60,14 +93,14 @@ def print_res(Task, Penal, f__f):
     OBJ_ = Gr.OBJ ()
     print (  '    OBJ =', OBJ_ )
     f__f.write ( '\n    OBJ ='+ str(OBJ_)+'\n')
-    tmp = (x.MSD())
-    stmp = str(tmp)
-    print (      '    ',int(tmp/OBJ_*1000)/10,'\tx.MSD() =', stmp )
-    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tx.MSD() ='+ stmp+'\n')
     tmp = (x.Complexity([Penal[0]]))
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tx.Complexity([Penal[0]]) =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tx.Complexity([Penal[0]]) ='+ stmp+'\n')
+    tmp = (x.MSD())
+    stmp = str(tmp)
+    print (      '    ',int(tmp/OBJ_*1000)/10,'\tx.MSD() =', stmp )
+    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tx.MSD() ='+ stmp+'\n')
 
     return
 
@@ -87,22 +120,4 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-x.SaveSol ('xOpt(t).sol')
-t21 = Set('t21',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.175,'','t')
-x_f = Fun('x_f',[t21], param=True)
-def fx_f(t21) : return x_f.F([t21])
-x_f.grd=x_f.V.dat
-sqrt_x_f__x=sqrt ( sum((fx_f(va)-fx(va))**2 for va in x_f.A[0].Val)/DAT.NoR)/x.V.sigma*100
-print('\nsqrt_x_f__x',sqrt_x_f__x,'NoR',DAT.NoR)
-SvF.addStrToRes='sqrt_x_f-x= '+str(sqrt_x_f__x)
-xOver = Fun('xOver',[t], param=True, ReadFrom="xOver(t).sol")
-def fxOver(t) : return xOver.F([t])
-xUnder = Fun('xUnder',[t], param=True, ReadFrom="xUnder(t).sol")
-def fxUnder(t) : return xUnder.F([t])
-Reg=Polyline([-1,-1,2.5,2.5,-1],[-0.1,2.2,2.2,-0.1,-0.1],None,'Region')
-x.V.oname="Ballanced"
-xOver.V.oname="Overtrained"
-xUnder.V.oname="Undertrained "
-x_f.V.leg_name  = "z(t)"
-x_f.V.dat=None
-Task.Draw ( 'Region;LC:green;LSt:dashed x_f;MS:0;DMS:0;LSt:solid;LC:green xOver;LC:b;MS:0;LW:1;LSt:dotted xUnder;LC:gray x;LC:r;LSt:solid;DMS:3;DLW:0;DC:b' )
+Task.Draw ('')

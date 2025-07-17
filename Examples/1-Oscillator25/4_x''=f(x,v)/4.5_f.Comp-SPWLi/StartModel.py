@@ -15,13 +15,20 @@ from GIS import *
 
 SvF.Task = TaskClass()
 Task = SvF.Task
-SvF.mngF = 'MNG-0.1166-Opt.mng'
-DAT = Table ( 'Spring5.dat','DAT','*' )
+SvF.mngF = 'MNG-dif-2.mng'
+SvF.CVNumOfIter = 0
+SvF.CVstep = 21
+Table ( 'Spring5.dat','curentTabl','t,x' )
 t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+X = Set('X',-0.1,2.3,0.3,'','X')
+V = Set('V',-1,1.7,0.3,'','V')
 x = Fun('x',[t])
 def fx(t) : return x.F([t])
+v = Fun('v',[t])
+def fv(t) : return v.F([t])
+f = SPWLFun('f',[X,V], Type='SPWLi')
+def ff(X,V) : return f.F([X,V])
 CVmakeSets ( CV_NumSets=21 )
-SvF.CVNumOfIter = 1
 import  numpy as np
 
 from Lego import *
@@ -35,6 +42,24 @@ def createGr ( Task, Penal ) :
     x.var = py.Var ( x.A[0].NodS,domain=Reals )
     Gr.x =  x.var
 
+    v.var = py.Var ( v.A[0].NodS,domain=Reals )
+    Gr.v =  v.var
+
+    f.var = py.Var ( f.A[0].NodS,f.A[1].NodS,domain=Reals )
+    Gr.f =  f.var
+ 								# v==d/dt(x)
+    def EQ0 (Gr,_it) :
+        return (
+          fv(_it)==((fx((_it+t.step))-fx(_it))/t.step)
+        )
+    Gr.conEQ0 = py.Constraint(t.FlNodSm,rule=EQ0 )
+ 								# d2/dt2(x)==f(x,v)
+    def EQ1 (Gr,_it) :
+        return (
+          ((fx((_it+t.step))+fx((_it-t.step))-2*fx(_it))/t.step**2)==ff(fx(_it),fv(_it))
+        )
+    Gr.conEQ1 = py.Constraint(t.mFlNodSm,rule=EQ1 )
+
     if len (SvF.CV_NoRs) > 0 :
         Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )
     SvF.fun_with_mu.append(getFun('x'))
@@ -42,10 +67,10 @@ def createGr ( Task, Penal ) :
     x.ValidationSets = SvF.ValidationSets
     x.notTrainingSets = SvF.notTrainingSets
     x.TrainingSets = SvF.TrainingSets
- 											# x.MSD()+x.Complexity([Penal[0]])
+ 											# f.Complexity([Penal[0],Penal[1]])/x.V.sigma2+x.MSD()
     def obj_expression(Gr):  
         return (
-             x.MSD()+x.Complexity([Penal[0]])
+             f.Complexity([Penal[0],Penal[1]])/x.V.sigma2+x.MSD()
         )  
     Gr.OBJ = py.Objective(rule=obj_expression)  
 
@@ -57,17 +82,19 @@ def print_res(Task, Penal, f__f):
 
     x = Task.Funs[0]
 
+    f = Task.Funs[2]
+
     OBJ_ = Gr.OBJ ()
     print (  '    OBJ =', OBJ_ )
     f__f.write ( '\n    OBJ ='+ str(OBJ_)+'\n')
+    tmp = (f.Complexity([Penal[0],Penal[1]])/x.V.sigma2)
+    stmp = str(tmp)
+    print (      '    ',int(tmp/OBJ_*1000)/10,'\tf.Complexity([Penal[0],Penal[1]])/x.V.sigma2 =', stmp )
+    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tf.Complexity([Penal[0],Penal[1]])/x.V.sigma2 ='+ stmp+'\n')
     tmp = (x.MSD())
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tx.MSD() =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tx.MSD() ='+ stmp+'\n')
-    tmp = (x.Complexity([Penal[0]]))
-    stmp = str(tmp)
-    print (      '    ',int(tmp/OBJ_*1000)/10,'\tx.Complexity([Penal[0]]) =', stmp )
-    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tx.Complexity([Penal[0]]) ='+ stmp+'\n')
 
     return
 
@@ -87,22 +114,8 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-x.SaveSol ('xOpt(t).sol')
-t21 = Set('t21',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.175,'','t')
-x_f = Fun('x_f',[t21], param=True)
-def fx_f(t21) : return x_f.F([t21])
-x_f.grd=x_f.V.dat
-sqrt_x_f__x=sqrt ( sum((fx_f(va)-fx(va))**2 for va in x_f.A[0].Val)/DAT.NoR)/x.V.sigma*100
-print('\nsqrt_x_f__x',sqrt_x_f__x,'NoR',DAT.NoR)
-SvF.addStrToRes='sqrt_x_f-x= '+str(sqrt_x_f__x)
-xOver = Fun('xOver',[t], param=True, ReadFrom="xOver(t).sol")
-def fxOver(t) : return xOver.F([t])
-xUnder = Fun('xUnder',[t], param=True, ReadFrom="xUnder(t).sol")
-def fxUnder(t) : return xUnder.F([t])
-Reg=Polyline([-1,-1,2.5,2.5,-1],[-0.1,2.2,2.2,-0.1,-0.1],None,'Region')
-x.V.oname="Ballanced"
-xOver.V.oname="Overtrained"
-xUnder.V.oname="Undertrained "
-x_f.V.leg_name  = "z(t)"
-x_f.V.dat=None
-Task.Draw ( 'Region;LC:green;LSt:dashed x_f;MS:0;DMS:0;LSt:solid;LC:green xOver;LC:b;MS:0;LW:1;LSt:dotted xUnder;LC:gray x;LC:r;LSt:solid;DMS:3;DLW:0;DC:b' )
+Task.Draw ( 'x' )
+Pl = Polyline (x, v, None, 'Trajectory')
+Pl.Y[0]=Pl.Y[1]
+Pl.Y[-1]=Pl.Y[-2]
+Task.Draw ( 'f Trajectory;LC:red' )
