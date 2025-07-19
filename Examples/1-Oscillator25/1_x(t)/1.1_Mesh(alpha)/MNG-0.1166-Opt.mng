@@ -13,16 +13,16 @@ OBJ:   	x.MSD() + x.Complexity(Penal[0]) # целевая функция
   
 #Draw	x				# отображение нацденной функции x(t)
 
-:x.SaveSol ('xOpt(t).sol')
+:x.SaveSol ('xOpt(t).sol')		#  оператор Питона  ':'  - чтобы не обрабатывалось в SvF	
 
 SET:	t21  = [ , ,  0.175];  Data='t' 	# множество t исходное 
 Param:  x_f (t21)
 :x_f.grd=x_f.V.dat
 sqrt_x_f__x = sqrt ( sum (  (fx_f(va)-fx(va))**2 for va in x_f.A[0].Val  )/DAT.NoR) / x.V.sigma*100
 print ('\nsqrt_x_f__x',sqrt_x_f__x,   'NoR', DAT.NoR)	
-SvF.addStrToRes = 'sqrt_x_f-x= '+ str(sqrt_x_f__x)
+SvF.addStrToRes = 'sqrt_x_f-x= '+ str(sqrt_x_f__x)      #   добавление стороки в рез-файл
 
-Param:  xOver(t) << xOver(t).sol
+Param:  xOver(t) << xOver(t).sol		# счит. из файла
 Param:  xUnder(t) << xUnder(t).sol
 
 
