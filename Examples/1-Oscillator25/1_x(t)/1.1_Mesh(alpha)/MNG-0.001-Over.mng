@@ -15,7 +15,9 @@ Draw	x				# отображение нацденной функции x(t)
 :x.SaveSol ('xOver(t).sol')
 
 #SET:	t21  = [ , ,  0.175, i__t21, t]	# множество t исходное 
-SET:	t21  = [ , ,  0.175, , t]	# множество t исходное 
+#SET:	t21  = [ , ,  0.175, , t]	# множество t исходное 
+SET:	t21  = [ , ,  0.175];  Data='t' 	# множество t исходное 
+
 Param:  x_f (t21)
 sqrt_x_f__x = sqrt ( sum (  (fx_f(va)-fx(va))**2 for va in x_f.A[0].Val  )/DAT.NoR) / x.V.sigma*100
 print ('\nsqrt_x_f__x',sqrt_x_f__x,   'NoR', DAT.NoR)	
