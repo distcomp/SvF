@@ -19,6 +19,7 @@ jobId_s = []
 maxJobs = 0
 
 DrawMode = 'Screen&File'
+DrawFileName = ''
 Resources = [ "pool-scip-ipopt" ]
 #Resources = [ "vvvolDellDocker" ]
 

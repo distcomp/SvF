@@ -267,6 +267,7 @@ def make_Polynome (smbF, fun) :             #  Polynome (6, c, X, V) ###########
                 if   arg >= 2: pol += '*' + args[iarg] + '**' + str(arg)
                 elif arg == 1: pol += '*' + args[iarg]
         print (pol)
+        pol = ' ( ' + pol + ' ) '
 #        print (find_combinations(len(args), d))
  #   1/0
 
@@ -321,6 +322,7 @@ def make_Fourier (smbF, fun) :        # Fourier (t, 5, T, c)
         elif p%2 == 1:  pol += coef +'['+str(p)+']*cos('+ ω +'*'+str(n)+'*'+arg+')'
         else :          pol += coef +'['+str(p)+']*sin('+ ω +'*'+str(n)+'*'+arg+')'
     print (pol)
+    pol = ' ( ' + pol + ' ) '
     pars.items[i_pol].part = pol
     for i in pars.items[i_pol + 1:i_pol+lenAgs*2+2]: i.part = ''
 #    for i in pars.items[i_pol + 1:i_pol+10]: i.part = ''  # убираем лишнее
@@ -337,9 +339,11 @@ def make_Fourier (smbF, fun) :        # Fourier (t, 5, T, c)
 
 def make_smbFun(smbF, fun):
     print('make_smbFun', smbF);
-    if smbF.find('Polynome') >= 0: smbF = make_Polynome (smbF, fun)
-    if smbF.find('Fourier') >= 0:   smbF = make_Fourier (smbF, fun)
- #   1/0
+#    if smbF.find('Polynome') >= 0: smbF = make_Polynome (smbF, fun)
+#    if smbF.find('Fourier') >= 0:   smbF = make_Fourier (smbF, fun)
+    while ( smbF.find('Polynome') >= 0 ):  smbF = make_Polynome(smbF, fun)
+    while ( smbF.find('Fourier') >= 0  ):  smbF = make_Fourier(smbF, fun)
+#   1/0
     if fun.dim == 1:
         variables = sy.symbols(fun.A[0] + ',')
     else:
@@ -438,18 +442,19 @@ def WriteVarParam26 ( buf, param ) :
 
         fun = None
         parts = buf.split(';')
-        p = -1                                              #  вставляем ';'
-        if   parts[0].find(')<') > 0 : p=parts[0].find(')<')+1   #    X(t) <= 0
-        elif parts[0].find(')>') > 0 : p=parts[0].find(')>')+1   #   X(t) >= 0
-        elif parts[0].find(')=') > 0 : p=parts[0].find(')=')+1   # Param:  H(X,Y) = DEM_Kostica.asc
+#        p = -1                                              #  вставляем ';'
+ #       if   parts[0].find(')<') > 0 : p=parts[0].find(')<')+1   #    X(t) <= 0
+#        elif parts[0].find(')>') > 0 : p=parts[0].find(')>')+1   #   X(t) >= 0
+  #      elif parts[0].find(')=') > 0 : p=parts[0].find(')=')+1   # Param:  H(X,Y) = DEM_Kostica.asc
 # ??        elif parts[0].find(')\\inn')>0: p=parts[0].find(')\\inn')+1   # Param:  H(X,Y) \\in [0,1]
-        if p > 0 :
-            parts[0] = parts[0][:p] + ';' + parts[0][p:]
+   #     if p > 0 :
+    #        parts[0] = parts[0][:p] + ';' + parts[0][p:]
  #           print('P0', parts[0])
-            buf1 = ';'.join (parts)
-            parts = buf1.split(';')
+     #       buf1 = ';'.join (parts)
+      #      parts = buf1.split(';')
 
-        for i, part in enumerate (parts) :
+        for i, part_i in enumerate (parts) :
+                part = part_i
 ## 30                part = Task.substitudeDef ( part )
                 part_blanck = part
                 part = part.replace(' ','')
@@ -482,9 +487,18 @@ def WriteVarParam26 ( buf, param ) :
                     fun_args_str = ','.join(fun_args)
                     dim = len (fun_args)
                     if dim == 0 :   f_type = 'tensor'
-                    print (pars.Args(1), dop_args, fun_args, fun_args_str)
+                    print (f_name, f_type, pars.Args(1), dop_args, fun_args, fun_args_str)
                     fun = Fun(pars.items[0].part ,fun_args, param, PolyPow )     # here  '('
-                elif part.find('Degree')==0 :                        #  Функция VAR:    x ( t ); Degree=8
+
+                    p = -1
+                    if   part.find('<') > 0:  p = part.find('<')  # X(t) <= 0
+                    elif part.find('>') > 0:  p = part.find('>')  #   X(t) >= 0
+                    elif part.find('=') > 0:  p = part.find('=')  # Param:  H(X,Y) = Polynome (Fgg
+                    # ??        elif parts[0].find(')\\inn')>0: p=parts[0].find(')\\inn')+1   # Param:  H(X,Y) \\in [0,1]
+                    if p > 0:
+                        part = part[p:]
+                    else: continue
+                if part.find('Degree')==0 :                        #  Функция VAR:    x ( t ); Degree=8
                             PolyPow = int(part.split('=')[1])
                             fun.PolyPow = PolyPow
                             fun.type = 'p'
@@ -520,8 +534,8 @@ def WriteVarParam26 ( buf, param ) :
                         p = max(part.find('>'), part.find('>=') + 1)
                         Lbound = part[p + 1:]
                 elif part.find('<') == 0:                                   # <6        # elif <  after  <<
-                    p = max(part.find('<'), part.find('<=') + 1)
-                    Ubound = part[p + 1:]
+                        p = max(part.find('<'), part.find('<=') + 1)
+                        Ubound = part[p + 1:]
                 elif part.find('ReadFrom')==0 :
                             ReadFrom = part.split('=')[1]
                 elif part.find('\\inn') > 0:

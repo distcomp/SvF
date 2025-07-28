@@ -388,6 +388,7 @@ def DrawComb( param ):
 
     plt.tight_layout()
     if SvF.DrawMode.find('File') >= 0 :
+        if SvF.DrawFileName != '':  file_name = SvF.DrawFileName
         if DrawErr:  plt.savefig(file_name+'Err.' + SvF.graphic_file_type, dpi=SvF.DPI)  # (os.path.join('%s'%dir,'inner_int_gamma_%g%s.%s'%(fun.gamma, suffix, fmt)), dpi = dpi)
         else:        plt.savefig(file_name + '.'+ SvF.graphic_file_type, dpi=SvF.DPI)
     if SvF.DrawMode.find('Screen') >= 0 :

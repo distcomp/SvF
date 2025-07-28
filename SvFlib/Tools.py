@@ -80,10 +80,10 @@ def floatGradNaN ( txt ) :
             try :
 #                gra = txt.index('°')
                 gra = txt.find('°')
-                print ('GRAD:',txt, gra)
+       #         print ('GRAD:',txt, gra)
                 if gra >= 0:
                     ret = float(txt[:gra])
-#                    print (ret,txt[gra + 1:])
+       #             print (ret,txt[gra + 1:])
                     minut = txt[gra + 1:]
                     minut = minut.replace ("''", '"')
                     if len (minut) == 0: return ret
@@ -97,9 +97,9 @@ def floatGradNaN ( txt ) :
 #                    print (pmin, minut,minut[2],ord(minut[2]),ord("?"))
  #                   exit(-1)
   #                  print ( ord('?'), '29°45?11?')
-                    if pmin == -1:  return ret + float(minut) / 60. * sign (ret)
+                    if pmin == -1:  return ret + float(minut) / 60. * np.sign (ret)
 
-                    ret += float(minut[:pmin]) / 60. * sign(ret)
+                    ret += float(minut[:pmin]) / 60. * np.sign(ret)
                     sec = str(minut[pmin + 1:])
 #                    print ('SS',sec)
                     if len (sec) == 0: return ret
@@ -111,17 +111,17 @@ def floatGradNaN ( txt ) :
  #                   print ('SS+', psec, sec, sec[4], ord(sec[4]), ord('"'), ord("\""))
 #                    print ('S', psec, sec)
                     if psec != -1: sec = sec[:psec]
-                    return ret + float(sec) / 3600. * sign (ret)
+                    return ret + float(sec) / 3600. * np.sign (ret)
                 else :
                     parts = txt.split(',')
                     if len(parts) == 4:
  #                       print ('*************************PARTS', parts)
   #                      print (float(parts[0]), float(parts[1])/60. , float(parts[2]+'.'+parts[3])/3600.)
    #                     print (float(parts[0]) + ( float(parts[1])/60. + float(parts[2]+'.'+parts[3])/3600.)*sign(float(parts[0])))
-                        return float(parts[0]) + ( float(parts[1])/60. + float(parts[2]+'.'+parts[3])/3600.)*sign(float(parts[0]))
+                        return float(parts[0]) + ( float(parts[1])/60. + float(parts[2]+'.'+parts[3])/3600.)*np.sign(float(parts[0]))
                     elif len(parts) == 3:
 #                        print ('************************PARTS3', parts)
-                        return float(parts[0]) + (float(parts[1]+ '.' + parts[2]) / 60.) * sign(float(parts[0]))
+                        return float(parts[0]) + (float(parts[1]+ '.' + parts[2]) / 60.) * np.sign(float(parts[0]))
                     else: return np.nan
             except:
                 if not txt is None : print ('ERR TO FLOAT', txt)

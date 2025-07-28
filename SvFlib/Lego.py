@@ -142,6 +142,9 @@ class BaseFun (Tensor) :
         else:
             self.Allocate_tensor([self.sizeP])
 
+        if self.param: self.InitByData()  # 29
+
+
     """
     def Initialize ( self, InitFloat = None ) :
         if SvF.printL > 0: printS('Initialize: |'); self.Oprint()
@@ -785,7 +788,7 @@ class BaseFun (Tensor) :
         return	 (self.delta(n)/ max(self.V.dat[n],self.measurement_accur))
 
     def MSD ( self ) :
-        return self.MSDnan()
+         return self.MSDnan()
 #        if not SvF.Hack_Stab :
  #           return self.MSDnan()
   #      else :
@@ -797,7 +800,7 @@ class BaseFun (Tensor) :
                     * sum ( (self.tbl[n,self.V.num]!=self.NDT) * self.mu[n] * self.delta(n)**2 for n in self.sR )
 
     def MSDrel (self, measurement_accur = 0) :        # valid_f  - for verification - validation
-            if self.mu is None : return self.MSDrel_no_mu()     # 24.01
+            if self.mu is None : return self.MSDrel_no_mu(measurement_accur)     # 24.01
             self.MSDmode = 'MSDrel'
             self.measurement_accur = measurement_accur
             ret = 0
@@ -832,11 +835,13 @@ class BaseFun (Tensor) :
         return ret
 
     def MSDnan (self, valid_f = None) :        # valid_f  - for verification - validation
+#            print('AAAAAAAAAAAAAAAAAAAAASvF.Us', SvF.Use_var)
+#            1/0
             if self.mu is None : return self.MSDnan_no_mu()     # 24.01
             self.MSDmode = 'MSD'
             ret = 0
             num = 0
-#            print ('SvF.Use_var', SvF.Use_var)
+  #          print ('SvF.Use_var', SvF.Use_var)
             if not SvF.Use_var:                                      #  mu[n]  <->  mu[n]()
                 for n in self.sR:
                     if not np.isnan(self.V.dat[n]):
@@ -2056,12 +2061,18 @@ class Fun (BaseFun) :
    #         print (self.A[0].dat[n])
             return self.interpol ( 1, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step )
         elif self.dim==2 :
-            return self.interpol ( 2, self.A[0].dat[n]/self.A[0].step,
-                                      self.A[1].dat[n]/self.A[1].step )
+#            return self.interpol ( 2, self.A[0].dat[n]/self.A[0].step,
+ #                                     self.A[1].dat[n]/self.A[1].step )
+            return self.interpol ( 2, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step,          # 25/07
+                                      (self.A[1].dat[n]-self.A[1].min)/self.A[1].step )
+
         elif self.dim==3 :
-            return self.interpol ( 3, self.A[0].dat[n]/self.A[0].step,
-                                      self.A[1].dat[n]/self.A[1].step,
-                                      self.A[2].dat[n]/self.A[2].step )
+            return self.interpol ( 3, ( self.A[0].dat[n]-self.A[0].min )/self.A[0].step,        # 25/07  not tested
+                                       ( self.A[1].dat[n]-self.A[1].min )/self.A[1].step,
+                                       ( self.A[2].dat[n]-self.A[2].min )/self.A[2].step )
+#            return self.interpol ( 3, self.A[0].dat[n]/self.A[0].step,
+ #                                     self.A[1].dat[n]/self.A[1].step,
+  #                                    self.A[2].dat[n]/self.A[2].step )
 
     def interpol ( self, lev, X,Y=0,Z=0 ) :   # X,Y,Z  в шагах
         if self.param or not SvF.Use_var: gr = self.grd

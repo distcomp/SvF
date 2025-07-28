@@ -486,7 +486,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
                   cCos_old_cCos = int_angleV1V2 ( cCos, old_cCos )  # cos old and new cond
                   if coprintL: print ('cCos_old_cCos' , cCos_old_cCos)
                   if dim>2 and abs (cCos_old_cCos-90.) > 30 :                 #  недостаточно _|_
-                      pro =  old_cCos * cos (cCos_old_cCos*pi/180.)
+                      pro =  old_cCos * np.cos (cCos_old_cCos*np.pi/180.)
                       cCos = cCos - pro
                       norm = norma ( cCos )
                       cCos = cCos/norm
