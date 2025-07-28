@@ -267,7 +267,7 @@ def make_Polynome (smbF, fun) :             #  Polynome (6, c, X, V) ###########
                 if   arg >= 2: pol += '*' + args[iarg] + '**' + str(arg)
                 elif arg == 1: pol += '*' + args[iarg]
         print (pol)
-        pol = ' ( ' + pol + ' ) '
+    pol = ' ( ' + pol + ' ) '
 #        print (find_combinations(len(args), d))
  #   1/0
 
@@ -337,6 +337,17 @@ def make_Fourier (smbF, fun) :        # Fourier (t, 5, T, c)
 #    print (pars.join())
     return  pars.join()
 
+def add_py_to_fun (f_txt):          # добавляем к функциям py.
+    pars = parser ( f_txt )
+    py_names = dir(py)
+    for f_name in py_names:
+        beg = pars.find_part(f_name)
+        while ( beg != -1 ):
+            if beg == 0 :  pars.items[beg].part = 'py.' + f_name
+            elif pars.items[beg-1].part != '.' :  pars.items[beg].part = 'py.' + f_name  # перед не .
+            beg = pars.find_part(f_name,beg+1)
+    return pars.join()
+
 def make_smbFun(smbF, fun):
     print('make_smbFun', smbF);
 #    if smbF.find('Polynome') >= 0: smbF = make_Polynome (smbF, fun)
@@ -391,7 +402,8 @@ def make_smbFun(smbF, fun):
         Swr('def ' + fun.name + '_' + f_name + '(Args) :')
         Swr('   ' + fun.A[0] + ' = Args[0]')
         if fun.dim == 2: Swr('   ' + fun.A[1] + ' = Args[1]')
-        for f_nam in py_names: f_txt = f_txt.replace(f_nam,'py.'+f_nam)    #  добавляем к функциям py.
+ #       for f_nam in py_names: f_txt = f_txt.replace(f_nam,'py.'+f_nam)    #  добавляем к функциям py.
+        f_txt = add_py_to_fun( f_txt )                                    # добавляем к функциям py.
 #        Swr('   return ' + gr_add_brack(f_txt))
         Swr('   return ' + f_txt)
         Swr(fun.name + '.' + f_name + ' = ' + fun.name + '_' + f_name + '')
@@ -1167,7 +1179,8 @@ def WriteModelEQ31 ( buf ):
 #        if b_if != '' :  wr('        if not ('+b_if+') : return Constraint.Skip')         #  Constraint.Skip
         if b_if != '' :  wr('        ' + b_if + 'return py.Constraint.Skip')         #  Constraint.Skip
         wr('        return (')
-        wr('          '+equation)
+#        wr('          '+equation)
+        wr('          '+add_py_to_fun( equation ) )
         wr('        )')
         wr('    Gr.con'+eqName+' = py.Constraint(')
         for ng, g in enumerate(constraint_Sets) :
