@@ -162,6 +162,10 @@ class smbFun (BaseFun) :
             if self.dim == 1:
                 for i in range(self.Sizes[0]):
                     self.grd[i] = self.Fijk ([i])
+            elif self.dim == 2:
+                for i in range(self.Sizes[0]):
+                    for j in range(self.Sizes[1]):
+                        self.grd[i,j] = self.Fijk ([i,j])
 
     def grd_to_var (self) :
         return
