@@ -357,7 +357,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
     par_der = []   # deriv
     firstDerec = True
 #    opt = LittleFactory ( None, 10000, 1e-9 )  # чтобы отделиться
-    opt = Factory ( None, 10000, 1e-9 )  # чтобы отделиться
+    opt = Factory ( None )  # чтобы отделиться
 
     Arg = []
     steps = []

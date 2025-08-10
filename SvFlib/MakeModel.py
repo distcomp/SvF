@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+from fontTools.misc.cython import returns
 
 from   ModelFiles import *
 from Table import *
@@ -353,44 +354,15 @@ def make_smbFun(smbF, fun):
 #    if smbF.find('Polynome') >= 0: smbF = make_Polynome (smbF, fun)
 #    if smbF.find('Fourier') >= 0:   smbF = make_Fourier (smbF, fun)
     while ( smbF.find('Polynome') >= 0 ):  smbF = make_Polynome(smbF, fun)
-    while ( smbF.find('Fourier') >= 0  ):  smbF = make_Fourier(smbF, fun)
+    while ( smbF.find('Fourier')  >= 0 ):  smbF = make_Fourier (smbF, fun)
 #   1/0
     if fun.dim == 1:
         variables = sy.symbols(fun.A[0] + ',')
     else:
         variables = sy.symbols(fun.A[0] + ',' + fun.A[1])
-    """"
-    def gr_add_brack(txt):  # add  []  ДЛЯ ПО
-        part = txt.split(Coeff_name)
-        ret = part[0]
-        for p in part[1:]:
- #           print (p)
-            for i, char in enumerate(p):
-                if not char.isdigit() :
-                    ret += Coeff_name + '[' + p[:i] + ']' + p[i:]
-                    break
-                elif i == len(p) - 1 :
-                    ret += Coeff_name + '[' + p + ']'
-                    break
-        return ret
-    """
-#
     smbF = smbF.replace('[', '(').replace(']', ')')  # Заменяем  []  ->  ()
-    smbFx  = str(sy.diff(smbF,  variables[0])) + ' '   #   for  last gr7 ->gr[7]?
-    smbFxx = str(sy.diff(smbFx, variables[0])) + ' '
-    print('smbF  ', smbF)
-    print('smbFx ', smbFx)
-    print('smbFxx', smbFxx)
-    smbFxx_2 = '('+smbFxx+')**2'
-    print('smbFxx_2', smbFxx_2)
-    if fun.Int_smbFxx_2 is None :
-        Int_smbFxx_2 = str(sy.integrate(smbFxx_2, variables[0]))
-        ######
-    else :  Int_smbFxx_2 = None
-    print('\nIntegral', Int_smbFxx_2)
 
-    py_names = dir(py)
-    def Write_def_smbFun(f_name, f_txt):
+    def Write_def_smbFun(f_name, f_txt, d1=0, d2=0):
         if f_txt is None : return
         obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION(f_txt, [])
         for fu in SvF.Task.Funs:
@@ -402,29 +374,48 @@ def make_smbFun(smbF, fun):
         Swr('def ' + fun.name + '_' + f_name + '(Args) :')
         Swr('   ' + fun.A[0] + ' = Args[0]')
         if fun.dim == 2: Swr('   ' + fun.A[1] + ' = Args[1]')
- #       for f_nam in py_names: f_txt = f_txt.replace(f_nam,'py.'+f_nam)    #  добавляем к функциям py.
         f_txt = add_py_to_fun( f_txt )                                    # добавляем к функциям py.
-#        Swr('   return ' + gr_add_brack(f_txt))
         Swr('   return ' + f_txt)
         Swr(fun.name + '.' + f_name + ' = ' + fun.name + '_' + f_name + '')
-#    obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION(smbF, [])
 
-    Write_def_smbFun('smbF', smbF)
-    Write_def_smbFun('smbFx', smbFx)
-    Write_def_smbFun('smbFxx', smbFxx)
-    Write_def_smbFun('Int_smbFxx_2', Int_smbFxx_2)
+        Swr(fun.name + '.IntegDer2['+str(d1)+']['+str(d2)+'] = ' + fun.name + '_' + f_name + '')
 
-    if fun.dim == 2:
-        smbFy  = str(sy.diff(smbF,  variables[1])) + ' '
-        smbFxy = str(sy.diff(smbFx, variables[1])) + ' '
-        smbFyy = str(sy.diff(smbFy, variables[1])) + ' '
-        print('smbFy',  smbFy)
-        print('smbFxy', smbFxy)
-        print('smbFyy', smbFyy)
-        Write_def_smbFun('smbFy', smbFy)
-        Write_def_smbFun('smbFxy', smbFxy)
-        Write_def_smbFun('smbFyy', smbFyy)
+    def Write123 (f_name, d0=0, d1=0):
+        if   f_name == 'smbF' : f_txt = smbF
+        elif f_name == 'Hessian' :
+            f_txt = str(sy.diff(smbF, variables[d0], variables[d1])) + ' '
+        elif f_name == 'IntegDer2' :
+            f_txt = str(sy.diff(smbF, variables[d0], variables[d1])) + ' '
+            if fun.dim == 1 :
+                f_txt = str(sy.integrate('(' + f_txt + ')**2', variables[0]))
+            elif fun.dim == 2:
+                f_txt = str(sy.integrate('(' + f_txt + ')**2', variables[0], variables[1]))
 
+        obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION(f_txt, [])
+        for fu in SvF.Task.Funs:
+            if fu.dim != 0:
+                eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name)
+            else:
+                eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name + '()')
+        f_txt = eqPars.join()
+
+        Swr('def ' + fun.name + '_' + f_name +str(d0)+str(d1) + '(Args) :')
+        Swr('   ' + fun.A[0] + ' = Args[0]')
+        if fun.dim == 2: Swr('   ' + fun.A[1] + ' = Args[1]')
+        f_txt = add_py_to_fun( f_txt )                                    # добавляем к функциям py.
+        Swr('   return ' + f_txt)
+        if   f_name == 'smbF' :
+            Swr(fun.name + '.' + f_name + ' = ' + fun.name + '_' + f_name +str(d0)+str(d1) )
+        else :
+            Swr(fun.name + '.'+ f_name + '['+str(d0)+']['+str(d1)+'] = ' + fun.name + '_' + f_name +str(d0)+str(d1))
+
+    Write123('smbF')
+    if fun.SymbolDiffer == False : return
+    for d0 in range(fun.dim):
+        for d1 in range(d0, fun.dim):
+            if   fun.SymbolInteg:   Write123('IntegDer2', d0, d1)
+            elif fun.SymbolDiffer:  Write123('Hessian',   d0, d1)
+    return
 
 
 def WriteVarParam26 ( buf, param ) :
@@ -451,6 +442,8 @@ def WriteVarParam26 ( buf, param ) :
         Ubound = None
         Finitialize = '' #'0'
         AddGap = False
+        SymbolInteg  = ''
+        SymbolDiffer = ''
 
         fun = None
         parts = buf.split(';')
@@ -524,8 +517,17 @@ def WriteVarParam26 ( buf, param ) :
                             Data = part
                 elif part[0] == '=' :
                             smbFun = part[1:]
-                elif part.find('Int_smbFxx_2=False') == 0:
-                            fun.Int_smbFxx_2 = ''
+                elif part.find('SymbolicIntegration') == 0 \
+                  or part.find('SymbolInteg') == 0 \
+                  or part.find('Int_smbFxx_2') == 0 :         #  устарело
+                            SymbolInteg  = part.split('=')[1]
+                            if SymbolInteg == 'False' :  fun.SymbolInteg = False
+#                elif part.find('Int_smbFxx_2=False') == 0:          #  устарело
+ #                           fun.SymbolicIntegration = False
+                elif part.find('SymbolicDifferentiation') == 0 \
+                  or part.find('SymbolDiffer') == 0      :
+                            SymbolDiffer  = part.split('=')[1]
+                            if SymbolDiffer == 'False' :  fun.SymbolDiffer = False
         #        elif part.find('Coeff')==0 :
          #                   Coeff = part.split('=')[1][1:-1]      #  убираем кавычки
       #          elif part.find('Fun')==0 :
@@ -666,6 +668,9 @@ def WriteVarParam26 ( buf, param ) :
         if ReadFrom != '' and not ('ReadFrom' in dop_args): f_str += ', ReadFrom=' + ReadFrom
         if Data     != '' and not ('Data'     in dop_args): f_str += ', ' + Data
         if Finitialize != '' and not ('Finitialize' in dop_args): f_str += ', Finitialize=' + Finitialize
+        if SymbolInteg != '' : f_str += ', SymbolInteg=' + SymbolInteg
+        if SymbolDiffer != '' : f_str += ', SymbolDiffer=' + SymbolDiffer
+
 #       if smbFun != '' :  f_str += ', smbFun=\''+smbFun+'\', Coeff=\''+Coeff+'\''
         if dop_args != '' : f_str += dop_args
         f_str += ')'

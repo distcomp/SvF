@@ -71,7 +71,7 @@ def SvFstart19 ( Task ) :
 
 #    maxSigEst = 0           # оценка сигмы скольз. среднем
 
-    co.optFact = Factory(co.optFile, co.py_max_iter, co.py_tol)
+    co.optFact = Factory(co.optFile)
     print('co.optFactST', co.optFact)
 
     print ('')

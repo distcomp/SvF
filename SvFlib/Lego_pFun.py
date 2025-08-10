@@ -198,4 +198,35 @@ class pFun (BaseFun) :
         if self.param : return
         for i in range ( self.sizeP ) :  self.var[i].value = self.grd[i]
 
+    def SaveSol(self, fName=''):  ## OLD
+        #      self.var_to_grd()
+#        Prefix = SvF.Prefix
 
+ #       if SvF.printL > 0: print('Before SaveSol to ', fName, self.type)
+  #      if fName == '':
+   #             fName = Prefix + self.nameFun() + ".p.sol"
+    #    if SvF.printL > 0: print('SaveSol to ', fName, self.type)
+     #   try:
+      #      fi = open(fName, "w")
+       # except IOError as e:
+        #    print("Can''t open file: ", fName)
+         #   return
+
+        fi, fName = self.File_SaveSol('.p.sol', fName)
+        if not fi is None:
+            fi.write("%d" % self.dim + " %d" % self.PolyPow + " %d" % self.sizeP + '\n')
+
+            for d in range(self.dim):
+                fi.write('(' + self.A[d].name + '-' + str(self.A[d].min) + ')/' + str(self.A[d].ma_mi) + '\t')
+            fi.write(self.V.name + SvF.Prefix)  # Prefix + '\t#SvFver_62_poly\n'
+
+            for i in self.PolyR:
+                fi.write("\n" + str_val(self.grd[i]) + "\t" + str(self.pow[i][0]))  # 29
+                if self.dim == 2:
+                    fi.write("\t" + str(self.pow[i][1]))
+            fung = self.gClone(True)
+            gfName = fName.replace('.p.', '.')
+            fung.SaveSol(gfName)
+            fi.close()
+            if SvF.printL > 0: print("END of SaveSol to ", fName, self.type)
+        return

@@ -720,7 +720,7 @@ class Table (Object):
                         print ("No Column for", fld.src_name, "*****************************")
                         exit (-1)    
             self.KillField ('*')
-##            for fld in self.Flds : fld.Mprint()
+#            for fld in self.Flds : fld.Mprint()
 
             self.NoC = len(self.Flds)
             maxNoR = 50000;
@@ -732,7 +732,7 @@ class Table (Object):
             if self.FileType != 'mtr2' and self.FileType != 'matr2' :                   #  tbl
               for line in fi :
                 nums_row = line.split()
-           #     print ( 'F', nums_row[0] )
+#                print ( 'F', nums_row[0] )
                 if len(nums_row) == 0: continue
                 if nums_row[0] == '#END#':  break
                 if nums_row[0][0] == '#'    :  continue

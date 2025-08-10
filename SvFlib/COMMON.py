@@ -184,16 +184,12 @@ stab_file = 'tmp_stab_file.nl'
 stab_val_sub   = []
 stab_val_by_cv   = []
 
-py_max_iter = 50000    #
-py_tol = 1e-9  #  -11
+#py_max_iter = 50000    #
+#py_tol = 1e-9  #  -11
 #acceptable_tol
-py_warm_start_bound_push = 1e-6   #
-py_warm_start_mult_bound_push = 1e-6
-py_constr_viol_tol = 1e-4  ##1e-11
-#py_tol = 1e-9
-#py_warm_start_bound_push = 1e-6
+#py_warm_start_bound_push = 1e-6   #
 #py_warm_start_mult_bound_push = 1e-6
-#py_constr_viol_tol = 1e-4
+#py_constr_viol_tol = 1e-4  ##1e-11
 
 path_SvF   = ''     #   "/home/sokol/C/_SvF/"
 path_SvF_Lib = ''   #   /home/sokol/D/SvF/SvFlib/

@@ -114,25 +114,37 @@ class Tensor (Object) :
         fi.close()
         return True
 
-    def SaveSol(self, fName=''):  ## OLD
-            if SvF.printL > 0: print('Before SaveSol to ', fName, self.type)
-            if fName == '':   fName = SvF.Prefix + self.nameFun() + ".sol"
-            if SvF.printL > 0: print('SaveSol to ', fName, self.type)
+    def File_SaveSol(self, ext='.sol', fName=''):      #  25.07
+#            print('Before SaveSol to ', fName, self.type)
+            if fName == '':   fName = SvF.Prefix + self.nameFun() + ext
             try:
                 fi = open(fName, "w")
             except IOError as e:
                 print("Can''t open file: ", fName)
-                return
+                return None, None
+            return fi, fName
 
-            if self.dim == 0:
-                fi.write(self.name + '\t#SvFver_70_tensor')
-                v = self.grdNaNreal()
-                fi.write( '\n' + str_val(v))
-            elif self.dim == 1:
-                fi.write(self.name + '[' + str(self.Sizes[0]) + ']\t#SvFver_70_tensor')
-                for i in range (self.Sizes[0]) :
-                    v = self.grdNaNreal(i)
-                    fi.write( '\n' + str_val(v) )
+
+    def SaveSol(self, fName=''):  ## OLD
+#            if SvF.printL > 0: print('Before SaveSol to ', fName, self.type)
+ #           if fName == '':   fName = SvF.Prefix + self.nameFun() + ".sol"
+  #          if SvF.printL > 0: print('SaveSol to ', fName, self.type)
+   #         try:
+    #            fi = open(fName, "w")
+     #       except IOError as e:
+      #          print("Can''t open file: ", fName)
+       #         return
+            fi, fName = self.File_SaveSol('.sol', fName)
+            if not fi is None:
+                if self.dim == 0:
+                    fi.write(self.name + '\t#SvFver_70_tensor')
+                    v = self.grdNaNreal()
+                    fi.write( '\n' + str_val(v))
+                elif self.dim == 1:
+                    fi.write(self.name + '[' + str(self.Sizes[0]) + ']\t#SvFver_70_tensor')
+                    for i in range (self.Sizes[0]) :
+                        v = self.grdNaNreal(i)
+                        fi.write( '\n' + str_val(v) )
 
 
     def FillNaN(self):

@@ -48,6 +48,7 @@ class BaseFun (Tensor) :
 
         #    self.smbF = ''
         self.dim = len (self.A)  #-1
+
         self.param    = param #False
         self.DataReadFrom = DataReadFrom
         self.NoR   = 0
@@ -57,14 +58,17 @@ class BaseFun (Tensor) :
         self.PolyPow  = Degree # -1            # степень полинома
         if self.PolyPow != -1:  self.type  = 'p'
 
-        self.Int_smbFxx_2 = None
+    #    self.Int_smbFxx_2 = None
+        self.SymbolInteg  = True      # SymbolicIntegration     = True            # for smb   for dim=1 yet
+        self.SymbolDiffer = True
+        self.ArgNormalition = True    #False
 
  #       self.domain_ = py.Reals
         if SvF.Compile :  return
 
         if isnotNone ( Domain ) : self.domain = Domain.domain
 
-        if   self.type == 'g':             pass
+        if     self.type == 'g':           pass
         elif   self.type == 'p':           pass
         elif   self.type == 'smbFun':      pass
         elif self.type == 'SPWL':          self.type = 'gSPWL'
@@ -112,7 +116,6 @@ class BaseFun (Tensor) :
  #       self.DataReadFrom = DataReadFrom
 #        self.param    = param #False
         self.Finitialize = Finitialize
-        self.ArgNormalition = False
 
 #        self.sizeP = PolySize ( self.dim, self.PolyPow )
         if SvF.Compile :  return    #####################################
@@ -954,7 +957,7 @@ class BaseFun (Tensor) :
             else:
               return (  bets[0]**4 * self.INTxx ( )
                       + bets[1]**4 * self.INTyy ( )
-                      + bets[0]**2 * bets[1]**2 * self.INTxy ( )
+                      + bets[0]**2 * bets[1]**2 * self.INTxy ( )                     #      * 2  ????
                      )   
 
     def ComplDer1 ( self, bets ) :
@@ -1169,21 +1172,24 @@ class BaseFun (Tensor) :
 
     def SaveSol ( self, fName='' ) :                ## OLD
 #      self.var_to_grd()
-      Prefix = SvF.Prefix
+#      Prefix = SvF.Prefix
       
-      if SvF.printL > 0 : print ('Before SaveSol to ', fName, self.type)
-      if fName == '' :
-          if  self.type[0] == 'g'  or self.type == 'smbFun':   # 2505    # 2407
-                                fName = Prefix +self.nameFun() + ".sol"
-          else                : fName = Prefix +self.nameFun() + ".p.sol"
-      if SvF.printL > 0 : print ('SaveSol to ', fName, self.type)
-      try:
-            fi = open ( fName, "w")
-      except IOError as e:
-            print ("Can''t open file: ", fName)
-            return
+#      if SvF.printL > 0 : print ('Before SaveSol to ', fName, self.type)
+ #     if fName == '' :
+  #    #    if  self.type[0] == 'g'  or self.type == 'smbFun':   # 2505    # 2407
+   #                             fName = Prefix +self.nameFun() + ".sol"
+    #  #    else                : fName = Prefix +self.nameFun() + ".p.sol"
+     # if SvF.printL > 0 : print ('SaveSol to ', fName, self.type)
+      #try:
+       #     fi = open ( fName, "w")
+#      except IOError as e:
+ #           print ("Can''t open file: ", fName)
+  #          return
 
-      if self.type[0] == 'g'  or self.type == 'smbFun':   # 2505
+#      if self.type[0] == 'g'  or self.type == 'smbFun':   # 2505
+      fi, fName = self.File_SaveSol('.sol', fName)
+      if not fi is None:
+#      if True :
           for a in self.A : fi.write ( a.name + '\t' )
           fi.write ( self.V.name )
           if   self.dim==0 :
@@ -1225,6 +1231,8 @@ class BaseFun (Tensor) :
 #                      fi.write( self.prep_val ( self.grd[i,j,k], 1 ) + '\t' )
                   fi.write ( '\n' )
 #      elif self.type == 'smbFun':          pass
+
+      """   
       else :                                                    # POLY
         fi.write ( "%d" % self.dim + " %d" % self.PolyPow + " %d" % self.sizeP + '\n' )
 
@@ -1239,6 +1247,8 @@ class BaseFun (Tensor) :
         fung = self.gClone(True)
         gfName = fName.replace ('.p.', '.')
         fung.SaveSol(gfName)
+    
+      """
       fi.close()
       if SvF.printL > 0 : print ("END of SaveSol to ", fName, self.type)
 

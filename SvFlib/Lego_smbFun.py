@@ -5,19 +5,26 @@ import sympy as sy
 from itertools import combinations_with_replacement
 
 class smbFun (BaseFun) :
-    def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 0, DataReadFrom = '',Data=[], Type='smbFun',
-                  Domain = None, smbFun = '' ):
+    def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 0, DataReadFrom = '',Data=[], Type='smbFun', Domain = None,
+                  SymbolInteg=True, SymbolDiffer =True ) :     #, smbFun = '' ):
         BaseFun.__init__(self, Vname, As, param, Degree, Finitialize, DataReadFrom, Data, Type, Domain)
 
         if SvF.Compile : return    #  ???
-        self.FunStr = smbFun
+#        self.FunStr = smbFun
         self.smbF   = None
-        self.smbFx  = None
+#        self.smbFx  = None
+ #       self.smbFy  = None
         self.smbFxx = None
-        self.smbFy  = None
         self.smbFyy = None
         self.smbFxy = None
-#        self.Int_smbFxx_2 = None   into Fun
+        self.Int_smbFxx_2 = None
+        self.Int_smbFyy_2 = None    #  not ready yet
+        self.Int_smbFxy_2 = None    #  not ready yet
+        self.SymbolInteg  = SymbolInteg
+        self.SymbolDiffer = SymbolDiffer
+
+        self.Hessian = [[None for _ in range(self.dim)] for _ in range(self.dim)]
+        self.IntegDer2 = [[None for _ in range(self.dim)] for _ in range(self.dim)]
 
 
     def calcNDTparam(self) :
@@ -102,39 +109,69 @@ class smbFun (BaseFun) :
                        (self.derivY(self.NormStep_ma_mi([x, y]))) ** 2
                        for y in self.A[1].NodS for x in self.A[0].NodS) / self.Nyy
     """
-    def INTxx ( self, set = None ) :
-        if self.dim == 1 :
-            if set is None :  setA0 = self.A[0]
-            else :            setA0 = set
-            if self.Int_smbFxx_2 is None :
-            #                   ( self.derivXX ( [x*self.A[0].step/self.A[0].ma_mi] ) )**2
-                return  sum (  self.fneNDT(x) * self.f_gap(x) *
-                          ( self.derivXX(self.NormStep_ma_mi([x]) ) ) ** 2
-                        for x in setA0.NodS ) / self.Nxx # * setA0.ma_mi ** 4  # Nxx   !!!!!!!!!!!!
-            #            for x in self.A[0].NodS ) / self.Nxx * self.A[0].ma_mi ** 4  # !!!!!!!!!!!!
-            #            for x in range(0, min(self.A[0].Ub, RB) + 1) ) / self.Nxx * self.A[0].ma_mi ** 4  # !!!!!!!!!!!!
 
-            else :
-                return (self.Int_smbFxx_2 ([self.A[0].max]) - self.Int_smbFxx_2([self.A[0].min])) \
-                    * self.A[0].ma_mi**3
-        else:
-            return  sum (  self.fneNDT(x,y) * self.f_gap(x,y) *
-             #        ( self.derivXX ( [x*self.A[0].step/self.A[0].ma_mi, y*self.A[1].step/self.A[1].ma_mi] ) )**2
-                           (self.derivXX(self.NormStep_ma_mi([x,y]))) ** 2
-                    for y in self.A[1].NodS    for x in self.A[0].NodS )  /self.Nxx
+    def DERIV2(self, d0, d1, argxy):   # x, y):
+            if self.SymbolDiffer:
+                return self.Hessian[d0][d1](self.NormStep_ma_mi(argxy)) #[x, y]))
+            else:
+                arg = np.array(self.NormStep_ma_mi(argxy))  #[x, y]))    #  np.array    for + -
+                if self.ArgNormalition:   step = [a.step/a.ma_mi for a in self.A]
+                else:                     step = [a.step for a in self.A]
 
-    def INTyy ( self ) :
-        return  sum (  self.fneNDT(x,y) * self.f_gap(x,y) *
-                       (self.derivYY(self.NormStep_ma_mi([x, y]))) ** 2
- #                      ( self.derivYY ( [x*self.A[0].step/self.A[0].ma_mi, y*self.A[1].step/self.A[1].ma_mi] ) )**2
-#                     ( self.derivYY ( x, y ) )**2
-                    for y in self.A[1].NodS    for x in self.A[0].NodS ) /self.Nyy
-    def INTxy ( self ) :
-        return  sum (  self.fneNDT(x,y) * self.f_gap(x,y) *
-                       (self.derivXY(self.NormStep_ma_mi([x, y]))) ** 2
-   #                   ( self.derivXY ( [x*self.A[0].step/self.A[0].ma_mi, y*self.A[1].step/self.A[1].ma_mi] ) )**2
-#                     ( self.derivXY ( x, y ) )**2
-                    for y in self.A[1].NodS    for x in self.A[0].NodS ) /self.Nxy
+                if d0==0 and d1==0 :
+                    if self.dim != 1:  step[1] = 0
+                    return  ( self.smbF(arg-step) -2*self.smbF(arg) +self.smbF(arg+step) )/step[0]**2
+                elif d0==1 and d1==1 :
+                    step[0] = 0
+                    return  ( self.smbF(arg-step) -2*self.smbF(arg) +self.smbF(arg+step) )/step[1]**2
+                else:      #if d0==0 and d1==1 :
+                    step1 = [step[0],-step[1]]
+                    return  ( self.smbF(arg+step)+self.smbF(arg-step)-self.smbF(arg+step1)-self.smbF(arg-step1) ) \
+                        / step[0] / step[1] * .25
+
+    def INT2D ( self, d0, d1 ) :
+            if  self.SymbolInteg:
+                if self.ArgNormalition:
+                    arg_min = [0. for i in range(self.dim)]
+                    arg_max = [1. for i in range(self.dim)]
+                    return self.IntegDer2[d0][d1](arg_max) - self.IntegDer2[d0][d1](arg_min)
+                else :
+                    arg_min = [self.A[i].min for i in range(self.dim)]
+                    arg_max = [self.A[i].max for i in range(self.dim)]
+                    ret = (self.IntegDer2[d0][d1](arg_max) - self.IntegDer2[d0][d1](arg_min) ) \
+                           * self.A[d0].ma_mi ** 2 * self.A[d1].ma_mi ** 2       #  произв **2  сжатие
+                    for i in range(self.dim):  ret = ret / self.A[i].ma_mi        #  на объем
+                    return ret
+            else:                               #if self.SymbolDiffer True   and False
+                ret = 0;  num = 0
+                if self.dim == 1 :
+                    for x in self.A[0].NodS:
+                        if self.fneNDT(x) * self.f_gap(x) !=0:
+                            num += 1
+                            ret += self.DERIV2 ( d0,d1,[x] ) ** 2
+                elif self.dim == 2:
+                    for x in self.A[0].NodS :
+                      for y in self.A[1].NodS :
+                        if self.fneNDT(x,y) * self.f_gap(x,y) != 0:
+                            num += 1
+                            ret += self.DERIV2 ( d0,d1,[x, y] ) ** 2
+
+                ret = ret / num
+                if self.ArgNormalition == False:
+                    ret *= self.A[d0].ma_mi **2  * self.A[d1].ma_mi **2        #  сводим к [0,1]
+                return ret
+      #      else :
+
+    def ComplDer2(self, bets):
+        ret = 0
+        for d0 in range(self.dim) :
+            for d1 in range(d0, self.dim) :
+                if d0 == d1 :
+                    ret += bets[d0] ** 2 * bets[d1] ** 2 * self.INT2D(d0,d1)
+                else :
+                    ret += bets[d0] ** 2 * bets[d1] ** 2 * self.INT2D(d0,d1) * 2
+        return ret
+
 
     def Ftbl ( self, n ) :
         Args = [a.dat[n] for a in self.A]

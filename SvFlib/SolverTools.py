@@ -18,7 +18,7 @@ import pyomo   #      05.10.24
 
 from ssop_session import *
 
-def Factory (optFile , py_max_iter, py_tol ):
+def Factory (optFile):
     opt = None
     if optFile is None or SvF.RunMode[0] == 'L' or SvF.RunMode[2] == 'L' :
         opt = SolverFactory(SvF.LocalSolverName)  #'server' :  SvF.LocalSolverName
