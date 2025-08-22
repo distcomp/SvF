@@ -1,0 +1,27 @@
+CVNumOfIter  = 1			# максимальное кол-во итераций поиска весов регуляризации
+
+Select 	*  from  Spring5.dat 	# считывание всех столбцов из файла  Spring5.dat
+
+SET:	t  = [ , ,  0.025]		# множество t от min до max значений t из файла с шагом 0.025
+
+VAR:    x ( t )	<1.5; >-0.1  	  	# ограниченная неизвестная функция, заданная на множестве t
+
+CV:     CV_NumSets=21			# кол-во подмножеств для процедуры кросс-валидации
+OBJ:   	x.MSD() + x.Complexity(Penal[0]) # целевая функция
+  
+#***************     SDz
+
+SET:	t21  = [ , ,  0.175]; Data ='t'	# множество t исходное 
+Param:  x_f (t21)
+sqrt_x_f__x = sqrt ( sum (  (fx_f(va)-fx(va))**2 for va in x_f.A[0].Val  )/SvF.curentTabl.NoR) / x.V.sigma*100
+print ('\nSDz=  ',sqrt_x_f__x,   'NoR', SvF.curentTabl.NoR)	
+SvF.addStrToRes = 'SDz= ' + str(sqrt_x_f__x)
+
+Reg = Polyline ([-1,-1,2.5,2.5,-1], [-0.1,1.5,1.5,-0.1,-0.1], None, 'Region')
+Draw	Region;LC:green;LSt:dashed x;LC:r;LSt:solid 		# отображение найденной функции x(t)
+
+EOF					# конец файла, все что дальше опускается
+
+
+
+

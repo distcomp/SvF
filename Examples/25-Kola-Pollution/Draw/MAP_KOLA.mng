@@ -1,0 +1,52 @@
+SvF.DataPath = 'Draw/'
+
+
+TShore = Select * from SHORE.txt as TShore			# SHORE
+xx, yy = LatLonToAzimut ( TShore.Y[:], TShore.X[:] )
+#xx, yy = LatLonToAzimut ( TShore.Y, TShore.X )
+Shore = Polyline (xx, yy, None, 'Shore' )
+
+TTown = Select * from TOWN.txt as TTown 			# TOWN
+xx, yy = LatLonToAzimut ( TTown.Y[:], TTown.X[:] )
+Town = Polyline (xx, yy, None, 'Town' )
+
+TBrus = Select * from BORDER_R.txt as TBrus 		# BORDER
+xx, yy = LatLonToAzimut ( TBrus.Y[:], TBrus.X[:] )
+Brus = Polyline (xx, yy, None, 'Brus' )
+
+TBnor_fin = Select * from BORDER_F_N.txt as TBnor_fin 		
+xx, yy = LatLonToAzimut ( TBnor_fin.Y[:], TBnor_fin.X[:] )
+Bnor_fin = Polyline (xx, yy, None, 'Bnor_fin' )
+
+SvF.curentTabl  = None
+
+PARALx = [];  PARALy = []                                               # paral
+for y in range (66, 70+1):
+    if y%2 == 0:
+        for x in range (28, 38):
+            PARALy.append (y)
+            PARALx.append (x)
+    else:
+        for x in range (37, 27, -1):
+            PARALy.append (y)
+            PARALx.append (x)
+xx, yy = LatLonToAzimut ( PARALy, PARALx )
+PARAL = Polyline (xx, yy, None, 'PARAL' )
+
+MERIDx = [];  MERIDy = []                                               # MERID
+for x in range (28, 38):
+    if x%2 == 0:
+        for y in range (66, 72):
+#        for y in range (66, 71):
+            MERIDy.append (y)
+            MERIDx.append (x)
+    else:
+#        for y in range (70, 65, -1):
+        for y in range (71, 65, -1):
+            MERIDy.append (y)
+            MERIDx.append (x)
+xx, yy = LatLonToAzimut ( MERIDy, MERIDx )
+MERID = Polyline (xx, yy, None, 'MERID' )
+
+
+
