@@ -119,7 +119,8 @@ class Set (Object):
         self.NodSm  = range(0, self.Ub)
         self.mmNodS  = range(2, self.Ub + 1)
         self.Val = []
-        for i in self.NodS : self.Val.append ( self.min*((float(self.Ub)-i)/float(self.Ub)) +self.max*(i/float(self.Ub)) )
+        for i in self.NodS : self.Val.append ( ( self.min*(self.Ub-i) + self.max*i ) / float(self.Ub) )
+#        for i in self.NodS : self.Val.append ( self.min*((float(self.Ub)-i)/float(self.Ub)) +self.max*(i/float(self.Ub)) )
         self.FlNodS   = self.Val                 # myrange(self.min,   self.max,    self.step)
         self.mFlNodSm = self.FlNodS[1:-1]         # myrange(self.min+self.step, self.max-self.step, self.step)
         self.FlNodSm  = self.FlNodS[0:-1]        #myrange(self.min,           self.max-self.step, self.step)

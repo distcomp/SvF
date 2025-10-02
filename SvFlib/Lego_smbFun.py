@@ -6,7 +6,7 @@ from itertools import combinations_with_replacement
 
 class smbFun (BaseFun) :
     def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 0, DataReadFrom = '',Data=[], Type='smbFun', Domain = None,
-                  SymbolInteg=True, SymbolDiffer =True ) :     #, smbFun = '' ):
+                  SymbolInteg=False, SymbolDiffer =False, ArgNormalition =True ) :     #, smbFun = '' ):
         BaseFun.__init__(self, Vname, As, param, Degree, Finitialize, DataReadFrom, Data, Type, Domain)
 
         if SvF.Compile : return    #  ???
@@ -22,6 +22,8 @@ class smbFun (BaseFun) :
         self.Int_smbFxy_2 = None    #  not ready yet
         self.SymbolInteg  = SymbolInteg
         self.SymbolDiffer = SymbolDiffer
+        if self.SymbolInteg == True : self.SymbolDiffer = True   #25.10.02
+        self.ArgNormalition = ArgNormalition
 
         self.Hessian = [[None for _ in range(self.dim)] for _ in range(self.dim)]
         self.IntegDer2 = [[None for _ in range(self.dim)] for _ in range(self.dim)]

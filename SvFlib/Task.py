@@ -97,7 +97,7 @@ class TaskClass :
 
     def Draw (self, param ) :
         if SvF.Compile:  return
-        if len(param) == 0:
+        if len(param) == 0 or param[:1]=='*':
             for f in self.Funs:
                 if f.type == 'tensor' : continue
                 if f.dim > 0: DrawComb(f.name)

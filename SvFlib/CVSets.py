@@ -9,7 +9,8 @@ from Tools  import *
 
 import COMMON as SvF
 
-def CVmakeSets ( NoR =0, CV_NumSets =7, CV_Unit=1,  CV_Margin=0 ) :  #, CV_Border=None ) :
+def CVmakeSets ( NoR =0, CV_NumSets =7, CV_Unit=1,  CV_Margin=0, NumOfIter=None ) :  #, CV_Border=None ) :
+    if not isnotNone(NumOfIter):  SvF.CVNumOfIter = NumOfIter
     if type(CV_Unit) is type(1):
         if NoR == 0:
             if SvF.curentTabl is None:
@@ -49,7 +50,7 @@ def CVmakeSets ( NoR =0, CV_NumSets =7, CV_Unit=1,  CV_Margin=0 ) :  #, CV_Borde
     SvF.TrainingSets = [[] for _ in range(CV_NumSets)]
     for s in range(CV_NumSets):
         SvF.TrainingSets[s] = Substract (range(NoR), SvF.notTrainingSets[s])  #[x for x in range(NoR) if x not in ValidationSets[set] ]
-    print ('********************** TrainingSets ***',SvF.TrainingSets)
+#    print ('********************** TrainingSets ***',SvF.TrainingSets)
 
     SvF.CV_NoRs.append(NoR)
     print ('CVmakeSets    SvF.CV_NoRs', SvF.CV_NoRs, CV_NumSets)

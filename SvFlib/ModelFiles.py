@@ -272,7 +272,7 @@ def wrs(str):
 
 
 def to_logOut (aaa) :
-        if SvF.LogOutFile is None :  SvF.LogOutFile = open('SvF_LogOut.txt', 'w')
+        if SvF.LogOutFile is None :  SvF.LogOutFile = open('SvF_Log.Out', 'w')
         st = str(aaa)
         print ('LogOutFile' + st)
         SvF.LogOutFile.write( '\n'+st )
@@ -294,7 +294,7 @@ def startStartModel () :
     Swr('import COMMON as SvF')
     Swr('SvF.path_SvF = path_SvF')
     Swr('SvF.tmpFileDir = SvF.path_SvF + \'TMP/\'')
-
+#    Swr('print(SvF.resF, len (SvF.Penalty), SvF.Penalty)')
     Swr('from CVSets import *')
     Swr('from Table  import *')
     Swr('from Task   import *')

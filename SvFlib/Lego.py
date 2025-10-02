@@ -59,9 +59,9 @@ class BaseFun (Tensor) :
         if self.PolyPow != -1:  self.type  = 'p'
 
     #    self.Int_smbFxx_2 = None
-        self.SymbolInteg  = True      # SymbolicIntegration     = True            # for smb   for dim=1 yet
-        self.SymbolDiffer = True
-        self.ArgNormalition = True    #False
+        self.SymbolInteg  = False      # Для передачи в MakeMod...
+        self.SymbolDiffer = False
+#        self.ArgNormalition = True    #False
 
  #       self.domain_ = py.Reals
         if SvF.Compile :  return
@@ -250,7 +250,7 @@ class BaseFun (Tensor) :
                 a.dat = np.delete(a.dat, range(self.NoR, a.dat.shape[0]))
 
         self.sR = range(self.NoR)
-        print('After Cleaning' ,self.name, '->self.NoR =', self.NoR)
+ #       print('After Cleaning' ,self.name, '->self.NoR =', self.NoR)
 
 
     """""
@@ -1324,7 +1324,7 @@ class BaseFun (Tensor) :
 #                       print self.grd[0,0].value, self.grd[self.A[0].Ub,self.A[1].Ub].value
             fi.close()
             if SvF.printL > 0 : print ("End of Fun.ReadSol from", fName)
-            print ("End of Fun.ReadSol from", fName)
+#            print ("End of Fun.ReadSol from", fName)
             return
 ##############################################################################
       if self.type[0] == 'g' :         # 2407

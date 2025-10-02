@@ -6,11 +6,23 @@ from Table import *
 
 def splitByEq (buf ):
     buf_sp = buf.split('=')
+    if buf[-1:] == ';' : buf = buf[:-1]
     if len (buf_sp) == 1:  return buf_sp[0], None
     else:                  return buf_sp[0], buf_sp[1]
 
+def WriteRUNoption (buf):
+        if len(buf)==0: return
+        if buf[-1:] == ';': buf = buf[:-1]
+        buf = buf.replace('NumOfIter', 'CVNumOfIter')
+        opt = '; SvF.'.join(buf.split(';'))
+        Swr('SvF.'+opt)
+
 
 def WriteCV(buf):
+            buf = buf.replace ('NumOfSets','CV_NumSets')
+            buf = buf.replace ('Unit','CV_Unit')
+            buf = buf.replace ('GroupBy','CV_Unit')
+            buf = buf.replace ('Margin','CV_Margin')
             arg = ','.join(buf.split(';'))
             Swr('CVmakeSets ( ' + arg + ' )')
 #            Swr('make_CV_Sets ( ' + arg + ' )')
@@ -62,6 +74,8 @@ def Sets_add ( all_Sets, from_ ) :    # пополняет из from_,  если
 
 
 def WriteSelectTable(leftName, Fields, FileName, AsName, where):  #  запись в файл
+    FileName = FileName.replace('\'', '')
+    FileName = FileName.replace('\"', '')
     if AsName == '': AsName = 'curentTabl'
     if where != '':
         args = ''
@@ -79,6 +93,7 @@ def WriteSelectTable(leftName, Fields, FileName, AsName, where):  #  запис�
         Swr('    return (' + where + ')')
     txt = ''
     if leftName != '': txt += leftName + ' = '
+    else             : txt += AsName + ' = '
     txt += 'Table ( \'' + FileName + '\''
     txt += ',\'' + AsName + '\''
     txt += ',\'' + Fields + '\''
@@ -111,7 +126,9 @@ def WriteTable30(buf):  #  разбор Table
 
 
 def WriteSelect30(buf):  ##  разбор  Select
+    buf = buf.replace ('*from','* from')
     print (buf)
+
     leftName, Fields, FileName, AsName, where = ParseSelect30 ( buf )
     WriteSelectTable( leftName, Fields, FileName, AsName, where )
     return
@@ -288,7 +305,10 @@ def make_Polynome (smbF, fun) :             #  Polynome (6, c, X, V) ###########
 #        WriteVarParam26 ( coef + '[' + str(degr+1) + ']' , False)
  #       to_logOut('Var:  ' + coef + '[' + str(degr+1) + '] was added')
 
-    return smbF[0:beg]+pol+smbF[end+1:]
+#    return smbF[0:beg]+pol+smbF[end+1:]
+    smbF = smbF[0:beg] + pol + smbF[end + 1:]
+    smbF = smbF.replace('[', '(').replace(']', ')')  # Заменяем  []  ->  ()              # 25.10
+    return smbF
 
 
 
@@ -334,9 +354,11 @@ def make_Fourier (smbF, fun) :        # Fourier (t, 5, T, c)
     if getFun (coef) is None :         #  coef  is not defined
         WriteVarParam26 ( coef + '[' + str(ncoef) + ']' , False)
         to_logOut('Var:  ' + coef + '[' + str(ncoef) + '] was added')
+#    return  pars.join()
+    smbF = pars.join()
+    smbF = smbF.replace('[', '(').replace(']', ')')  # Заменяем  []  ->  ()              # 25.10
+    return smbF
 
-#    print (pars.join())
-    return  pars.join()
 
 def add_py_to_fun (f_txt):          # добавляем к функциям py.
     pars = parser ( f_txt )
@@ -360,7 +382,7 @@ def make_smbFun(smbF, fun):
         variables = sy.symbols(fun.A[0] + ',')
     else:
         variables = sy.symbols(fun.A[0] + ',' + fun.A[1])
-    smbF = smbF.replace('[', '(').replace(']', ')')  # Заменяем  []  ->  ()
+#    smbF = smbF.replace('[', '(').replace(']', ')')  # Заменяем  []  ->  ()   25.10
 
     def Write_def_smbFun(f_name, f_txt, d1=0, d2=0):
         if f_txt is None : return
@@ -444,6 +466,7 @@ def WriteVarParam26 ( buf, param ) :
         AddGap = False
         SymbolInteg  = ''
         SymbolDiffer = ''
+        ArgNormalition = ''
 
         fun = None
         parts = buf.split(';')
@@ -465,10 +488,11 @@ def WriteVarParam26 ( buf, param ) :
                 part = part.replace(' ','')
                 if part == '' :   continue
                 up_part = part.upper()
-                print('PART:', part, up_part)
+                print('PART:', part)
                 pars = parser ( part )
          #       pars.myprint()
-                print ('PART:', part )
+
+                print ('PART:', part, part.find('\\inn') )
         #        print ('PART1{:', pars.items[1].part )
 
                 if i==0 :                                       #  Функция VAR:    x ( t, Degree=8 )
@@ -521,13 +545,15 @@ def WriteVarParam26 ( buf, param ) :
                   or part.find('SymbolInteg') == 0 \
                   or part.find('Int_smbFxx_2') == 0 :         #  устарело
                             SymbolInteg  = part.split('=')[1]
-                            if SymbolInteg == 'False' :  fun.SymbolInteg = False
+                            if SymbolInteg == 'True' :  fun.SymbolInteg = True
 #                elif part.find('Int_smbFxx_2=False') == 0:          #  устарело
  #                           fun.SymbolicIntegration = False
                 elif part.find('SymbolicDifferentiation') == 0 \
                   or part.find('SymbolDiffer') == 0      :
                             SymbolDiffer  = part.split('=')[1]
-                            if SymbolDiffer == 'False' :  fun.SymbolDiffer = False
+                            if SymbolDiffer == 'True' :  fun.SymbolDiffer = True
+                elif part.find('ArgNormalition') == 0:
+                            ArgNormalition = part.split('=')[1]
         #        elif part.find('Coeff')==0 :
          #                   Coeff = part.split('=')[1][1:-1]      #  убираем кавычки
       #          elif part.find('Fun')==0 :
@@ -562,6 +588,8 @@ def WriteVarParam26 ( buf, param ) :
                             num_arg = fun_args.index(args)
                             fun_args[num_arg] = SetOrDom
                             fun_args_str = ','.join(fun_args)
+                        elif args == f_name and SetOrDom.find('[')==0:              #  W ∈ [Wmin, Wmax]   25.10
+                            Lbound, Ubound = SetOrDom[1:-1].split(',')
                         else:
                             print('**************** Cant understand :', part)
                             exit(-1)
@@ -670,6 +698,7 @@ def WriteVarParam26 ( buf, param ) :
         if Finitialize != '' and not ('Finitialize' in dop_args): f_str += ', Finitialize=' + Finitialize
         if SymbolInteg != '' : f_str += ', SymbolInteg=' + SymbolInteg
         if SymbolDiffer != '' : f_str += ', SymbolDiffer=' + SymbolDiffer
+        if ArgNormalition != '' : f_str += ', ArgNormalition=' + ArgNormalition
 
 #       if smbFun != '' :  f_str += ', smbFun=\''+smbFun+'\', Coeff=\''+Coeff+'\''
         if dop_args != '' : f_str += dop_args
@@ -1071,7 +1100,7 @@ def ParseEQUATION ( equation, all_Sets, Mode = 'EQ' ) :
         dif_minus, dif_plus  = eqPars.dif1 ( dif_minus, dif_plus, all_Sets )
         dif_minus, dif_plus  = eqPars.dif2 ( dif_minus, dif_plus, all_Sets )
         eqPars.summa(all_Sets)
-        print ('555', eqPars.join())
+ #       print ('555', eqPars.join())
         integral_Sets = eqPars.integral( all_Sets )                  # лучше оставить последним - там всякие for и sum
         equation = eqPars.join()
         if SvF.printL : print ('END PARSE', equation)

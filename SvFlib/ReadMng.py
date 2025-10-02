@@ -122,6 +122,8 @@ def ReadMng ( ) :
      buf = UTF8replace(buf, '√', 'sqrt')
      buf = UTF8replace(buf, '∙', '*')
      buf = UTF8replace(buf, '·', '*')   #  другая точка
+     buf = UTF8replace(buf, '≥', '>=')# ≥
+     buf = UTF8replace(buf, '≤', '<=')#
 
      if not SvF.UseGreek :
         buf = UTF8replace(buf, 'τ', 'tau1')       #  tau   - не ест Pioma
@@ -354,7 +356,7 @@ def ReadMng ( ) :
     else  : old_qlf = ''
     glfCase = qlf
     Q = qlf.upper()
-    if Q[-1] == ':' :  old_qlf = Q   # if Q in ['GRID:','VAR:','PARAM:','EQ:', 'DEF:','CODE:', 'OBJ:', 'Set:', Penalty] :
+    if Q[-1] == ':' :  old_qlf = Q   # if Q in ["SELECT:",'GRID:','VAR:','PARAM:','EQ:', 'DEF:','CODE:', 'OBJ:', 'Set:', Penalty] :
     printS  (Q+' |')
 
 #    print  (Q+'|', ord(Q[0]))
@@ -405,6 +407,8 @@ def ReadMng ( ) :
     elif Is(Q, "SetStartDir") :
                     os.chdir(SvF.startDir);
     elif Is(Q, "DataLineWidth"): print ( '*********************** use DLW' );  exit (-1)  ##########################
+    elif Is(Q, "SELECT:") :
+        WriteSelect30(Treat_FieldNames('Select '+buf))
 
     elif(Is(Q, "GRID:") or
          Is(Q, "SET:")  ) :
@@ -440,7 +444,9 @@ def ReadMng ( ) :
  #                       SvF.Compile = False
                         return Task
 
-    elif Is(Q, 'CV:'):  WriteCV (Treat_FieldNames(buf))
+    elif Is(Q, 'CV:'):    WriteCV (Treat_FieldNames(buf))
+    elif Is(Q, 'DRAW:'):  Swr('Task.Draw ( \'' + buf + '\' )')
+    elif Is(Q, 'RUN:'):   WriteRUNoption (buf)
 
     elif Is(Q, "MakeSets_byParam") :                #  out of date      24-12-26
             args = buf.split(' ');  #args[0] = '\''+ args[0] + '\''

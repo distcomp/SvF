@@ -45,9 +45,7 @@ buf = ""
 
 def SvFstart19 ( Task ) :
     full_start = time.time()
-#    print 'full_start',  full_start
     print ('\n\n\nStart SvFstart')
- #   print ('G3', Task.Funs[0].grd)
 
     if co.resF is None :   #  не считываем, но сохраняем
         co.resF = co.mngF[:co.mngF.rfind('.')] + '.res'  # RES file read
@@ -58,7 +56,8 @@ def SvFstart19 ( Task ) :
         Penal = co.Penalty
 ##        if co.printL : print ('co.lenPenalty', co.lenPenalty)
 
-        print('From File: ', co.resF)
+        print('From File: ', co.resF) #, len (co.Penalty), co.Penalty)
+
         try:
                 with (open(co.resF,'r') as f):
                     s = f.readline().strip().replace(',', ' ').replace('   ', ' ').replace('  ', ' ').replace(' ', ',')  #.split(', ')
@@ -68,6 +67,9 @@ def SvFstart19 ( Task ) :
                 print ("******* Can''t open RES file: ", co.resF)
                 if len (Penal) == 0 :  exit(-1)
         co.Penalty = Penal
+    # print (co.Penalty); exit(22)
+    co.Penalty = [0.1 if x is None else x for x in co.Penalty]
+
 
 #    maxSigEst = 0           # оценка сигмы скольз. среднем
 
