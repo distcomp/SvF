@@ -6,7 +6,8 @@ import COMMON as SvF            #   общий импорт
 import numpy as np
 
 class Object :
-    def __init__ ( self, name='', Otype='NoType' ): #, object=None) :   #
+#    def __init__ ( self, name='', Otype='NoType' ): #, object=None) :   #
+    def __init__ ( self, name, Otype='NoType' ): #, object=None) :   #  25.10.08
         self.name = name
         self.Otype = Otype
   #      print ('SSSSSSSSSS', self.name, self.Otype )

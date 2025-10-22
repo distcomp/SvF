@@ -208,7 +208,7 @@ class  parser:
         if lev_br > 0:
                 print ("*****************  Not enough )))))))) ****************  lev_br =", lev_br)
                 print('in', self.join())
-                self.myprint()
+        #        self.myprint()
                 exit (-1)
                                                         #######  СКОБКИ   для (,[,),] in etc - номера скобок и запятых
         for itn, it in enumerate(self.items) :                                          
@@ -265,7 +265,7 @@ class  parser:
 
     def integral ( self, all_Sets ) :       #        ∫( 0,ta,d(t)*mu(-r*t,ap) )     or    ∫( 0,ta,dt*mu(-r*t,ap) )
         integral_Sets = []
-        self.myprint()
+    #    self.myprint()
         int_type = 'int'
         p_int = self.find_type ( 'int' )          #
         if p_int == -1 :
@@ -367,109 +367,164 @@ class  parser:
             self.reparse_funs ( all_Sets )
             return
 
+        def dif1OLD(self, dif_minus, dif_plus, Sets):  # DIF 1      \d(t,H2O(t))
+            if self.text.find('\\d') == -1: return dif_minus, dif_plus
+            self.reparse_funs(Sets)
+            print('dif_beg', self.join())
+            if com.printL: print('DIF ' + com.SchemeD1[-1])
+            for itn, it in enumerate(self.items):
+                if it.type == '\\d':  # par = [ '\d',  '\d',  lev, ]
+                    args = self.Args(itn + 1)
+                    print('args', args)
+                    fun_name = args[1][:args[1].find('(')]
+                    #                print ('fun_nameFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', fun_name)
+                    if getFun(fun_name).type == 'p':  # Polynome
+                        #                   print ('pppppppppppp', getFun (fun_name).V.name)
+                        dif1 = fun_name + '.dF_dX' + args[1][args[1].find('('):]  ## 30g+
+                    #                dif1 = fun_name + '__f.dF_dX' + args[1][args[1].find('('):]
+                    #                    print (dif1)
+                    #                    1/0
+                    else:  # Set func
+                        gr_name = args[0]
+                        gr_name_step = gr_name  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        if gr_name == 'T':
+                            gr_name = 'T(x,t)'
+                            gr_name_step = 's' + gr_name_step  # !++++++++++++++++++++++++++++++++++++!!!!!!!!!!!!!!
 
+                        #                   print (args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')
+                        #                    plus_st  = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')  # t -> t+1
+                        #                   minus_st = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + gr_name + '__p.step)')  # t -> t+1
+                        plus_st = SubstitudeName(args[1], gr_name,
+                                                 '(' + gr_name + '+' + gr_name_step + '__p.step)')  # t -> t+1
+                        minus_st = SubstitudeName(args[1], gr_name,
+                                                  '(' + gr_name + '-' + gr_name_step + '__p.step)')  # t -> t+1
+                        print("gr_name", gr_name, 'plus_st', plus_st, 'minus_st', minus_st)
 
+                        for Sch in reversed(com.SchemeD1):
+                            #                        print ('                                                             ', gr_name, Sch)
+                            parts = Sch.split(' ')
+                            Scheme = parts[0]
+                            if len(parts) == 1:
+                                break
+                            elif parts[1] == gr_name:
+                                break
+                        if Scheme == 'Forward':
+                            dif1 = '(' + plus_st + '-' + args[1] + ')/' + gr_name_step + '__p.step'
+                            dif_minus.append(gr_name)
+                        elif Scheme == 'Central':
+                            dif1 = '(' + plus_st + '-' + minus_st + ')/' + gr_name_step + '__p.step *0.5'
+                            dif_minus.append(gr_name)
+                            dif_plus.append(gr_name)
+                        elif Scheme == 'Backward':
+                            dif1 = '(' + args[1] + '-' + minus_st + ')/' + gr_name_step + '__p.step'
+                            dif_plus.append(gr_name)
+                        #                        print ("Not implemented yet:   " + com.SchemeD1);  exit (-1)
+                        else:
+                            ##                   print('\n**********************com.SchemeD1', com.SchemeD1[-1])
+                            1 / 0
+                    it.part = '';
+                    it.type = ''
+                    for p in range(self.items[itn + 1].etc[0] + 1, self.items[itn + 1].etc[-1]):
+                        self.items[p].part = ''
+                    self.items[p - 1].part = dif1
+                    print('dif', itn, self.join())
+            #                    dif_minus.append ( gr_name)
+            self.reparse_funs(Sets)
+            ##        self.myprint()
+            #        1/0
+            print(self.join())
+            print('DIF END')
+            return dif_minus, dif_plus
 
-    def dif1  ( self, dif_minus, dif_plus, Sets ) :       #  DIF 1      \d(t,H2O(t))
+    def dif1  ( self, dif_minus, dif_plus, Sets ) :       #  DIF 1      \d(t,H2O(t))     25ю10ю09
         if self.text.find ('\\d') == -1: return  dif_minus, dif_plus
         self.reparse_funs ( Sets )
- ##       print (self.join())
-#        if self.find_type ( '\\d' ) == -1 :     return  dif_minus
-        if com.printL : print ('DIF '+ com.SchemeD1[-1])
+  #      print ('DIF '+ com.SchemeD1[-1])
         for itn, it in enumerate(self.items) :
             if it.type == '\\d' :                        # par = [ '\d',  '\d',  lev, ]
                 args = self.Args (itn+1)
-#                print (args)
+                gr_name = args[0]
+   #             print ('args', args)
                 fun_name = args[1][:args[1].find ('(')]
-#                print ('fun_nameFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', fun_name)
                 if getFun(fun_name).type == 'p' :                   # Polynome
- #                   print ('pppppppppppp', getFun (fun_name).V.name)
                     dif1 = fun_name + '.dF_dX'+ args[1][args[1].find ('('):]  ## 30g+
-    #                dif1 = fun_name + '__f.dF_dX' + args[1][args[1].find('('):]
-                #                    print (dif1)
-#                    1/0
                 else :                                                      # Set func
-                    gr_name = args[0]
- ##                   print (args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')
-                    plus_st  = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + gr_name + '__p.step)')  # t -> t+1
-                    minus_st = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + gr_name + '__p.step)')  # t -> t+1
-   ##                 print ('plus_st', plus_st, 'minus_st', minus_st)
+                    fun = getFun(fun_name)
+                    if fun.dim == 1 :
+                        dif1 = self.items[itn+4].part + '.by_x'
+                    elif fun.dim == 2 :
+                        for ia, a in enumerate(fun.A) :
+#                            print(a)
+                            if a == self.items[itn+2].part :
+                                if ia == 0 :  dif1 = self.items[itn+4].part + '.by_x'
+                                else       :  dif1 = self.items[itn+4].part + '.by_y'
+                    else:
+                        print ("Not ready yet :( ")
+                        exit (-99)
 
-                    for Sch in reversed(com.SchemeD1) :
-#                        print ('                                                             ', gr_name, Sch)
-                        parts = Sch.split(' ')
-                        Scheme = parts[0]
-                        if len(parts)== 1:   break
-                        elif parts[1] == gr_name: break
+                    for i in range(self.items[itn + 5].etc[0], self.items[itn + 5].etc[-1] + 1):
+                        dif1 += self.items[i].part
+#                    print('ddd', dif1)
+
+                    for Sch in reversed(com.SchemeD1) :  #   Надо отдать в каждую функцию   !!!!!!!!!!
+                            parts = Sch.split(' ')
+                            Scheme = parts[0]
+                            if len(parts)== 1:   break
+                            elif parts[1] == gr_name: break
                     if   Scheme == 'Forward' :
-                        dif1 = '(' + plus_st + '-' + args[1] + ')/'+gr_name+'__p.step'
-                        dif_minus.append(gr_name)
+                            dif_minus.append(gr_name)
                     elif Scheme == 'Central' :
-                        dif1 = '(' + plus_st + '-' + minus_st + ')/'+gr_name+'__p.step *0.5'
-                        dif_minus.append(gr_name)
-                        dif_plus.append(gr_name)
+                            dif_minus.append(gr_name)
+                            dif_plus.append(gr_name)
                     elif Scheme == 'Backward' :
-                        dif1 = '(' + args[1] + '-' + minus_st + ')/'+gr_name+'__p.step'
-                        dif_plus.append(gr_name)
-#                        print ("Not implemented yet:   " + com.SchemeD1);  exit (-1)
+                            dif_plus.append(gr_name)
                     else :
-     ##                   print('\n**********************com.SchemeD1', com.SchemeD1[-1])
-                        1 / 0
-                it.part = '';  it.type = ''
-                for p in range ( self.items[itn+1].etc[0]+1, self.items[itn+1].etc[-1] ) :
-                    self.items[p].part = ''
-                self.items[p-1].part = dif1
-#                    dif_minus.append ( gr_name)
+                            print('\n  Разностная схема *******************', com.SchemeD1[-1])
+                            exit(-44)
+                it.part = dif1;  #     it.type = ''
+                for p in range ( self.items[itn+1].etc[0], self.items[itn+1].etc[-1]+1 ) :   self.items[p].part = ''
+ #               print('dif', itn, self.join())
         self.reparse_funs ( Sets )
-##        self.myprint()
-#        1/0
-        if com.printL : print (self.join ())
-        if com.printL : print ('DIF END')
+        print ('DIF END  ',self.join ())
+#        print ('DIF END',dif_minus, dif_plus)
         return  dif_minus, dif_plus
-            
-    def dif2 ( self, dif_minus, dif_plus, Sets ) :       #  \d2(t,x(t))
-#        if self.find_type ( '\d2' ) == -1 :     return  dif_minus, dif_plus
-#        find_d2 = False
-#        for ip in range( len(self.items)-3 ) :
- #           if self.items[ip].part == 'd2' and self.items[ip+1].part == '/' and self.items[ip+2].part[0] == 'd' :
-  #              self.items[ip  ].part = '\d2'	                #  'd2' -> 'd2'
-   #             self.items[ip+1].part = '('                    #    /  ->  (
-    #            self.items[ip+2].part = self.items[ip+2].part[1:-1]   #   dt2 ->  t
-     #           self.items[ip+3].part = ','                    #   (   ->  ,
-      #          find_d2 = True
-       # if not find_d2 : return  dif_minus, dif_plus
-        #self.reparse_funs ( Sets )
 
-        if com.printL : print ('DIF2', self.join())
+    def dif2 ( self, dif_minus, dif_plus, Sets ) :       #  \d2(t,x(t))
+ #       print ('DIF2', self.join())
         for itn, it in enumerate(self.items) :
             if it.type == '\\d2' :                        # par =  '\d2',  '\d2',  lev,        (  etc ->  '(', 't', ',', 'x(t)', ')' ]
-#                    print '\nCur it', itn; it.myprint()
- #                   print self.Args (itn+1)
                     args = self.Args (itn+1)
                     gr_name = args[0]  
-  #                  print 'gr_name', gr_name
-####                    step = str( findSetByName ( Sets, gr_name ).step )    #  ищем в глоб и лок
-############## НЕ ПРОВЕРЕНО №№№№№№№№№№№№№№№№№№№№№№№№
-                    cop  = SubstitudeName ( args[1], gr_name, '('+gr_name+'+'+gr_name+'__p.step)' )   # t -> t+1
-                    copM = SubstitudeName ( args[1], gr_name, '('+gr_name+'-'+gr_name+'__p.step)' )   # t -> t-1
-                    dif2 = '(' + cop + '+' + copM + '-2*'+args[1]+ ')/'+gr_name+'__p.step**2'
-#                    step = str(findSetByName(Sets, gr_name).step)  # ищем в глоб и лок
- #                   cop = SubstitudeName(args[1], gr_name, '(' + gr_name + '+' + step + ')')  # t -> t+1
-  #                  copM = SubstitudeName(args[1], gr_name, '(' + gr_name + '-' + step + ')')  # t -> t-1
-   #                 dif2 = '(' + cop + '+' + copM + '-2*' + args[1] + ')/' + step + '**2'
-  ##                  print ('dif2:', dif2)
-                    it.part = '';  it.type = ''
-                    for p in range ( self.items[itn+1].etc[0]+1, self.items[itn+1].etc[-1] ) :
-#                        print self.items[p].part
-                        self.items[p].part = ''
-                    self.items[p-1].part = dif2
+#                    print ( '2@@gr_name', gr_name, args )
+                    fun_name = args[1][:args[1].find ('(')]
+                    fun = getFun(fun_name)
+                    if fun.dim == 1 :
+                        dif2 = self.items[itn+4].part + '.by_xx'
+                    elif fun.dim == 2 :
+                        for ia, a in enumerate(fun.A) :
+ #                           print(a)
+                            if a == self.items[itn+2].part :
+                                if ia == 0 :  dif2 = self.items[itn+4].part + '.by_xx'
+                                else       :  dif2 = self.items[itn+4].part + '.by_yy'
+                    else:
+                        print ("Not ready yet :( ")
+                        exit (-99)
+
+                    for i in range(self.items[itn + 5].etc[0], self.items[itn + 5].etc[-1] + 1):
+                        dif2 += self.items[i].part
+  #                  print('ddd', dif2)
+
+
+                    it.part = dif2;  # it.type = ''
+                    for p in range(self.items[itn + 1].etc[0], self.items[itn + 1].etc[-1] + 1):   self.items[p].part = ''
+
                     dif_minus.append ( gr_name)
                     dif_plus.append ( gr_name)
-                    if com.printL : print (self.join ())
+                    print (self.join ())
+      #              1/0
         self.reparse_funs ( Sets )
-#        self.myprint()        
-        if com.printL : print (self.join ())
-        if com.printL : print ('DIF2 END')
+        print ('DIF2 END ', self.join ())
+
         return  dif_minus, dif_plus
 
 

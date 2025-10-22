@@ -3,12 +3,15 @@ from Lego import *
 
 class CycleFun (Fun) :
     def __init__(self, Vname='', As=[], param=False, Finitialize=0, DataReadFrom='', Data=[], Domain=None, ReadFrom='', Period=0):
-        Fun.__init__(self, Vname, As, param, -1, Finitialize, DataReadFrom, Data, 'gCycle', Domain, ReadFrom)
+        Fun.__init__( self, Vname, As, param, -1, Finitialize, DataReadFrom, Data, 'gCycle', Domain, ReadFrom)
         if SvF.Compile: return  # ???
         self.Period = Period / self.A[0].step
         if Period == 0: self.Period = self.A[0].Ub
 
-    def interpol(self, lev, X, Y=0, Z=0):  # X,Y,Z  в шагах
+#    def interpol(self, lev, X, Y=0, Z=0):  # X,Y,Z  в шагах
+    def interpolNode(self, argNode, lev=1):  # argNode =[ X,Y,..]  в шагах
+            X = argNode[0]        #  на всякий случай, Х меняется
+#            X = copy(argNode[0])        #  на всякий случай, Х меняется
             if self.param or not SvF.Use_var:   gr = self.grd
             else:                               gr = self.var  # 29
             #       print ("Use", SvF.Use_var)

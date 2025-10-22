@@ -22,10 +22,10 @@ class Polyline (Object):
                 self.Y = Y
                 self.Z = Z
             elif type(X) == type ('abc') :
-                self.X =  SvF.curentTabl.getFieldData(X)
-                self.Y =  SvF.curentTabl.getFieldData(Y)
+                self.X =  SvF.currentTab.getFieldData(X)
+                self.Y =  SvF.currentTab.getFieldData(Y)
                 if not (Z is None) :
-                    self.Z = SvF.curentTabl.getFieldData(Z)
+                    self.Z = SvF.currentTab.getFieldData(Z)
 #            elif str(type(X)) == '<class \'range\'>' :
  #               self.X = X
   #              self.Y = Y

@@ -24,8 +24,8 @@ from Object    import *
 
 
 def getCurrentFieldData (f_name) :
-    if SvF.curentTabl is None: return None
-    return SvF.curentTabl.getFieldData (f_name)
+    if SvF.currentTab is None: return None
+    return SvF.currentTab.getFieldData (f_name)
 
 
 def ParseSelect30(buf):  ##  разбор  Select
@@ -60,7 +60,7 @@ def  Treat_FieldNames (raw_line) :
   #              print ('tb.name',tb.name, ' in ', raw_line)
                 if findNamePos(raw_line, tb.name ) < 0 : continue
                 tb_name = tb.name
-                if tb_name == 'SvF.curentTabl' : tb_name = 'curentTabl'    # ЗАПЛАТКА для обработки  SvF.curentTabl
+                if tb_name == 'SvF.currentTab' : tb_name = 'currentTab'    # ЗАПЛАТКА для обработки  SvF.currentTab
     #            print('\nTABB ' + raw_line, tb_name)
                 pars = parser (raw_line)
                 itn = 0
@@ -100,7 +100,7 @@ def joinTab(*Tabs):
 ## 30       SvF.Task.KillTbl(ret.name)  # kill the same name
 ##        SvF.Task.AddTbl(ret)
         ret.Add()
-        SvF.curentTabl = ret
+        SvF.currentTab = ret
         return ret
 
 
@@ -148,7 +148,7 @@ def joinTabBy(By, *Tabs):                #  TMo = joinTabBy ( 't', TMos, Spline 
 ## 30    SvF.Task.KillTbl(ret.name)  # kill the same name
 ##    SvF.Task.AddTbl(ret)
     ret.Add()
-    SvF.curentTabl = ret
+    SvF.currentTab = ret
     return ret
 
 
@@ -163,7 +163,7 @@ def appendTab(*Tabs):
         ret.NoR = ret.Flds[0].tb.size
         ret.sR = range (ret.NoR)
         ret.Add()
-        SvF.curentTabl = ret
+        SvF.currentTab = ret
         return ret
 
 
@@ -240,7 +240,7 @@ class Table (Object):
         self.con_list = []                            # list of arguments for
         self.where_condition = where_condition        #   where_condition
 
-        if self.name == '' : self.name = 'curentTabl'
+        if self.name == '' : self.name = 'currentTab'
         if SvF.printL : print ('\nSelect', fields, '\n  from', fromFile, 'name:'+self.name+'|')
 #        print('*Table*', fields, ' from', fromFile, 'name:'+self.name+'|')
 ##?        ff_nn = SplitIgnor ( fromFile, ' AS ' )     # Имя файла и таблицы
@@ -253,6 +253,7 @@ class Table (Object):
             if len(part) == 2 : name = part[1]              # As
             else              : name = part[0]              # the same name
             self.Flds.append ( Field ( name, src_name ) )
+#            setattr(Table, name, self.Flds[-1])  #  НЕ ПОЙДЕТ. В разных таблицах одинаковые имена  :)
             if src_name.upper() == 'ROWNUM' :  self.Flds[-1].src_num = -1
             if SvF.printL : self.Flds[-1].Mprint()
 #            self.Flds[-1].Mprint()
@@ -261,7 +262,7 @@ class Table (Object):
         if fromFile == '':
             self.sR = 0
             self.NoR = 0
-            SvF.curentTabl = self
+            SvF.currentTab = self
             return
 
         root, ext = splitext(self.fromFile.upper())
@@ -283,7 +284,7 @@ class Table (Object):
 
         self.sR = range (self.NoR)
 
-        SvF.curentTabl = self
+        SvF.currentTab = self
 
     def Oprint(self):
         if SvF.Compile :  print('Oprint Compile', self.Otype, self.name)
@@ -404,7 +405,7 @@ class Table (Object):
         leftCol = part[0].split('.')[1]
         leftInd = self.getFieldNum(leftCol)
         for ic, c in enumerate(self.Flds) :
-            rightPart = rightPart.replace('curentTabl.'+c.name, 'c.tb[:]')
+            rightPart = rightPart.replace('currentTab.'+c.name, 'c.tb[:]')
         self.Flds[leftInd].tb[:] = eval(rightPart)
 
     def TblLonLatToGaussKruger ( self ) :

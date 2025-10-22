@@ -20,8 +20,8 @@ from GaKru   import *
 from SurMin  import SurMin
 from Pars    import *
 from Tools   import *
-from Task    import Grd_to_Var
-from Task    import Var_to_Grd, FillNaNAll
+#from Task    import Grd_to_Var
+from Task    import Var_to_Grd, FillNaNAll, setUse_var
 
 #from StartModel import Model
 #import Model as Model
@@ -46,6 +46,7 @@ buf = ""
 def SvFstart19 ( Task ) :
     full_start = time.time()
     print ('\n\n\nStart SvFstart')
+    setUse_var(False)  # 25.10
 
     if co.resF is None :   #  не считываем, но сохраняем
         co.resF = co.mngF[:co.mngF.rfind('.')] + '.res'  # RES file read
@@ -219,11 +220,13 @@ def get_sigCV( Penal, itera ):
     print ('for Penal: ', Penal ) #, end=' ')
 
     if SvF.OptMode == 'SurMinOpt' :
-        co.Use_var = True       # 29
+  #      co.Use_var = True       # 29
+        setUse_var(True)       # 25.10
 
         Gr = Task.createGr(Task, Penal)   # обновлем на каждой итерации
         Grd_to_Var()
-        co.Use_var = False       # 29
+        #co.Use_var = False       # 29
+        setUse_var(False)  # 25.10
 
         resultss = solveProblemsNl(Gr, '', co.RunMode[0])               #  tmp
         Gr.solutions.load_from(resultss[0])
@@ -236,11 +239,13 @@ def get_sigCV( Penal, itera ):
     elif SvF.OptMode == 'SvF':
 
         FillNaNAll ()
-        co.Use_var = True       # 29
+     #   co.Use_var = True       # 29
+        setUse_var(True)  # 25.10
 
         Gr = Task.createGr(Task, Penal)   # обновлем на каждой итерации
         Grd_to_Var()
-        co.Use_var = False       # 29
+#        co.Use_var = False       # 29
+        setUse_var(False)  # 25.10
 
         for fu in Task.Funs :  fu.CVresult = []
 
@@ -287,8 +292,6 @@ def get_sigCV( Penal, itera ):
 
     elif SvF.OptMode == 'SurMin':
        Estim = SvF.ObjectiveFun (Penal)
-
-#    co.Use_var = False       # 29
 
     if Estim < co.optEstim :
             co.optEstim = Estim

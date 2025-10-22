@@ -5,8 +5,8 @@ import sympy as sy
 from itertools import combinations_with_replacement
 
 class smbFun (BaseFun) :
-    def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 0, DataReadFrom = '',Data=[], Type='smbFun', Domain = None,
-                  SymbolInteg=False, SymbolDiffer =False, ArgNormalition =True ) :     #, smbFun = '' ):
+    def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 0, DataReadFrom = '',Data=[], Type='smbFun',
+                          Domain = None, SymbolInteg=False, SymbolDiffer =False, Deriv1=False, ArgNorm =True) :
         BaseFun.__init__(self, Vname, As, param, Degree, Finitialize, DataReadFrom, Data, Type, Domain)
 
         if SvF.Compile : return    #  ???
@@ -22,11 +22,11 @@ class smbFun (BaseFun) :
         self.Int_smbFxy_2 = None    #  not ready yet
         self.SymbolInteg  = SymbolInteg
         self.SymbolDiffer = SymbolDiffer
-        if self.SymbolInteg == True : self.SymbolDiffer = True   #25.10.02
-        self.ArgNormalition = ArgNormalition
-
-        self.Hessian = [[None for _ in range(self.dim)] for _ in range(self.dim)]
-        self.IntegDer2 = [[None for _ in range(self.dim)] for _ in range(self.dim)]
+        self.Deriv1 = Deriv1
+        self.ArgNorm = ArgNorm
+#        self.Deriv1_= [None for _ in range(self.dim)]
+ #       self.Hessian = [[None for _ in range(self.dim)] for _ in range(self.dim)]
+  #      self.IntegDer2 = [[None for _ in range(self.dim)] for _ in range(self.dim)]
 
 
     def calcNDTparam(self) :
@@ -42,13 +42,28 @@ class smbFun (BaseFun) :
           A1 = self.A[1]
           if domain is None :
               self.Nxx = (A0.Ub+1)*(A1.Ub+1)
-              self.Nyy = (A0.Ub+1)*(A1.Ub+1)
-              self.Nxy = (A0.Ub+1)*(A1.Ub+1)
+              self.Nyy = self.Nxx
+              self.Nxy = self.Nxx
           else :
             self.Nxx = sum (  domain[x,y]  for y in A1.NodS   for x in A0.NodS )
             self.Nyy = self.Nxx
             self.Nxy = self.Nxx
 
+
+    def Real_to_Norm_or_Real ( self, ArS_real ) :    # реальные в [0,1]    нормализация аргументов
+        if self.ArgNorm  :  return  [(ArS_real[i]-a.min)/a.ma_mi for i, a in enumerate(self.A)]
+        else                    :  return ArS_real
+
+#    def Node_to_Norm_or_Real (self, xy):
+ #       if self.ArgNorm :  return  [xy[i]*a.step/a.ma_mi for i, a in enumerate(self.A)]
+  #      else                   :  return  [a.Val[xy[i]] for i, a in enumerate(self.A)]
+
+    def Node_to_Norm_or_Real (self, nodeArgs):
+        #realArgs = self.Node_to_Real (nodeArgs)      
+        #return self.Real_to_Norm_or_Real (realArgs)
+        if self.ArgNorm :  return  [nodeArgs[i]*a.step / a.ma_mi   for i, a in enumerate(self.A)]
+        else            :  return  [nodeArgs[i]*a.step + a.min     for i, a in enumerate(self.A)]
+        
 
     """"
     def dF_dX (self, *xy ) :                                #   real args
@@ -71,6 +86,35 @@ class smbFun (BaseFun) :
         if SvF.Use_var:    return self.PolinoFy.Calc(self.var, xy)
         else:              return self.PolinoFy.Calc(self.grd, xy)
     """
+    def by_xx (self,x,y=None) :
+        if self.SymbolDiffer :
+
+            if y is None :
+                print ("YTS")
+                Args = [x,y]
+                if self.ArgNorm:
+                    Args = [(Args[i] - a.min) / a.ma_mi for i, a in enumerate(self.A)]
+                    return self.Hessian[0][0](Args) / (self.A[0].ma_mi) ** 2
+                else:
+                    return self.Hessian[0][0](Args)
+
+                ret = self.Hessian[0][0](self.Real_to_Norm_or_Real([x,y]))
+                if self.ArgNorm :   ret /=  (self.A[0].ma_mi)**2
+                return ret
+          #      return self.Hessian[0][0](self.Node_to_Norm_or_Real([x,y]))  # [x, y]))
+
+            #    return (self.F([x + self.A[0].step]) - 2 * self.F([x]) + self.F([x - self.A[0].step])) / (self.A[0].step ** 2)
+            else:
+                print('*******************************************************by_xx', x)
+                return (self.F([x+self.A[0].step,y]) - 2*self.F([x,y]) + self.F([x-self.A[0].step,y]))/(self.A[0].step**2)
+        else : return super().by_xx(x,y)
+
+    def by_x (self,x) :
+      #  print ("LLL", len(self.Deriv1_) )
+        if self.Deriv1 :
+            return self.Deriv1_([0][x])
+        else: return super().by_x(x)
+
     def derivXX (self, xy ) :
    #     print (xy, self.smbFxx( xy ))
         return self.smbFxx( xy )
@@ -87,38 +131,37 @@ class smbFun (BaseFun) :
    #   if SvF.Use_var:      return self.smbFxy(self.var, xy)
     #  else :               return self.smbFxy(self.grd, xy)
 
-    def NormStep_ma_mi (self, xy):
-        if self.ArgNormalition :  return  [xy[i]*a.step/a.ma_mi for i, a in enumerate(self.A)]
-        else                   :  return  [a.Val[xy[i]] for i, a in enumerate(self.A)]
-    #    for na in range (self.dim) : ret.append (xy[na] * self.A[na].step / self.A[na].ma_mi)
-     #   return ret
 
     """"
     def INTx(self):
         if self.dim == 1:
             return sum(self.fneNDT(x) * self.f_gap(x) *
    #                    (self.derivX([x * self.A[0].step / self.A[0].ma_mi])) ** 2
-                       (self.derivX(self.NormStep_ma_mi([x]))) ** 2
+                       (self.derivX(self.Node_to_Norm_or_Real([x]))) ** 2
                        for x in self.A[0].NodS) / self.Nxx   Nx?
         else:
             return sum(self.fneNDT(x, y) * self.gap[x, y] *
   #                     (self.derivX([x * self.A[0].step / self.A[0].ma_mi, y * self.A[1].step / self.A[1].ma_mi])) ** 2
-                       (self.derivX(self.NormStep_ma_mi([x, y]))) ** 2
+                       (self.derivX(self.Node_to_Norm_or_Real([x, y]))) ** 2
                        for y in self.A[1].NodS for x in self.A[0].NodS) / self.Nxx
     def INTy(self):
             return sum(self.fneNDT(x,y) * self.gap[x, y] *
 #                       (self.derivY([x * self.A[0].step / self.A[0].ma_mi, y * self.A[1].step / self.A[1].ma_mi])) ** 2
-                       (self.derivY(self.NormStep_ma_mi([x, y]))) ** 2
+                       (self.derivY(self.Node_to_Norm_or_Real([x, y]))) ** 2
                        for y in self.A[1].NodS for x in self.A[0].NodS) / self.Nyy
     """
 
+    def by_xy_node (self, by0, by1, arg_node ): #  Вторая РАЗНОСТЬ по by0, by1 d узле
+        if self.ArgNorm:
+            step = [a.step / a.ma_mi for a in self.A]
+
     def DERIV2(self, d0, d1, argxy):   # x, y):
             if self.SymbolDiffer:
-                return self.Hessian[d0][d1](self.NormStep_ma_mi(argxy)) #[x, y]))
+                return self.Hessian[d0][d1](self.Node_to_Norm_or_Real(argxy)) #[x, y]))
             else:
-                arg = np.array(self.NormStep_ma_mi(argxy))  #[x, y]))    #  np.array    for + -
-                if self.ArgNormalition:   step = [a.step/a.ma_mi for a in self.A]
-                else:                     step = [a.step for a in self.A]
+                arg = np.array(self.Node_to_Norm_or_Real(argxy))  #[x, y]))    #  np.array    for + -
+                if self.ArgNorm:   step = [a.step/a.ma_mi for a in self.A]
+                else:              step = [a.step for a in self.A]
 
                 if d0==0 and d1==0 :
                     if self.dim != 1:  step[1] = 0
@@ -133,7 +176,7 @@ class smbFun (BaseFun) :
 
     def INT2D ( self, d0, d1 ) :
             if  self.SymbolInteg:
-                if self.ArgNormalition:
+                if self.ArgNorm:
                     arg_min = [0. for i in range(self.dim)]
                     arg_max = [1. for i in range(self.dim)]
                     return self.IntegDer2[d0][d1](arg_max) - self.IntegDer2[d0][d1](arg_min)
@@ -159,7 +202,7 @@ class smbFun (BaseFun) :
                             ret += self.DERIV2 ( d0,d1,[x, y] ) ** 2
 
                 ret = ret / num
-                if self.ArgNormalition == False:
+                if self.ArgNorm == False:
                     ret *= self.A[d0].ma_mi **2  * self.A[d1].ma_mi **2        #  сводим к [0,1]
                 return ret
       #      else :
@@ -177,25 +220,25 @@ class smbFun (BaseFun) :
 
     def Ftbl ( self, n ) :
         Args = [a.dat[n] for a in self.A]
-#        print (Args, self.ArgsNorm_ma_mi(Args))
-        return self.smbF(self.ArgsNorm_ma_mi(Args))
-     #   if not SvF.Use_var:  return self.txtF(self.grd, self.ArgsNorm_ma_mi( Args))
-      ##  else:                return self.txtF(self.var, self.ArgsNorm_ma_mi( Args))
+#        print (Args, self.Real_to_Norm_or_Real(Args))
+        return self.smbF(self.Real_to_Norm_or_Real(Args))
+     #   if not SvF.Use_var:  return self.txtF(self.grd, self.Real_to_Norm_or_Real( Args))
+      ##  else:                return self.txtF(self.var, self.Real_to_Norm_or_Real( Args))
 
-    def ArgsNorm_ma_mi ( self, ArS_real ) :    # нормализация аргументов
-        if self.ArgNormalition  :  return  [(ArS_real[i]-a.min)/a.ma_mi for i, a in enumerate(self.A)]
-        else                    :  return ArS_real
+
 
     def F ( self, ArS_real ) :  #   real args
-        return self.smbF( self.ArgsNorm_ma_mi( ArS_real) ) + self.V.avr    # gr = self.grd
-    #    if self.param or not SvF.Use_var:  return self.txtF(self.grd, self.ArgsNorm_ma_mi( ArS_real)) + self.V.avr    # gr = self.grd
-     #   else :                             return self.txtF(self.var, self.ArgsNorm_ma_mi( ArS_real)) + self.V.avr    #gr = self.var
+#        print ('ArS_real', self.name,  ArS_real, self.Real_to_Norm_or_Real( ArS_real),
+ #              self.smbF( self.Real_to_Norm_or_Real( ArS_real) ) + self.V.avr)
+        return self.smbF( self.Real_to_Norm_or_Real( ArS_real) ) + self.V.avr    # gr = self.grd
+    #    if self.param or not SvF.Use_var:  return self.txtF(self.grd, self.Real_to_Norm_or_Real( ArS_real)) + self.V.avr    # gr = self.grd
+     #   else :                             return self.txtF(self.var, self.Real_to_Norm_or_Real( ArS_real)) + self.V.avr    #gr = self.var
 
     def Fijk ( self, ijk ) :  # i j k  args
         ArS_real = [ a.Val[ijk[ia]] for ia, a in enumerate (self.A) ]
-        return self.smbF( self.ArgsNorm_ma_mi( ArS_real) ) + self.V.avr    # gr = self.grd
-    #    if self.param or not SvF.Use_var:  return self.txtF(self.grd, self.ArgsNorm_ma_mi( ArS_real)) + self.V.avr    # gr = self.grd
-     #   else :                             return self.txtF(self.var, self.ArgsNorm_ma_mi( ArS_real)) + self.V.avr    #gr = self.var
+        return self.smbF( self.Real_to_Norm_or_Real( ArS_real) ) + self.V.avr    # gr = self.grd
+    #    if self.param or not SvF.Use_var:  return self.txtF(self.grd, self.Real_to_Norm_or_Real( ArS_real)) + self.V.avr    # gr = self.grd
+     #   else :                             return self.txtF(self.var, self.Real_to_Norm_or_Real( ArS_real)) + self.V.avr    #gr = self.var
 
     def var_to_grd (self) :
             if self.dim == 1:

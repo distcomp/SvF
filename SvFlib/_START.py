@@ -42,7 +42,7 @@ while (1) :
         SvF.resF = ''
         SvF.OptStep = '0.01'
         SvF.optEstim = np.float_info.max
-        SvF.curentTabl = None
+        SvF.currentTab = None
         SvF.useNaN = False
     else :  break
 

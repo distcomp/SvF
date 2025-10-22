@@ -46,9 +46,13 @@ class BaseFun (Tensor) :
  #       self.A = copy(As) #[ ]             #  Arg
         self.A = deepcopy(As) #[ ]             #  Arg     КОПИРУЕМ АРГУМЕНТЫ
 
+        self.grd = None
+        self.var = None
+        self.gr = None
+
         #    self.smbF = ''
         self.dim = len (self.A)  #-1
-
+  #      if self.grd != None : x=1
         self.param    = param #False
         self.DataReadFrom = DataReadFrom
         self.NoR   = 0
@@ -61,9 +65,15 @@ class BaseFun (Tensor) :
     #    self.Int_smbFxx_2 = None
         self.SymbolInteg  = False      # Для передачи в MakeMod...
         self.SymbolDiffer = False
-#        self.ArgNormalition = True    #False
+        self.Deriv1 = False
+        self.Deriv1_= [None for _ in range(self.dim)]
+        if self.dim > 0 :
+            self.Deriv1_[0] = self.by_y
+        self.Hessian = [[None for _ in range(self.dim)] for _ in range(self.dim)]
+        self.IntegDer2 = [[None for _ in range(self.dim)] for _ in range(self.dim)]
+        self.Finitialize = Finitialize
+        self.ReadFrom = ReadFrom
 
- #       self.domain_ = py.Reals
         if SvF.Compile :  return
 
         if isnotNone ( Domain ) : self.domain = Domain.domain
@@ -103,6 +113,7 @@ class BaseFun (Tensor) :
         self.TrainingSets = SvF.TrainingSets
 
         self.Nxx   = 0
+        self.NxxBorder   = 0
         self.Nyy   = 0
         self.Nxy   = 0
         self.gap   = None
@@ -113,12 +124,6 @@ class BaseFun (Tensor) :
         self.measurement_accur = 0
         self.CVresult = []    #  [[spart, npart],[spart, npart],.. ]    27
         self.sCrVa = 0        #  np.sqrt (..)                              27
- #       self.DataReadFrom = DataReadFrom
-#        self.param    = param #False
-        self.Finitialize = Finitialize
-
-#        self.sizeP = PolySize ( self.dim, self.PolyPow )
-        if SvF.Compile :  return    #####################################
 
         for a in self.A:
             d = getCurrentFieldData(a.name)     #      Если имя есть в таблице ...
@@ -136,7 +141,16 @@ class BaseFun (Tensor) :
 #        self.CleanData()   #  dat
         self.Normalization(SvF.VarNormalization)
         self.calcNDTparam()
-        if ReadFrom != '':  self.ReadSol(ReadFrom)
+        if ReadFrom != '':
+            if self.ReadSol(ReadFrom) == False : exit (-1)
+        self.set_gr_grd_or_var()
+
+    def set_gr_grd_or_var(self):
+        if SvF.Use_var == True:
+            self.gr = self.var
+        else :
+            self.gr = self.grd
+
 
     def Allocate_grd(self) :
         if self.type != 'p':  # не полином
@@ -148,12 +162,19 @@ class BaseFun (Tensor) :
         if self.param: self.InitByData()  # 29
 
 
+    def Real_to_Node ( self, realArgs ) :    # реальные в координаты сетку [0, Ub]
+        return [ (realArgs[i] - a.min) / a.step   for i, a in enumerate(self.A) ]
+
+
+    def Node_to_Real(self, nodeArgs):  #         сетку [0, Ub] -> реальные
+        return [ nodeArgs[i] * a.step + a.min   for i, a in enumerate(self.A) ]
+
     """
     def Initialize ( self, InitFloat = None ) :
         if SvF.printL > 0: printS('Initialize: |'); self.Oprint()
         if InitFloat is None : InitFloat = '0'
        
-        tmpcurentTabl = SvF.curentTabl
+        tmpcurrentTab = SvF.currentTab
         if self.DataReadFrom != '':
      #       Tab.Select ( self.DataReadFrom )
             leftName, Fields, FileName, AsName, where = Tab.ParseSelect30(self.DataReadFrom)
@@ -177,7 +198,7 @@ class BaseFun (Tensor) :
         
         if self.dim > 0 :
             self.CleanData()
-#            SvF.curentTabl = tmpcurentTabl
+#            SvF.currentTab = tmpcurrentTab
             self.Normalization(SvF.VarNormalization)
             self.calcNDTparam()
         
@@ -388,58 +409,6 @@ class BaseFun (Tensor) :
             self.A[1].dat[self.NoR-1] = A1 - self.A[1].min
         self.sR = range(self.NoR)
 
-    """""
-    def grd_to_var (self) :
-        if self.var is None:  return
-        if self.param : return
-        if self.type == 'p' :
-            for i in range ( self.sizeP ) :  self.var[i].value = self.grd[i]
-        elif self.type == 'smbFun' :
-            pass
-  #          for i in range ( self.NoCoeff ) :  self.var[i].value = self.grd[i]
-        else :
-            if   self.dim == 0:
-                self.var.value = self.grd
-#                print('*************************************var', self.var.value, self.grd)
-            elif self.dim == 1:
-                for i in self.A[0].NodS:
-#                    self.var[i].value = self.grd[i]
-                    self.var[i].set_value(self.grd[i], skip_validation=True)
-            elif self.dim == 2:
-                for i in self.A[0].NodS:
-#                    for j in self.A[1].NodS:  self.var[i,j].value = self.grd[i,j]
-                    for j in self.A[1].NodS:  self.var[i,j].set_value(self.grd[i,j], skip_validation=True)
-
-            elif self.dim == 3:
-                for i in self.A[0].NodS:
-                    for j in self.A[1].NodS:
-                        for k in self.A[2].NodS:
-#                            self.var[i,j,k].value = self.grd[i,j,k]
-                            self.var[i,j,k].set_value(self.grd[i,j,k], skip_validation=True)
-
-    
-    def var_to_grd (self) :
-        if self.var is None:  return
-        if self.param : return
-#        print ('var_to_grd',self.type,self.dim)
-        if self.type == 'p' :
-            for i in range ( self.sizeP ) :  self.grd[i] = self.var[i].value
-        elif self.type == 'smbFun' :
-            pass
-    #         for i in range ( self.NoCoeff ) :  self.grd[i] = self.var[i].value
-        else :
-            if   self.dim == 0:   self.grd = self.var.value
-            elif self.dim == 1:
-                for i in self.A[0].NodS:  self.grd[i] = self.var[i].value
-            elif self.dim == 2:
-                for i in self.A[0].NodS:
-                    for j in self.A[1].NodS:  self.grd[i,j] = self.var[i,j].value
-            elif self.dim == 3:
-                for i in self.A[0].NodS:
-                    for j in self.A[1].NodS:
-                        for k in self.A[2].NodS:
-                            self.grd[i,j,k] = self.var[i,j,k].value
-    """""
                                                                          # возможно меняет  param и type.
     def CopyFromFun ( self, DataFrom, new_param=None, new_type=None, copy_dat = True ):
         if new_type is None : self.type  = DataFrom.type                # для полином -> грид : вычисляет значения
@@ -463,10 +432,15 @@ class BaseFun (Tensor) :
    #     self.domain = DataFrom.domain
         self.domain = deepcopy(DataFrom.domain)      #    deepcopy ?????
         self.Nxx   = DataFrom.Nxx
+        self.NxxBorder   = DataFrom.NxxBorder
         self.Nyy   = DataFrom.Nyy
         self.Nxy   = DataFrom.Nxy
         self.gap   = deepcopy(DataFrom.gap)
         self.DataReadFrom = DataFrom.DataReadFrom
+        self.ReadFrom = DataFrom.ReadFrom
+
+
+
  #       self.domain_  = DataFrom.domain_
         self.ValidationSets  = DataFrom.ValidationSets
         self.notTrainingSets = DataFrom.notTrainingSets
@@ -474,6 +448,7 @@ class BaseFun (Tensor) :
 #        self.G     = DataFrom.G
         self.grd = None
         self.var = None                 # 29
+      #  self.gr  = None                 # 25.10
         if self.type == DataFrom.type :
             self.grd = deepcopy(DataFrom.grd)       # 29
             return self                                   # 29
@@ -482,6 +457,7 @@ class BaseFun (Tensor) :
         if self.dim   == 1:  self.grd = np.zeros(self.A[0].Ub + 1, np.float64)
         elif self.dim == 2:  self.grd = np.zeros((self.A[0].Ub + 1, self.A[1].Ub + 1), np.float64)
         elif self.dim == 3:  self.grd = np.zeros((self.A[0].Ub + 1, self.A[1].Ub + 1, self.A[2].Ub + 1), np.float64)
+        self.set_gr_grd_or_var()
 
         if 1 :           
                 Ax = self.A[0]
@@ -576,6 +552,7 @@ class BaseFun (Tensor) :
         if self.dim == 1:
           if domain is None :
             self.Nxx = A0.Ub-1
+            self.NxxBorder = A0.Ub+1
           else :
             self.Nxx = sum ( domain[x-1]*domain[x]*domain[x+1] for x in range( 1,A0.Ub ) )
         elif self.dim == 2:
@@ -763,26 +740,6 @@ class BaseFun (Tensor) :
                 if  np.isnan(self.grd[x,y]) or self.grd[x,y]== self.NDT:  ################
                     self.grd[x,y]=1     ########################################
 
-    """""
-    def Feal(self):
-        if self.type == 'p': return
-        if self.domain is None: return
-        if self.dim == 0: return
-
-        if self.dim == 1:
-            for x in self.A[0].NodS:
-                if not self.domain[x]:
-                    self.var[x].value = self.NDT
-                    self.var[x].fixed = True
-        else:
-            for x in self.A[0].NodS:
-                for y in self.A[1].NodS:
-                    #     if  np.isnan(self.var[x,y].value) or self.var[x,y].value== self.NDT:  ################
-                    #        self.var[x,y].value=0     ########################################
-                    if not self.domain[x, y]:
-                        self.var[x, y].value = self.NDT
-                        self.var[x, y].fixed = True
-    """
     def delta( self, n ) :
         return	 self.Ftbl ( n ) - self.V.dat[n]   #  13.03.2023
  #       return	 self.V.dat[n] - self.Ftbl ( n )
@@ -967,11 +924,6 @@ class BaseFun (Tensor) :
                 return ( bets[0]**4  * self.INTx()
                        + bets[1]**4  * self.INTy()
                        )
-#              return    bets[0]**4 /self.Nxx  /(1./self.A[0].Ub)**2 * self.INTx ( )
- #           else:
-  #            return (  bets[0]**4 / self.Nxx  / (1./self.A[0].Ub)**2 * self.INTx ( )
-   #                   + bets[1]**4 / self.Nyy  / (1./self.A[1].Ub)**2 * self.INTy ( )
-    #                 )
 
     def Mean ( self ) :                                         #  А как же кол-во дырок   NDT
             if self.param or not SvF.Use_var:    gr = self.grd
@@ -1258,7 +1210,7 @@ class BaseFun (Tensor) :
     def ReadSol ( self, fName='', printL=0 ) :
       if self.type == 'smbFun':  ##########################
           return
-#      print 'self.Task.Mng.Prefix'+self.Task.Mng.Prefix+'|',fName
+ #     print ('self.Task.Mng.Prefix',fName)
       Prefix = SvF.Prefix
       if fName == '' :
           if self.type[0] == 'g':      # 2407
@@ -1584,15 +1536,6 @@ class BaseFun (Tensor) :
 
 
 
-    def ArgsNorm_step ( self, ArS_real ) :    # нормализация аргументов
-        return [(ArS_real[a]-self.A[a].min)/self.A[a].step for a in range (self.dim) ]
-
-#        Args = []
- #       for a in range (self.dim) : Args.append ((ArS_real[a]-self.A[a].min)/self.A[a].step)
-  #      return Args
-
-
-
     def F_or0 ( self, ArS_real0, ArS_real1 = None  ) :
         if ArS_real0 < self.A[0].min : return 0
         if ArS_real0 > self.A[0].max : return 0
@@ -1621,23 +1564,37 @@ class BaseFun (Tensor) :
                     for y in self.A[1].NodS    for x in self.A[0].mNodSm )
 
     def derivXX (self, xy ) :
-        if self.param or not SvF.Use_var:   gr = self.grd
-        else:                               gr = self.var  # 29
+   #     if self.param or not SvF.Use_var:   gr = self.grd
+    #    else:                               gr = self.var  # 29
         if self.dim == 1:
-            return   (gr[xy - 1] - 2 * gr[xy] + gr[xy + 1]) / self.A[0].step**2
+            return   (self.gr[xy - 1] - 2 * self.gr[xy] + self.gr[xy + 1]) / self.A[0].step**2
 
+    def by_ii (self, i,j=None):   # i,j - номера точек сетки
+        if i == 0: i=1
+        if i == self.A[0].Ub:  i = self.A[0].Ub - 1
+        if j is None :
+            return self.gr[i-1] - 2 * self.gr[i] + self.gr[i+1]
+        else:
+            return self.gr[i-1, j] - 2 * self.gr[i, j] + self.gr[i+1, j]
 
 
     def INTxx ( self ) :
 #      print ('gG INTxx', self.type)
        if self.type[0] == 'g' :     # 2407
-          if self.param or not SvF.Use_var:     gr = self.grd
-          else:                                 gr = self.var  # 29
+          if self.param or not SvF.Use_var:
+              gr = self.grd
+              self.gr = self.grd
+          else:
+              gr = self.var  # 29
+              self.gr = self.var  # 29
 #          print ("Use", SvF.Use_var)
           if   self.dim==1 :
-          #   return  sum ( self.fneNDT(x-1) * self.fneNDT(x) * self.fneNDT(x+1) * self.f_gap(x) *
-           #                ( gr[x-1]-2*gr[x]+gr[x+1] )**2   for x in self.A[0].mNodSm
-            #             )  /self.Nxx  /(1./self.A[0].Ub)**4
+             return  sum ( self.fneNDT(x-1) * self.fneNDT(x) * self.fneNDT(x+1) * self.f_gap(x) *
+                          ( self.by_ii ( x ) )**2   for x in self.A[0].NodS
+                       )  / self.NxxBorder  *  self.A[0].ma_mi**4 / self.A[0].step**4
+             return  sum ( self.fneNDT(x-1) * self.fneNDT(x) * self.fneNDT(x+1) * self.f_gap(x) *
+                          ( self.by_ii ( x ) )**2   for x in self.A[0].mNodSm
+                       )  /self.Nxx  *  self.A[0].ma_mi**4 / self.A[0].step**4
              return  sum ( self.fneNDT(x-1) * self.fneNDT(x) * self.fneNDT(x+1) * self.f_gap(x) *
                           ( self.derivXX ( x ) )**2   for x in self.A[0].mNodSm
                        )  /self.Nxx  *  self.A[0].ma_mi**4  #self.A[0].Ub**4 * self.A[0].step**4
@@ -1871,6 +1828,37 @@ class BaseFun (Tensor) :
         ret.V.avr = 0   # 19.12.19
         return ret
 
+ #   def by1 (self,x) :
+  #      return (self.F([x+self.A[0].step])-self.F([x]))/self.A[0].step
+
+    def by_x (self,x,y=None) :
+        if y is None:
+            return (self.F([x + self.A[0].step]) - self.F([x])) / self.A[0].step
+        else :
+            return (self.F([x+self.A[0].step,y])-self.F([x,y]))/self.A[0].step
+
+    def by_y (self,x,y) :
+        return (self.F([x,y+self.A[1].step])-self.F([x,y]))/self.A[1].step
+
+#    def by2 (self,x) :
+        return (self.F([x+self.A[0].step]) - 2*self.F([x]) + self.F([x-self.A[0].step]))/(self.A[0].step**2)
+
+    def by_xx (self,x,y=None) :
+ #       print  ('BaseFun by_xx',x)
+        if y is None :
+  #          print (self.F([x - self.A[0].step]), self.F([x]), self.F([x + self.A[0].step])  )
+            return (self.F([x + self.A[0].step]) - 2 * self.F([x]) + self.F([x - self.A[0].step])) / (self.A[0].step ** 2)
+        else:
+            return (self.F([x+self.A[0].step,y]) - 2*self.F([x,y]) + self.F([x-self.A[0].step,y]))/(self.A[0].step**2)
+
+    def by_yy (self,x,y) :
+        return (self.F([x,y+self.A[1].step]) - 2*self.F([x,y]) + self.F([x,y-self.A[1].step]))/(self.A[1].step**2)
+
+    def by_xy (self,x,y) :
+        return (self.F([x+self.A[0].step,y+self.A[1].step]) - self.F([x+self.A[0].step,y-self.A[1].step])
+              - self.F([x-self.A[0].step,y+self.A[1].step]) + self.F([x-self.A[0].step,y-self.A[1].step])) / self.A[0].step/self.A[1].step
+
+
     def INTy ( self ) :
         return  sum ( self.fneNDT(x,y-1) * self.fneNDT(x,y) * self.fneNDT(x,y+1) * self.f_gap(x,y) *
                      ( self.grd[x,y+1] - self.grd[x,y-1] )**2 
@@ -2055,35 +2043,34 @@ class Fun (BaseFun) :
           if self.dim == 0:                           #  31
                 if SvF.Use_var: return self.var
                 else          : return self.grd
-          ar =  self.ArgsNorm_step ( ArS_real )
-          if ( self.type[0] == 'g' ) and self.dim==1 :       # 2407
-            return self.interpol ( 1, ar[0] )
-          elif ( self.type[0] == 'g' ) and self.dim==2 :       # 2407
-            return self.interpol ( 2, ar[0], ar[1] )
-          elif self.type[0] == 'g' and self.dim==3 :
-              return self.interpol ( 3, ar[0], ar[1], ar[2] )
+          ar =  self.Real_to_Node ( ArS_real )
+          return self.interpolNode(ar)
+#          if ( self.type[0] == 'g' ) and self.dim==1 :       # 2407
+ #           return self.interpol ( 1, ar[0] )
+  #        elif ( self.type[0] == 'g' ) and self.dim==2 :       # 2407
+   #         return self.interpol ( 2, ar[0], ar[1] )
+    #      elif self.type[0] == 'g' and self.dim==3 :
+     #         return self.interpol ( 3, ar[0], ar[1], ar[2] )
 
     def Ftbl ( self, n ) :
       if self.type[0] == 'g':      # 2407
+        args = [(a.dat[n]-a.min)/a.step   for a in self.A]
+        return self.interpolNode (args)
+    """""        
         if   self.dim==1 :
-   #         print ( self.V.name,n)
-  #          print (self.A[0].dat)
-   #         print (self.A[0].dat[n])
-            return self.interpol ( 1, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step )
+            return self.interpolNode (  [(self.A[0].dat[n]-self.A[0].min)/self.A[0].step] )
+ #           return self.interpol ( 1, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step )
         elif self.dim==2 :
-#            return self.interpol ( 2, self.A[0].dat[n]/self.A[0].step,
- #                                     self.A[1].dat[n]/self.A[1].step )
-            return self.interpol ( 2, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step,          # 25/07
-                                      (self.A[1].dat[n]-self.A[1].min)/self.A[1].step )
+            return self.interpolNode (  [(self.A[0].dat[n]-self.A[0].min)/self.A[0].step,          # 25/07
+                                      (self.A[1].dat[n]-self.A[1].min)/self.A[1].step] )
+ #           return self.interpol ( 2, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step,          # 25/07
+  #                                    (self.A[1].dat[n]-self.A[1].min)/self.A[1].step )
 
         elif self.dim==3 :
             return self.interpol ( 3, ( self.A[0].dat[n]-self.A[0].min )/self.A[0].step,        # 25/07  not tested
                                        ( self.A[1].dat[n]-self.A[1].min )/self.A[1].step,
                                        ( self.A[2].dat[n]-self.A[2].min )/self.A[2].step )
-#            return self.interpol ( 3, self.A[0].dat[n]/self.A[0].step,
- #                                     self.A[1].dat[n]/self.A[1].step,
-  #                                    self.A[2].dat[n]/self.A[2].step )
-
+    """""
     def interpol ( self, lev, X,Y=0,Z=0 ) :   # X,Y,Z  в шагах
         if self.param or not SvF.Use_var: gr = self.grd
         else                            : gr = self.var            # 29
@@ -2119,8 +2106,42 @@ class Fun (BaseFun) :
                 if self.dim == 3 :  return  gr[Xi+1 ,Y , Z]
             else                 :
                 if self.dim == 1 :  return  gr[Xi       ] * (1-dX) + gr[Xi+1       ] * dX
-                if self.dim == 2 :  return  gr[Xi ,Y    ] * (1-dX) + gr[Xi+1 ,Y    ] * dX
+#                if self.dim == 2 :  return  gr[Xi ,Y    ] * (1-dX) + gr[Xi+1 ,Y    ] * dX
+                if self.dim == 2 :  return  gr[int(Xi) ,int(Y)    ] * (1-dX) + gr[int(Xi+1) ,int(Y)    ] * dX
                 if self.dim == 3 :  return  gr[Xi ,Y , Z] * (1-dX) + gr[Xi+1 ,Y , Z] * dX
 
+    def interpolNode ( self, argNode, lev=None ) :   # argNode =[ X,Y,..]  в шагах
+     #   if self.param or not SvF.Use_var: self.gr = self.grd
+      #  else                            : self.gr = self.var            # 29
+ #       print ("Use", SvF.Use_var,argNode)
+ #       self.set_gr_grd_or_var()
+        if lev is None :
+            lev = len(argNode)
+        if lev > 0 :
+            Z = argNode[lev-1]
+            Zi = int(floor ( Z ))
+            if Zi < 0            : Zi = 0
+            if Zi==self.A[lev-1].Ub  : Zi=self.A[lev-1].Ub-1
+            dZ = Z-Zi
+   #         print('btg', lev, argNode, Z, Zi, dZ)
+            if abs(dZ) < 1e-10   :  dZ = 0
+            elif abs(dZ-1) < 1e-10 : dZ = 1
+            argZi = copy (argNode)
+            argZi[lev-1] = Zi
+            argZi_1 = copy (argNode)
+            argZi_1[lev-1] = Zi+1
+    #        print ('bZi', lev, Zi, dZ, Zi+1, argZi, argZi_1)
+            ret = self.interpolNode ( argZi, lev-1 ) * (1-dZ) + + self.interpolNode ( argZi_1, lev-1 ) * dZ
+     #       print ('ret', lev, ret)
+            return ret
+            return  self.interpol ( lev-1, X,Y,Zi ) * (1-dZ) + self.interpol ( lev-1, X,Y,Zi+1 ) * dZ
+            if abs(dZ-1) < 1e-10 :  return  (
+                self.interpol ( lev-1, X,Y,Zi+1 ))
+            else                 :  return  self.interpol ( lev-1, X,Y,Zi ) * (1-dZ) + self.interpol ( lev-1, X,Y,Zi+1 ) * dZ
 
+        else :
+   #         print (argNode, gr[int(argNode[0]),int(argNode[1])] )
+            if self.dim == 1:  return self.gr[int(argNode[0])]
+            if self.dim == 2:  return self.gr[int(argNode[0]),int(argNode[1])]
+            if self.dim == 3:  return self.gr[int(argNode[0]),int(argNode[1]),int(argNode[2])]
 

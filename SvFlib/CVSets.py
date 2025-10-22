@@ -9,25 +9,25 @@ from Tools  import *
 
 import COMMON as SvF
 
-def CVmakeSets ( NoR =0, CV_NumSets =7, CV_Unit=1,  CV_Margin=0, NumOfIter=None ) :  #, CV_Border=None ) :
-    if not isnotNone(NumOfIter):  SvF.CVNumOfIter = NumOfIter
-    if type(CV_Unit) is type(1):
+def CVmakeSets ( NoR =0, CV_NumSets =7, GroupBy=1,  CV_Margin=0, NumOfIter=None ) :  #, CV_Border=None ) :
+    if isnotNone(NumOfIter):  SvF.CVNumOfIter = NumOfIter
+    if type(GroupBy) is type(1):
         if NoR == 0:
-            if SvF.curentTabl is None:
-                print ('SvF.curentTabl is None')
+            if SvF.currentTab is None:
+                print ('SvF.currentTab is None')
                 return
-            NoR = SvF.curentTabl.NoR
-        CVarray = [ int(i/CV_Unit) for i in range(NoR)]
-        print (CVarray)
+            NoR = SvF.currentTab.NoR
+        CVarray = [ int(i/GroupBy) for i in range(NoR)]
+#        print (CVarray)
     else:
-        if type(CV_Unit) is str:
-            CV_Unit = SvF.curentTabl.dat(CV_Unit)
-        CVarray = CV_Unit.tolist()
+        if type(GroupBy) is str:
+            GroupBy = SvF.currentTab.dat(GroupBy)
+        CVarray = GroupBy.tolist()
 
     NoR = len(CVarray)
 #    print ('CVarray',CVarray)
     unique_par = list(set(CVarray))
-    print('unique_par', NoR, len(unique_par), unique_par)
+#    print('unique_par', NoR, len(unique_par), unique_par)
 
     CV_NumSets = min (len(unique_par), int(CV_NumSets))
 
@@ -61,14 +61,14 @@ def make_CV_Sets ( NoR =0, NoSubSets =7, ValidationPartSize=1,  Data =None, Marg
  #   print (NoR, Param, Data)
     if Data is None :
         if NoR == 0:
-            if SvF.curentTabl is None:
-                print ('SvF.curentTabl is None')
+            if SvF.currentTab is None:
+                print ('SvF.currentTab is None')
                 return
-            NoR = SvF.curentTabl.NoR
+            NoR = SvF.currentTab.NoR
         MakeSets_byParts(NoR, NoSubSets, ValidationPartSize, Margin)
     else :
         if type(Data) is str:
-            Data = SvF.curentTabl.dat(Data)
+            Data = SvF.currentTab.dat(Data)
         SvF_MakeSets_byParam( Data, NoSubSets, Margin, Border )
 
 

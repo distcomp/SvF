@@ -2,16 +2,12 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
-#Sets = []
-#Funs = []    #  Проблеммы с Funs
-#Tbls = []
-#Objects = []
 
 feasibleSol = None          #  function feasibleSol(Peal) - перед оптимизацией
 OptMode = 'SvF'
 ObjectiveFun = None
 
-UsePrime = False
+UsePrime = True
 
 max_workers = 3
 
@@ -19,6 +15,7 @@ jobId_s = []
 maxJobs = 0
 
 DrawMode = 'Screen&File'
+ShowAll = True
 DrawFileName = ''
 Resources = [ "pool-scip-ipopt" ]
 #Resources = [ "vvvolDellDocker" ]
@@ -129,7 +126,7 @@ OptNames = []
 CVNumOfIter  =   20
 CV_Iter  =   0
 
-curentTabl  = None
+currentTab  = None
 
 numCV      = -1
 CV_NoRs     = []     # 23.11    = 0
@@ -149,7 +146,7 @@ NotCulcBorder = False
 Task        = None
 TaskName    = 'NoName'
 
-useNaN      = False
+useNaN      = True   #False
 VarNormalization = False
 
 optFact          = None

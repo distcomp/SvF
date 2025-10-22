@@ -5,6 +5,7 @@ import numpy as np
 import sys
 from datetime import date
 from copy import deepcopy
+import re
 
 FLOMAX = sys.float_info.max
 RADpGRAD = np.pi/180
@@ -12,6 +13,11 @@ GRADpRAD = 180/np.pi
 
 CLASS_TXT = type('a')
 CLASS_INT = type(1)
+
+def ireplace(s: str, old: str, new: str, count: int = 0) -> str:
+    # замен€ет old ? new без учЄта регистра; count=0 Ч все вхождени€
+    pattern = re.compile(re.escape(old), flags=re.IGNORECASE)
+    return pattern.sub(new, s, count=count)
 
 def Substract (from_list, lis) :
     return  [x for x in from_list if x not in lis]
@@ -72,6 +78,20 @@ def tetta_old (x) :
     if   x < 0 :  return 0
     elif x > 0 :  return 1
     else       :  return 0.5
+
+
+def readFlag(buf):                             #  25.10.06
+     if len (buf) == 0:  return True
+     print ('readFlag', buf)
+     if buf[0:1] == '=' :   buf = buf[1:]
+     print ('readFlag=!'+buf+'|')
+     if buf == 'True'  : return True
+     if buf == 'False' : return False
+     print ('ERR convertion to Bool:', buf)
+     exit (-1)
+
+
+
 
 def floatGradNaN ( txt ) :
         try:

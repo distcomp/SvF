@@ -34,18 +34,24 @@ from Lego_Tools  import *
 
 ##### ********************************************************** #######
 class Tensor (Object) :
-    def __init__ (self, name, Sizes = None, Finitialize = 1) :
+    def __init__ (self, name, Sizes = None, Finitialize = 1, param=False, ReadFrom='') :
         Object.__init__(self, name, 'Fun')
         self.name = name
         self.grd = None
         self.var = None
-        self.param = False
+        self.param = param
         self.type = 'tensor'
         self.A = []             #  Arg     25.01   ???
         self.Finitialize = Finitialize
         if Sizes is None : return
         self.dim = len(Sizes)
         self.Allocate_tensor(Sizes)
+    #    self.gr  = self.grd                 # 25.10
+        self.ReadFrom = ReadFrom
+        if ReadFrom != '':
+            if self.ReadSol(ReadFrom) == False : exit (-1)
+        self.gr = self.grd  # 25.10
+
 
     def Allocate_tensor(self, Sizes) :
         self.Sizes = Sizes
@@ -62,13 +68,21 @@ class Tensor (Object) :
                 self.grd = np.ones((Sizes[0],Sizes[1],Sizes[2]), np.float64)
                 self.grd[:,:,:] = self.Finitialize                     #  by default = 1
 
+    def set_gr_grd_or_var(self):
+        if SvF.Use_var == True and self.param != True:
+            self.gr = self.var
+        else :
+            self.gr = self.grd
+
     def F ( self, ij ) :
           if self.dim == 0:                           #  31
-                if SvF.Use_var: return self.var
-                else          : return self.grd
+                return self.gr
+#                if SvF.Use_var: return self.var
+ #               else          : return self.grd
           elif self.dim == 1:
-                if SvF.Use_var: return self.var[ij[0]]
-                else          : return self.grd[ij[0]]
+                return self.gr[ij[0]]
+  #              if SvF.Use_var: return self.var[ij[0]]
+   #             else          : return self.grd[ij[0]]
 
     def nameFun(self):
             name = self.name

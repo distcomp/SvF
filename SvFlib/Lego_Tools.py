@@ -37,6 +37,8 @@ def cnstrFun2 (args, V_name, NDT) :   #
     from Lego import Fun
     fu = Func()     #   Устарело! Надо заменить!
     fu.dim = 2
+ #   print ('*******************',fu.name)
+  #  1/0
     fu.param = True
     fu.NDT = NDT
     fu.V = Vari (V_name)
@@ -74,8 +76,8 @@ def oFunFromSolFile(ReadFrom, Vnum=1):  # для tbl   нулевая  коло�
  #       ret_fun.V = Vari(cols[Vnum])
         #            if SvF.printL :
         #           print "Read from", ReadFrom, cols, 'dim=', ret_fun.dim
-        tmp_curentTabl = SvF.curentTabl  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
-        SvF.curentTabl = None
+        tmp_currentTab = SvF.currentTab  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
+        SvF.currentTab = None
         if ret_fun.dim == 1:
             tb = np.loadtxt(fi, 'double')
             ret_fun.A = [Set(cols[0], tb[0][0], tb[-1][0], -(tb.shape[0] - 1))]
@@ -106,7 +108,7 @@ def oFunFromSolFile(ReadFrom, Vnum=1):  # для tbl   нулевая  коло�
             for x in ret_fun.A[0].NodS:  ret_fun.A[0].Val[x] = float(x_gr[x])
             for x in ret_fun.A[1].NodS:  ret_fun.A[1].Val[x] = tb[x][0]
             ret_fun.grd = np.delete(tb, range(0, 1), 1).transpose()
-        SvF.curentTabl = tmp_curentTabl
+        SvF.currentTab = tmp_currentTab
         return ret_fun
 
     #      except IOError as e:
@@ -135,8 +137,8 @@ def FunFromSolFile(ReadFrom, AddObj = False):
     ret_fun.param = True
     ret_fun.V = Vari(cols[-1])
 
-    tmp_curentTabl = SvF.curentTabl  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
-    SvF.curentTabl = None
+    tmp_currentTab = SvF.currentTab  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
+    SvF.currentTab = None
     if ret_fun.dim == 0:
         ret_fun.A = []
         ret_fun.grd = grd    #  бросил надоело ...
@@ -147,7 +149,8 @@ def FunFromSolFile(ReadFrom, AddObj = False):
             ret_fun.A = [Set(cols[0], xp[0], xp[-1], -(len(xp) - 1)),
                          Set(cols[1], yp[0], yp[-1], -(len(yp) - 1))]
             ret_fun.grd = grd.transpose()  # np.delete(tb, range(0, 1), 1).transpose()
-    SvF.curentTabl = tmp_curentTabl
+    SvF.currentTab = tmp_currentTab
+    ret_fun.set_gr_grd_or_var()
     return ret_fun
 
 
@@ -172,8 +175,8 @@ def FunFromFileNew ( ReadFrom, Vnum = 1, AddObj = False ) :    #  для tbl  н
         ret_fun.param = True
 #        ret_fun.V     = Vari ( cols[Vnum] )
 
-        tmp_curentTabl = SvF.curentTabl  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
-        SvF.curentTabl = None
+        tmp_currentTab = SvF.currentTab  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
+        SvF.currentTab = None
         if ret_fun.dim == 1:
             ret_fun.A = [Set(cols[0], tb[0][0], tb[-1][0], -(tb.shape[0] - 1))]
             ret_fun.grd = np.zeros(ret_fun.A[0].Ub + 1, np.float64)
@@ -185,7 +188,7 @@ def FunFromFileNew ( ReadFrom, Vnum = 1, AddObj = False ) :    #  для tbl  н
                          Set(cols[1], x2[0], x2[-1], -(len(x2) - 1))]
             ret_fun.grd = tb
 #            print (tb.shape)
-        SvF.curentTabl = tmp_curentTabl
+        SvF.currentTab = tmp_currentTab
         return ret_fun
 
 ##### ********************************************************** #######

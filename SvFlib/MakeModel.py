@@ -4,28 +4,86 @@ from fontTools.misc.cython import returns
 from   ModelFiles import *
 from Table import *
 
-def splitByEq (buf ):
-    buf_sp = buf.split('=')
-    if buf[-1:] == ';' : buf = buf[:-1]
-    if len (buf_sp) == 1:  return buf_sp[0], None
-    else:                  return buf_sp[0], buf_sp[1]
 
-def WriteRUNoption (buf):
-        if len(buf)==0: return
-        if buf[-1:] == ';': buf = buf[:-1]
-        buf = buf.replace('NumOfIter', 'CVNumOfIter')
-        opt = '; SvF.'.join(buf.split(';'))
-        Swr('SvF.'+opt)
+def getKeyFromBuf (keys, part):                     # 'usehomeforPower' -> 'UseHomeforPower', '=', 'True'
+    for key in keys :                               #  UsePrime True -> UsePrime,'','True'
+        if part.lower().find(key[0].lower()) == 0:
+            rest = part[len(key[0]):].lstrip()
+            if rest.startswith("="):
+                eq = "="
+                val = rest[1:].strip()
+            else:
+                if len (rest) > 0:
+                    eq = ''
+                    val = rest
+                else :
+                    val = key[2]
+                    if val is None :
+                        eq = ''
+                    else :
+                        eq = '='
+
+            return key[1], eq, val
+    return None, None, None
+
+
+def COMPILE_RUN_option(buf):
+          # заменяем          на            значение
+    keys = [['TaskName',    'TaskName',         'NoName'],
+            ['UseNaN',      'UseNaN',           'True'],
+            ['ShowAll',     'ShowAll',          None],
+            ['UseHomeforPower', 'UseHomeforPower', 'True'],
+            ['UsePrime',    'UsePrime',         'True'],
+            ['NumOfIter',   'CVNumOfIter',      None],
+            ['MaxIter',     'CVNumOfIter',      None],
+            ['RunMode',     'RunMode',          None]
+           ]
+    if len(buf) == 0: return
+    if buf[-1:] == ';': buf = buf[:-1]
+    buf = buf.replace(';;',';')
+    writeBuf = ''
+    for opt in buf.split(';'):
+        key, eq, val = getKeyFromBuf (keys, opt)
+        if key is None or eq == '':
+            print ("Unknown key or no \'=\' in ", opt)
+            exit (-1)
+        writeBuf += 'SvF.' + key + '=' + val + '; '
+        if  key in ['ShowAll','UseHomeforPower', 'UsePrime']:
+            if   val == 'True':   setattr(SvF, key, True)
+            elif val == 'False':  setattr(SvF, key, False)
+            else :
+                print('Для ', key, ' должно писать =True или =False а не ', val)
+                exit(-1)
+    Swr(writeBuf)
 
 
 def WriteCV(buf):
-            buf = buf.replace ('NumOfSets','CV_NumSets')
-            buf = buf.replace ('Unit','CV_Unit')
-            buf = buf.replace ('GroupBy','CV_Unit')
-            buf = buf.replace ('Margin','CV_Margin')
-            arg = ','.join(buf.split(';'))
-            Swr('CVmakeSets ( ' + arg + ' )')
-#            Swr('make_CV_Sets ( ' + arg + ' )')
+                    # заменяем          на            значение
+            keys = [['NumOfSets',   'CV_NumSets', None],
+                    ['Unit',        'GroupBy', None],
+                    ['GroupByNum',  'GroupBy', None],
+                    ['GroupByParam','GroupBy', None],
+                    ['GroupBy',     'GroupBy', None],
+                    ['Margin',      'CV_Margin', None]
+                   ]
+            if buf[-1:] == ';': buf = buf[:-1]
+            buf = buf.replace(';;',';')
+            writeBuf = 'CVmakeSets ( '
+            for opt in buf.split(';'):
+                key, eq, val = getKeyFromBuf (keys, opt)
+                if key is None or eq == '':
+                    print ("Unknown key or no \'=\' in ", opt)
+                    exit (-1)
+                writeBuf += ' ' + key + '=' + val + ','
+            Swr(writeBuf[:-1]+' )')
+    #        buf = buf.replace ('NumOfSets','CV_NumSets')
+     #       buf = buf.replace ('Unit','GroupBy')
+      #      buf = buf.replace ('GroupByNum','GroupBy')
+       #     buf = buf.replace ('GroupByParam','GroupBy')
+        #    buf = buf.replace ('GroupBy','GroupBy')
+         #   buf = buf.replace ('Margin','CV_Margin')
+#            arg = ','.join(buf.split(';'))
+ #           Swr('CVmakeSets ( ' + arg + ' )')
             SvF.numCV += 1
             wr('\n    if len (SvF.CV_NoRs) > 0 :')  # 23.11
             wr('        Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
@@ -76,7 +134,7 @@ def Sets_add ( all_Sets, from_ ) :    # пополняет из from_,  если
 def WriteSelectTable(leftName, Fields, FileName, AsName, where):  #  запись в файл
     FileName = FileName.replace('\'', '')
     FileName = FileName.replace('\"', '')
-    if AsName == '': AsName = 'curentTabl'
+    if AsName == '': AsName = 'currentTab'
     if where != '':
         args = ''
         for a in Fields.split(','):
@@ -135,8 +193,8 @@ def WriteSelect30(buf):  ##  разбор  Select
 
 def WriteSetString30(g):
         if g.className == 'Set':
-            if is_nan(g.min):   g.min = 'SvF.curentTabl.dat(\'' + g.fld_name + '\')[:].min()'
-            if is_nan(g.max):   g.max = 'SvF.curentTabl.dat(\'' + g.fld_name + '\')[:].max()'
+            if is_nan(g.min):   g.min = 'SvF.currentTab.dat(\'' + g.fld_name + '\')[:].min()'
+            if is_nan(g.max):   g.max = 'SvF.currentTab.dat(\'' + g.fld_name + '\')[:].max()'
             if is_nan(g.step):  g.step = SvF.Default_step  #-50
 #            ret = 'Set(\'' + g.name + '\',' + str(g.min) + ',' + str(g.max) + ',' + str(g.step) + ',\'' + g.ind + '\',\'' + g.oname + '\')'
             ret = 'Set(\'' + g.name + '\',' + str(g.min) + ',' + str(g.max) + ',' + str(g.step) + ',\'' + g.ind + '\''')'
@@ -188,49 +246,65 @@ def WriteDomain_24_12(buf):
 
 
 def WriteSet_24_12(buf):        #  в память и в файл
+    keys = [  ['Data', 'Data', None], ['Index', "Index", None]  ]
     buf = buf.replace(' ','')    #  пробел после  '\\inn'
     if buf == '': return
     print('buf', buf)
-    buf_sp = buf.split ('=')
-    if len(buf_sp) < 2: buf_sp = buf.split ('\\inn')
-    if len(buf_sp) < 2: print ('No ='); exit (-1)
-    name = buf_sp[0]
-    step = '-50'
-    ind = ''
-    Data = '\''+ name + '\''
-    mi = ''
-    ma = ''
+    split_eq = buf.split('\\inn')
+    if len (split_eq) < 2 : split_eq = buf.split('=')
+    if len(split_eq) < 2: print ('No "=" in ', buf);  exit (-1)
+    name = split_eq[0]
+#    rest = '='.join (buf_sp[1:])                    #  могут быть и другие =
+    rest = '='.join (split_eq[1:])                    #  могут быть и другие =
 
-    buff = '='.join (buf_sp[1:])                    #  могут быть и другие =
-    for parts in buff.split(';') :
-       if '[' in parts :             #  [   ]
-           set = parts
-           pars = parser(set)
-     #      pars.myprint()
-           args = pars.Args(0)   # here  '['
-           print (args)
+#    buf_sp = buf.split ('=')
+ #   if len(buf_sp) < 2: buf_sp = buf.split ('\\inn')
+  #  if len(buf_sp) < 2: print ('No ='); exit (-1)
+   # name = buf_sp[0]
+    mi = '';   ma = '';  step = '-50';  Index = '';  Data = "'"+ name + "'"
+    #buff = '='.join (buf_sp[1:])                    #  могут быть и другие =
+    if rest.startswith('[') == False :  print (' Err in Set: ', buf); exit (-1)
+    parts = rest.split (';')
+    args = parts[0][1:-1].split (',')
+    if len(args) >= 1 and args[0] != '': mi = args[0]
+    if len(args) >= 2 and args[1] != '': ma = args[1]
+    if len(args) >= 3 and args[2] != '': step = args[2]
+    if len(args) >= 4 and args[3] != '': Index = args[3]
+    if len(args) >= 5 and args[4] != '': Data = args[4]
 
-           mi = args[0]
-           ma = args[1]
+    for n, part in enumerate ( parts ) :
+        if n==0: continue       #   [,,,]
+        key, eq, val = getKeyFromBuf(keys, part)
+        if 'Index' == key and eq == '=' :  Index = val
+        if 'Data'  == key and eq == '=' :  Data = val
+#    for parts in buff.split(';') :
+ #      if '[' in parts :             #  [   ]
+  #         set = parts
+   #        pars = parser(set)
+    #       args = pars.Args(0)   # here  '['
+     #      print (args)
 
-           if  len(args) > 2 :
-               if args[2] != '': step = args[2]
-           if  len(args) > 3 :
-               if args[3] != '': ind = args[3]
-           if  len(args) > 4 :
-               if args[4] != '': Data = args[4]
-       elif ('Data' in parts) : Data = parts.split('=')[1]
-       elif ('Index' in parts) : ind = parts.split('=')[1]
+      #     mi = args[0]
+       #    ma = args[1]
+
+#           if  len(args) > 2 :
+ #              if args[2] != '': step = args[2]
+  #         if  len(args) > 3 :
+   #            if args[3] != '': ind = args[3]
+    #       if  len(args) > 4 :
+     #          if args[4] != '': Data = args[4]
+      # elif ('Data' in parts) : Data = parts.split('=')[1]
+  #     elif ('Index' in parts) : Index = parts.split('=')[1]
 
     if mi == '':
         if '.' in Data : mi =  Data + '[:].min()'
-        else           : mi = 'SvF.curentTabl.dat(' + Data + ')[:].min()'
+        else           : mi = 'SvF.currentTab.dat(' + Data + ')[:].min()'
     if ma == '':
         if '.' in Data : ma =  Data + '[:].max()'
-        else           : ma = 'SvF.curentTabl.dat(' + Data + ')[:].max()'
-    ind = ind.strip ('\'')                                              #   'i' -> i
-    Swr(name + ' = Set(\'' + name +'\','+mi+','+ma+','+step+',\''+ind+'\','+Data+')')
-    Set (name,mi,ma,step,ind,Data)    #  нужен индекс при формир StartModel
+        else           : ma = 'SvF.currentTab.dat(' + Data + ')[:].max()'
+    Index = Index.strip ('\'')                                              #   'i' -> i
+    Swr(name + ' = Set(\'' + name +'\','+mi+','+ma+','+step+',\''+Index+'\','+Data+')')
+    Set (name,mi,ma,step,Index,Data)    #  нужен индекс при формир StartModel
     return
 
 
@@ -284,7 +358,7 @@ def make_Polynome (smbF, fun) :             #  Polynome (6, c, X, V) ###########
             for iarg, arg in enumerate(comb) :
                 if   arg >= 2: pol += '*' + args[iarg] + '**' + str(arg)
                 elif arg == 1: pol += '*' + args[iarg]
-        print (pol)
+ #       print (pol)
     pol = ' ( ' + pol + ' ) '
 #        print (find_combinations(len(args), d))
  #   1/0
@@ -298,12 +372,15 @@ def make_Polynome (smbF, fun) :             #  Polynome (6, c, X, V) ###########
      #   if p >=1: pol += '*'+args[0]+'**' + str(p)
   #  print (pol)
 
-    print (smbF[0:beg]+pol+smbF[end+1:])
+ #   print (smbF[0:beg]+pol+smbF[end+1:])
     if getFun (coef) is None :         #  coef  is not defined
-        WriteVarParam26 ( coef + '[' + str(coef_num) + ']' , False)
+        wr_text = coef + '[' + str(coef_num) + ']'
+        if fun.ReadFrom !='':
+            if fun.ReadFrom == '*': wr_text += ";"+' << ' + coef + '.sol'
+            else : wr_text += ";"+' << ' + fun.ReadFrom
+#        WriteVarParam26 ( coef + '[' + str(coef_num) + ']' , fun.param )     #False)  25.10.19
+        WriteVarParam26 ( wr_text , fun.param )     #False)  25.10.19
         to_logOut('Var:  ' + coef + '[' + str(coef_num) + '] was added')
-#        WriteVarParam26 ( coef + '[' + str(degr+1) + ']' , False)
- #       to_logOut('Var:  ' + coef + '[' + str(degr+1) + '] was added')
 
 #    return smbF[0:beg]+pol+smbF[end+1:]
     smbF = smbF[0:beg] + pol + smbF[end + 1:]
@@ -342,12 +419,12 @@ def make_Fourier (smbF, fun) :        # Fourier (t, 5, T, c)
         if   p == 0:    pol += coef +'[0]/2'
         elif p%2 == 1:  pol += coef +'['+str(p)+']*cos('+ ω +'*'+str(n)+'*'+arg+')'
         else :          pol += coef +'['+str(p)+']*sin('+ ω +'*'+str(n)+'*'+arg+')'
-    print (pol)
+#    print (pol)
     pol = ' ( ' + pol + ' ) '
     pars.items[i_pol].part = pol
     for i in pars.items[i_pol + 1:i_pol+lenAgs*2+2]: i.part = ''
 #    for i in pars.items[i_pol + 1:i_pol+10]: i.part = ''  # убираем лишнее
-    print ('JV',ω )
+ #   print ('JV',ω )
     if getFun (ω) is None :         #  coef  is not defined
         WriteVarParam26 ( ω , False)
         to_logOut('Var:  ' + ω  + ' was added')
@@ -372,9 +449,7 @@ def add_py_to_fun (f_txt):          # добавляем к функциям py.
     return pars.join()
 
 def make_smbFun(smbF, fun):
-    print('make_smbFun', smbF);
-#    if smbF.find('Polynome') >= 0: smbF = make_Polynome (smbF, fun)
-#    if smbF.find('Fourier') >= 0:   smbF = make_Fourier (smbF, fun)
+#    print('make_smbFun', smbF);
     while ( smbF.find('Polynome') >= 0 ):  smbF = make_Polynome(smbF, fun)
     while ( smbF.find('Fourier')  >= 0 ):  smbF = make_Fourier (smbF, fun)
 #   1/0
@@ -404,6 +479,8 @@ def make_smbFun(smbF, fun):
 
     def Write123 (f_name, d0=0, d1=0):
         if   f_name == 'smbF' : f_txt = smbF
+        elif f_name == 'Deriv1' :
+            f_txt = str ( sy.diff ( smbF, variables[d0] ) ) + ' '
         elif f_name == 'Hessian' :
             f_txt = str(sy.diff(smbF, variables[d0], variables[d1])) + ' '
         elif f_name == 'IntegDer2' :
@@ -421,31 +498,63 @@ def make_smbFun(smbF, fun):
                 eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name + '()')
         f_txt = eqPars.join()
 
-        Swr('def ' + fun.name + '_' + f_name +str(d0)+str(d1) + '(Args) :')
+        if f_name == 'Deriv1':
+            f_name = 'Deriv1_'
+            Swr('def ' + fun.name + '_' + f_name +str(d0) + '(Args) :')
+        else :
+            Swr('def ' + fun.name + '_' + f_name +str(d0)+str(d1) + '(Args) :')
         Swr('   ' + fun.A[0] + ' = Args[0]')
         if fun.dim == 2: Swr('   ' + fun.A[1] + ' = Args[1]')
         f_txt = add_py_to_fun( f_txt )                                    # добавляем к функциям py.
         Swr('   return ' + f_txt)
         if   f_name == 'smbF' :
             Swr(fun.name + '.' + f_name + ' = ' + fun.name + '_' + f_name +str(d0)+str(d1) )
+        elif f_name == 'Deriv1' :
+            Swr(fun.name + '.'+ f_name + '['+str(d0)+'] = ' + fun.name + '_' + f_name +str(d0))
         else :
             Swr(fun.name + '.'+ f_name + '['+str(d0)+']['+str(d1)+'] = ' + fun.name + '_' + f_name +str(d0)+str(d1))
 
     Write123('smbF')
-    if fun.SymbolDiffer == False : return
     for d0 in range(fun.dim):
         for d1 in range(d0, fun.dim):
-            if   fun.SymbolInteg:   Write123('IntegDer2', d0, d1)
-            elif fun.SymbolDiffer:  Write123('Hessian',   d0, d1)
+            if  fun.Deriv1:  Write123('Deriv1',   d0)
+
+            if  fun.SymbolInteg:   Write123('IntegDer2', d0, d1)
+            if  fun.SymbolDiffer:  Write123('Hessian',   d0, d1)
     return
 
 
 def WriteVarParam26 ( buf, param ) :
+        # заменяем          на            значение
+        keys =  [
+                  ['SymbolDiffer',  'SymbolDiffer', 'True'],
+                  ['Degree',        'Degree',       None],
+                  ['Type', 'Type', None],
+                  ['Period', 'Period', None],
+                  ['Domain', 'Domain', None],
+                  ['Data', 'Data', None],
+                  ['=',             '=',            None],
+                  ['SymbolInteg',   'SymbolInteg',  'True'],
+                  ['Int_smbFxx_2',  'SymbolInteg',  'True'],
+                  ['ArgNormalition','ArgNorm', 'True'],
+                  ['ArgNorm',       'ArgNorm', 'True'],
+                  ['Deriv1',        'Deriv1',       'True'],
+                  ['AddGap',        'AddGap',       'True'],
+                  ['Finitialize',   'InitBy',       None],
+                  ['InitBy',        'InitBy',       None],
+                  ['ReadFrom',      '<<',           None],
+                  ['<<',            '<<',           None],
+                  ['DataFile',      'DataFile',     None],
+                  ['Select', 'Select', None],
+       #           [, , None],
+            ['SyDiffer', 'SymbolDiffer', None]
+                ]
+
         if buf == '':  return
         if SvF.printL:  print ('VarParam26:', buf, param)
         Task = SvF.Task
 #        print('VarParam26:', buf, param)
-        strInitBy = ''
+ #       strInitBy = ''
         strFuncDomain = ''
         f_name = ''
         fun_args = []
@@ -464,22 +573,13 @@ def WriteVarParam26 ( buf, param ) :
         Ubound = None
         Finitialize = '' #'0'
         AddGap = False
+        Deriv1 = ''
         SymbolInteg  = ''
         SymbolDiffer = ''
-        ArgNormalition = ''
+        ArgNorm = ''
 
         fun = None
         parts = buf.split(';')
-#        p = -1                                              #  вставляем ';'
- #       if   parts[0].find(')<') > 0 : p=parts[0].find(')<')+1   #    X(t) <= 0
-#        elif parts[0].find(')>') > 0 : p=parts[0].find(')>')+1   #   X(t) >= 0
-  #      elif parts[0].find(')=') > 0 : p=parts[0].find(')=')+1   # Param:  H(X,Y) = DEM_Kostica.asc
-# ??        elif parts[0].find(')\\inn')>0: p=parts[0].find(')\\inn')+1   # Param:  H(X,Y) \\in [0,1]
-   #     if p > 0 :
-    #        parts[0] = parts[0][:p] + ';' + parts[0][p:]
- #           print('P0', parts[0])
-     #       buf1 = ';'.join (parts)
-      #      parts = buf1.split(';')
 
         for i, part_i in enumerate (parts) :
                 part = part_i
@@ -488,11 +588,11 @@ def WriteVarParam26 ( buf, param ) :
                 part = part.replace(' ','')
                 if part == '' :   continue
                 up_part = part.upper()
-                print('PART:', part)
+    #            print('PART:', part)
                 pars = parser ( part )
          #       pars.myprint()
 
-                print ('PART:', part, part.find('\\inn') )
+     #           print ('PART:', part, part.find('\\inn') )
         #        print ('PART1{:', pars.items[1].part )
 
                 if i==0 :                                       #  Функция VAR:    x ( t, Degree=8 )
@@ -518,6 +618,7 @@ def WriteVarParam26 ( buf, param ) :
                     if dim == 0 :   f_type = 'tensor'
                     print (f_name, f_type, pars.Args(1), dop_args, fun_args, fun_args_str)
                     fun = Fun(pars.items[0].part ,fun_args, param, PolyPow )     # here  '('
+                    print (fun.ReadFrom)
 
                     p = -1
                     if   part.find('<') > 0:  p = part.find('<')  # X(t) <= 0
@@ -527,57 +628,63 @@ def WriteVarParam26 ( buf, param ) :
                     if p > 0:
                         part = part[p:]
                     else: continue
-                if part.find('Degree')==0 :                        #  Функция VAR:    x ( t ); Degree=8
-                            PolyPow = int(part.split('=')[1])
+
+                key, eq, val = getKeyFromBuf(keys, part)
+                print ('key, eq, val', key, eq, val)
+                if '=' == key and eq == '':
+                            smbFun = val
+                elif 'SymbolDiffer' == key and eq == '=':
+                            SymbolDiffer = val;   fun.SymbolDiffer = val
+                elif part.find('Deriv1')  == key and eq == '=':
+                            Deriv1 = val;    fun.Deriv1 = val
+                elif 'SymbolInteg' == key and eq == '=':
+                            SymbolInteg = val;    fun.SymbolInteg = val
+                elif 'ArgNorm' == key and eq == '=':
+                            ArgNorm = val
+                elif 'AddGap' == key and eq == '=':     #up_part == 'ADDGAP' :
+                            AddGap = val
+                elif 'InitBy'== key and eq == '=':   #  InitBy = 99       # ?? Param:  H(X,Y) = DEM_Kostica.asc?   or H(X,Y) = 1  ???
+                            Finitialize = val
+                elif '<<'== key :    #  and eq == '':    ReadFrom = 'abc.sol'   25.10.19
+                        if smbFun == '':
+                            if val is None :  val = fun.NameArds() + '.sol'
+                            if val[0] != '"' and val[0] != "'" :     ReadFrom = '\"' + val + '\"'  #  добавляем кавычки
+                            else                               :     ReadFrom = val
+                        else :
+                            if val is None : ReadFrom = '*'
+                        fun.ReadFrom = ReadFrom
+                elif 'Degree' == key and eq == '=':
+#                elif part.find('Degree')==0 :                        #  Функция VAR:    x ( t ); Degree=8
+ #                           PolyPow = int(part.split('=')[1])
+                            PolyPow = int(val)
                             fun.PolyPow = PolyPow
                             fun.type = 'p'
-                elif part.find('Type')==0 :
-                            Type = part.split('=')[1]
-                elif part.find('Period')==0 :
-                            Period = part.split('=')[1]
-                elif part.find('Domain') == 0:
-                            Domain = part.split('=')[1]
-                elif part.find('Data')==0 :
+                elif 'Type' == key and eq == '=':
+ #               elif part.find('Type')==0 :
+                            Type = val    #part.split('=')[1]
+                elif 'Period' == key and eq == '=':
+    #            elif part.find('Period')==0 :
+                            Period = val    #part.split('=')[1]
+                elif 'Domain' == key and eq == '=':
+ #               elif part.find('Domain') == 0:
+                            Domain = val     #part.split('=')[1]
+                elif 'Data' == key and eq == '=':
+#                elif part.find('Data')==0 :
                             Data = part
-                elif part[0] == '=' :
-                            smbFun = part[1:]
-                elif part.find('SymbolicIntegration') == 0 \
-                  or part.find('SymbolInteg') == 0 \
-                  or part.find('Int_smbFxx_2') == 0 :         #  устарело
-                            SymbolInteg  = part.split('=')[1]
-                            if SymbolInteg == 'True' :  fun.SymbolInteg = True
-#                elif part.find('Int_smbFxx_2=False') == 0:          #  устарело
- #                           fun.SymbolicIntegration = False
-                elif part.find('SymbolicDifferentiation') == 0 \
-                  or part.find('SymbolDiffer') == 0      :
-                            SymbolDiffer  = part.split('=')[1]
-                            if SymbolDiffer == 'True' :  fun.SymbolDiffer = True
-                elif part.find('ArgNormalition') == 0:
-                            ArgNormalition = part.split('=')[1]
-        #        elif part.find('Coeff')==0 :
-         #                   Coeff = part.split('=')[1][1:-1]      #  убираем кавычки
-      #          elif part.find('Fun')==0 :
-       #                     smbFun = part.split('=')[1][1:-1]
-                elif part.find('Finitialize=') == 0:   # Param:  H(X,Y) = DEM_Kostica.asc?   or H(X,Y) = 1
-                            Finitialize = part.split('=')[1]
-#                elif part[0] == '=' :             # Param:  H(X,Y) = DEM_Kostica.asc   or H(X,Y) = 1
- #                           Finitialize = part[1:]
-                elif part.find('<<') == 0:
-                        if len (part[2:]) > 0:
-                            ReadFrom = part[2:]
-                        else:
-                            ReadFrom = fun.NameArds() + '.sol'
-                        if ReadFrom[0] != '\'' and ReadFrom[0] != '\"' : ReadFrom = '\"' + ReadFrom + '\"'
-                elif part.find('ReadFrom')==0 :
-                            ReadFrom = part.split('=')[1]
-                elif part.find('>') == 0:  # > 3
-                        p = max(part.find('>'), part.find('>=') + 1)
-                        Lbound = part[p + 1:]
-                elif part.find('<') == 0:                                   # <6        # elif <  after  <<
-                        p = max(part.find('<'), part.find('<=') + 1)
-                        Ubound = part[p + 1:]
-                elif part.find('ReadFrom')==0 :
-                            ReadFrom = part.split('=')[1]
+                elif 'DataFile'== key and eq == '=':
+                            fun.DataReadFrom = 'Select * from '+ val    # ????
+                elif 'Select'== key and eq == '=':                      #  ???
+                            fun.DataReadFrom = part_blanck
+                elif part.find('>') == 0  or part.find(f_name+'>') == 0:                    # > 3     f>0    25.10.06
+                            p = max(part.find('>'), part.find('>=') + 1)
+                            Lbound = part[p + 1:]
+                elif part.find('<') == 0  or part.find(f_name + '<') == 0:  # <6        # elif <  after  <<
+                            p = max(part.find('<'), part.find('<=') + 1)
+                            Ubound = part[p + 1:]
+                elif part.find('\\inn') > 0 and part.find('[') > 0:         # W ∈ [Wmin, Wmax]   25.10
+                            begin , interval = part.split('\\inn')
+                            if begin == f_name :
+                                Lbound, Ubound = interval[1:-1].split(',')
                 elif part.find('\\inn') > 0:
                         args, SetOrDom = part.split('\\inn')
                         print (args, SetOrDom);
@@ -588,11 +695,28 @@ def WriteVarParam26 ( buf, param ) :
                             num_arg = fun_args.index(args)
                             fun_args[num_arg] = SetOrDom
                             fun_args_str = ','.join(fun_args)
-                        elif args == f_name and SetOrDom.find('[')==0:              #  W ∈ [Wmin, Wmax]   25.10
-                            Lbound, Ubound = SetOrDom[1:-1].split(',')
                         else:
                             print('**************** Cant understand :', part)
                             exit(-1)
+                elif part.find (fun.V.name) >=0:    #  Нужно искать  ИМЯ а не подстроку !!!!!!!!!!!!!!!!!!!!!!!
+                    parts[i] = 'EQ:' + part
+                    if SvF.printL:  print ('treated as EQ:',  parts[i])
+                else :
+                    print ('**************** Cant understand :', part)
+                    exit (-1)
+
+#                elif part.find('SymbolDiffer') == 0:
+ #                           SymbolDiffer = readFlag(part.split('SymbolDiffer')[1])       #            25.10.06
+  #                          fun.SymbolDiffer = SymbolDiffer
+#                elif part.find('SymbolicDifferentiation') == 0 :        #  устарело
+ #                           SymbolDiffer  = part.split('=')[1]
+  #                          if SymbolDiffer == 'True' :  fun.SymbolDiffer = True
+        #        elif part.find('Coeff')==0 :
+         #                   Coeff = part.split('=')[1][1:-1]      #  убираем кавычки
+      #          elif part.find('Fun')==0 :
+       #                     smbFun = part.split('=')[1][1:-1]
+#                elif part[0] == '=' :             # Param:  H(X,Y) = DEM_Kostica.asc   or H(X,Y) = 1
+ #                           Finitialize = part[1:]
 
                 #                elif getSet26 ( pars, Task.Sets ) != None :   #  Грид
  #                       gr = SvF.LastSet
@@ -635,28 +759,19 @@ def WriteVarParam26 ( buf, param ) :
   #                          Lbound = getfloat(part[p+1:])
    #                         if SvF.printL:  print ('Lbound=', Lbound)
 
-                elif up_part.find('DATAFILE')>=0 :    fun.DataReadFrom = 'Select * from '+ part.split('=')[1]
-                elif up_part.find('SELECT')>=0 :      fun.DataReadFrom = part_blanck
 #                elif up_part.find('INITIALIZE')>=0 :  Finitialize = part.split('=')[1]   # 22.12.19
 
 #                elif part.find('\\in')>=0 :                                     #  не проверено и не понятно  ???????????????????
  #                           tmp = part.split('\\in')
   #                          if tmp[0].find(',')>=0 :  strFuncDomain = tmp[1]           # Function Domain для NDT
    #                         else :   all_grids.append ( readGrid19 ( part, '\\in' ) )
-                elif up_part.find('INITBY')>=0 :    #  для явного задания NDT   #  не проверено
-                            strInitBy = up_part[6:]
-                elif up_part == 'ADDGAP' :
-                    AddGap = True
+ #               elif up_part.find('INITBY')>=0 :    #  для явного задания NDT   #  не проверено
+  #                          strInitBy = up_part[6:]
 #                elif part.find (fun.V.name+'=') ==0 \
  #                 or part.find (fun.V.name+'('+fun_args_str+')=') ==0 :   #  smbFun !!!!!!!!!!!!!!!!!!!!!!!
   #                  smbFun = part.split('=')[1]
                     #############################################################   ПРАВИТЬ !!!!!!!!!!!
-                elif part.find (fun.V.name) >=0:    #  Нужно искать  ИМЯ а не подстроку !!!!!!!!!!!!!!!!!!!!!!!
-                    parts[i] = 'EQ:' + part
-                    if SvF.printL:  print ('treated as EQ:',  parts[i])
-                else :
-                    print ('**************** Cant understand :', part)
-                    exit (-1)
+
 
         if f_type != 'tensor' :
             for a in fun_args:          #  проверяем Аргументы
@@ -693,12 +808,13 @@ def WriteVarParam26 ( buf, param ) :
         if Type     != '' and Type != 'Cycle' and not ('Type' in dop_args):     f_str += ', Type=\''   + Type+ '\''
         if Period   != '' and not ('Period' in dop_args):   f_str += ', Period='   + Period
         if Domain   != '' and not ('Domain' in dop_args):   f_str += ', Domain='   + Domain
-        if ReadFrom != '' and not ('ReadFrom' in dop_args): f_str += ', ReadFrom=' + ReadFrom
+        if ReadFrom != '' and not ('ReadFrom' in dop_args) and smbFun == '': f_str += ', ReadFrom=' + ReadFrom
         if Data     != '' and not ('Data'     in dop_args): f_str += ', ' + Data
         if Finitialize != '' and not ('Finitialize' in dop_args): f_str += ', Finitialize=' + Finitialize
-        if SymbolInteg != '' : f_str += ', SymbolInteg=' + SymbolInteg
-        if SymbolDiffer != '' : f_str += ', SymbolDiffer=' + SymbolDiffer
-        if ArgNormalition != '' : f_str += ', ArgNormalition=' + ArgNormalition
+        if SymbolInteg != ''    : f_str += ', SymbolInteg=' + str(SymbolInteg)
+        if Deriv1 != ''   :       f_str += ', Deriv1=' + str(Deriv1)
+        if SymbolDiffer != ''   : f_str += ', SymbolDiffer=' + str(SymbolDiffer)
+        if ArgNorm != '' : f_str += ', ArgNorm=' + str(ArgNorm)
 
 #       if smbFun != '' :  f_str += ', smbFun=\''+smbFun+'\', Coeff=\''+Coeff+'\''
         if dop_args != '' : f_str += dop_args
@@ -725,11 +841,6 @@ def WriteVarParam26 ( buf, param ) :
         if smbFun != '':
             #            print (smbFun, Coeff)
             make_smbFun(smbFun, fun)
-#            1 / 0
-        #       if fun.PolyPow >=0 :
-  #          make_smbF(fun)                          ############  24.11
-        #       if fun.PolyPow >=0:     fun = pFun(fun)
- #       SvF.ReadFrom = ''
 ## 30        Task.AddFun ( fun )
         Task.Funs[-1].Oprint()
 
@@ -737,24 +848,24 @@ def WriteVarParam26 ( buf, param ) :
         if not param:  # Param
             if PolyPow >= 0:  # Poly
                 wr('\n    ' + f_name + '.var = py.Var ( range (' + f_name + '.sizeP' + ') )' ) #, initialize =  ' + Finitialize + ')') # ?? Finitialize copy from grd
-                wr('    Gr.' + f_name + ' =  ' + f_name + '.var')
-            else:  # Set
-  ##              if not fun.param:  # Var
+        #        wr('    '+ f_name + '.gr =  ' + f_name + '.var')           #  25.10.18
+         #       wr('    Gr.' + f_name + ' =  ' + f_name + '.var')
+#            else:  # Set
+            elif  smbFun == '':   #  Если не символьная
                     wr('\n    ' + f_name + '.var = py.Var ( ')
                     for di in range(dim):
                         if f_type == 'tensor':
                             wrs('range (' + f_name + '.Sizes[' + str(di) + ']),')
-
                         else :
                             wrs(f_name + '.A[' + str(di) + '].NodS,')
-                    #                      wrs ( 'domain='+str(fun.domain_)+',' )
                     wrs('domain=Reals')
-      #              wrs('domain=complex,')
                     if not (Lbound is None and Ubound is None):
                         wrs(', bounds=(' + str(Lbound) + ',' + str(Ubound) + ')')
                     wrs(' )')
 #                    wrs(' initialize = ' + Finitialize + ' )')
-                    wr('    Gr.' + f_name + ' =  ' + f_name + '.var')
+            if smbFun == '':  # Если не символьная
+                wr('    ' + f_name + '.gr =  ' + f_name + '.var')  # 25.10.18
+                wr('    Gr.' + f_name + ' =  ' + f_name + '.var')
 
  #24           if PolyPow < 0:  # Set
     #            wr('    ' + f_name + '.InitByData()')
@@ -780,7 +891,9 @@ def WriteVarParam26 ( buf, param ) :
             if PolyPow >= 0:  # Poly
                 if not Lbound is None:      WriteModelEQ31(f_name+'('+fun_args_str + ')>=' + str(Lbound))
                 if not Ubound is None:      WriteModelEQ31(f_name+'('+fun_args_str + ')<=' + str(Ubound))
-
+            if smbFun != '':  # Poly
+                if not Lbound is None:      WriteModelEQ31(f_name+'('+fun_args_str + ')>=' + str(Lbound))
+                if not Ubound is None:      WriteModelEQ31(f_name+'('+fun_args_str + ')<=' + str(Ubound))
 
 
             for part in parts:
@@ -857,7 +970,7 @@ def fromTEXplus(equation) :
   #  if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
    # else :                      equation = UTF8replace(equation, '^', '')
     sel = parser(equation)
-    sel.myprint()
+ #   sel.myprint()
     repars = True
     def del_figure (sel, pos):                      #  удаляет фигурные скобки
         if  sel.items[pos].part != '{' :  return pos
@@ -870,7 +983,7 @@ def fromTEXplus(equation) :
         sel = parser(equation)
         repars = False
         for itn, it in enumerate(sel.items) :
-            print ('itn=', itn)
+#            print ('itn=', itn)
             if it.type == 'name' or it.type == 'fun' :
                 if it.part == '\\frac' :                    #  \frac{d}{dro}(Df) = Pdf
 #                    repars = True
@@ -1007,23 +1120,39 @@ def fromTEXplus(equation) :
         equation = UTF8replace(equation, '^', '')
     sel = parser(equation)
 
-
-    if SvF.UsePrime and equation.find("'") >= 0:     #   G' > 0
-        for ip in range(len(sel.items) - 1):
-            if sel.items[ip].part == "'" :
-#                print (sel.items[ip-1].part,sel.items[ip-1].type, sel.items[ip].part,sel.items[ip].type )
-                fname = sel.items[ip-1].part
+    if SvF.UsePrime and equation.find("''") >= 1:     #   G'' > 0       25.10.05
+        print('B>>>', equation)
+        for nit, it in enumerate(sel.items):
+            if nit == 0 or nit > len (sel.items)-2: continue
+            if it.part == "'" and sel.items[nit+1].part == "'" :
+                fname = sel.items[nit-1].part
                 f= getFun(fname)
- #               print (f.name)
+                if f is None: continue                    #  25/10/03
                 if (len(f.A)) > 1:
-                    print ('Only for one argument')
+                    print ('Only for one argument', equation)
                     exit (-1)
-                sel.items[ip - 1].part = 'd/d'+f.A[0]+'('+ fname +')'
-                sel.items[ip].part = ""
+                sel.items[nit - 1].part = 'd2/d'+f.A[0]+'2('+ fname +')'
+                it.part = ""
+                sel.items[nit+1].part = ""
+        equation = sel.join()
+        print('>>>', equation)
+        sel = parser(equation)
+
+    if SvF.UsePrime and equation.find("'") >= 1:     #   G' > 0
+#        for nit in range(len(sel.items) - 1):
+        for nit, it in enumerate(sel.items):
+            if it.part == "'" :
+                fname = sel.items[nit-1].part
+                f= getFun(fname)
+                if f is None: continue                    #  25/10/03
+                if (len(f.A)) > 1:
+                    print ('Only for one argument', equation)
+                    exit (-1)
+                sel.items[nit - 1].part = 'd/d'+f.A[0]+'('+ fname +')'
+                it.part = ""
         equation = sel.join()
         sel = parser(equation)
-    print ('>>>', equation)
-   # 1/0
+   # print ('>>>>', equation)
 
                             #    d/dt(Vac(t))  ->  \d(t,Vac(t))
     if equation.find ('d/d') >= 0 :
@@ -1044,12 +1173,15 @@ def fromTEXplus(equation) :
             sel.items[ip + 2].part = sel.items[ip + 2].part[1:-1]       # dt2 ->  t
             sel.items[ip + 3].part = ','
       equation = sel.join()
-#      print (equation)
+  #    print ('>>>>>', equation)
  #     1/0
 #      sel = parser(equation)
 
 #    if SvF.UseHomeforPower :    equation = UTF8replace(equation, '^', '**')
  #   else :                      equation = UTF8replace(equation, '^', '')
+
+
+
     return equation
 
 
@@ -1060,10 +1192,9 @@ def ParseEQUATION ( equation, all_Sets, Mode = 'EQ' ) :
         dif_minus = []                               # DERIV     (H2O((t+1.0))-H2O(t))/1.0==-E(t)*2.0736+WF*WD(t)
         dif_plus = []                               # DERIV 2
 
-#        equation = fromTEXplus(equation)
         eqPars   = parser ( equation )
                                            #  Добавляем опущенные Аргументы
-        if SvF.printL:  print ('ParseEQUATION'); eqPars.myprint()
+  #      print ('ParseEQUATION'); eqPars.myprint()
         reparse = True
         while reparse :
           reparse = False
@@ -1074,6 +1205,9 @@ def ParseEQUATION ( equation, all_Sets, Mode = 'EQ' ) :
             if it.type == 'name' :                  # нет  (
                 if iit < len(eqPars.items)-1 :
                     if eqPars.items[iit+1].part == '.' : continue          #  F.Complex...
+                if iit >=2:
+                    if eqPars.items[iit-1].part == '(' and eqPars.items[iit-2].part == '\\d': continue
+ #               print (iit,it.part,eqPars.join())
                 for f in Funs :
                     if f.V.name == it.part and len(f.A) > 0:
                         for ia,a in enumerate( f.A ) :
@@ -1085,7 +1219,8 @@ def ParseEQUATION ( equation, all_Sets, Mode = 'EQ' ) :
                         if SvF.printL:  print ('NewPart',  it.part)
                         reparse = True
           if reparse :  eqPars   = parser ( eqPars.join() )
-        if SvF.printL:  eqPars.myprint()
+   #     print ('&&&', eqPars.join())
+        #eqPars.myprint()
 
    #     print ('ALL_Sets B', len(all_Sets))
   #      for g in all_Sets : print (g.name)
@@ -1099,11 +1234,12 @@ def ParseEQUATION ( equation, all_Sets, Mode = 'EQ' ) :
         eqPars.funs( all_Sets )                                        #  ... name -> Set
         dif_minus, dif_plus  = eqPars.dif1 ( dif_minus, dif_plus, all_Sets )
         dif_minus, dif_plus  = eqPars.dif2 ( dif_minus, dif_plus, all_Sets )
+   #     print ('dif_minus, dif_plus', dif_minus, dif_plus)
         eqPars.summa(all_Sets)
  #       print ('555', eqPars.join())
         integral_Sets = eqPars.integral( all_Sets )                  # лучше оставить последним - там всякие for и sum
         equation = eqPars.join()
-        if SvF.printL : print ('END PARSE', equation)
+        print ('END PARSE', equation)
 
         constraint_Sets=[]                         #  фигурируют в EQ  но не как  d(t)
         for g in all_Sets :
@@ -1123,6 +1259,7 @@ def ParseEQplus31 ( buf, Mode = 'EQ' ):
     if buf[-1] == ';' : buf = buf[:-1]          # Убираем последний ;
 
     buf = fromTEXplus(buf)
+ #   print('>>>>>>31', buf)
 
     all_Sets = []  # local (заданные в EQ  после ; and global Sets    explicit
     explicit_Sets =[]  # explicit Sets  for String
@@ -1158,10 +1295,9 @@ def ParseEQplus31 ( buf, Mode = 'EQ' ):
             eqPars.substAllNames_but_dot(ind_n, Set_n)
             equation = eqPars.join()
 #    print("EE", equation)
-
     equation, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION(equation, all_Sets, Mode)
 
- #   print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation, len(all_Sets) )
+#    print('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation, len(all_Sets) )
     for g in constraint_Sets:
         eqPars.substAllNames_but_dot(g.name, g.ind)  ## 30g+
         eqPars.substAllNames(g.name + '__p', g.name)
@@ -1174,8 +1310,9 @@ def ParseEQplus31 ( buf, Mode = 'EQ' ):
             eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name + '()')
 
     equation = eqPars.join()
+    equation = equation.replace('__p', '')
 #    print('2EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' + equation)
-    if SvF.printL: print('EQAFTER', equation)
+    print('EQAFTER', equation)
     return equation, constraint_Sets, dif_plus, dif_minus, explicit_Sets
 
 eqNUM = 0
@@ -1453,8 +1590,8 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
             for p in range(obj.count('Penal[')) : SvF.Penalty.append (.1)
 
         if SvF.numCV == -1 and SvF.OptMode == 'SvF':   # CV по умолчанию  2023.11
-#            wr('\n    SvF.ValidationSets, SvF.notTrainingSets = MakeSets_byParts(SvF.curentTabl.NoR, SvF.CVstep)')  # CV_Sets (fu )
-#            wr('\n    MakeSets_byParts(SvF.curentTabl.NoR, SvF.CVstep)')  # CV_Sets (fu )
+#            wr('\n    SvF.ValidationSets, SvF.notTrainingSets = MakeSets_byParts(SvF.currentTab.NoR, SvF.CVstep)')  # CV_Sets (fu )
+#            wr('\n    MakeSets_byParts(SvF.currentTab.NoR, SvF.CVstep)')  # CV_Sets (fu )
             #wr('\n    make_CV_Sets(0, 7)')  # CV_Sets (fu )
             wr('\n    make_CV_Sets(0, SvF.CVstep)')  # CV_Sets (fu )    -   25.05
 #make_CV_Sets ( NoR =0, NoSubSets =7, Param ='', Data =None ) :

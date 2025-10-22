@@ -48,7 +48,7 @@ def ReadMng ( ) :
  SvF.Task = TaskClass()
  Task = SvF.Task
 
- Table('', 'SvF.curentTabl')                # чтобы обрабатывать SvF.curentTabl.Dat
+ Table('', 'SvF.currentTab')                # чтобы обрабатывать SvF.currentTab.Dat
  maxSigEst = 0           # оценка сигмы скольз. среднем
 
  NDT = -99999.0
@@ -125,6 +125,8 @@ def ReadMng ( ) :
      buf = UTF8replace(buf, '≥', '>=')# ≥
      buf = UTF8replace(buf, '≤', '<=')#
 
+     if SvF.UseHomeforPower :    buf = UTF8replace(buf, '^', '**')#
+
      if not SvF.UseGreek :
         buf = UTF8replace(buf, 'τ', 'tau1')       #  tau   - не ест Pioma
         buf = UTF8replace(buf, 'μ', 'muu')
@@ -199,7 +201,7 @@ def ReadMng ( ) :
      buf_up = buf.upper()
      p = buf_up.find ('SELECT*')
      if p >= 0 : buf = buf[:p+6]+' * '+buf[p+7:]
-     print ('\nbuf2********', '|'+buf+'|')
+ #    print ('\nbuf2********', '|'+buf+'|')
 
      p = buf_up.find ('FROM/')
      if p >= 0 : buf = buf[:p+4]+' '+buf[p+4:]
@@ -351,6 +353,7 @@ def ReadMng ( ) :
     global EmptyBuf
     EmptyBuf = False
     qlf = readStr()
+ #   print (1, qlf,buf)
     if len (first_char) > 0 :
         if old_qlf != '' :   qlf = old_qlf
     else  : old_qlf = ''
@@ -386,9 +389,11 @@ def ReadMng ( ) :
             elif Is(Q, "Substitude"):
                 SvF.Substitude = readBool();  continue
             elif Is(Q, "UseHomeforPower"):
-                SvF.UseHomeforPower = readBool();  continue
+                SvF.UseHomeforPower = readFlag(buf);  continue
             elif Is(Q, "UsePrime"):
-                SvF.UsePrime = readBool();  continue
+                if buf.find('=') == -1:  SvF.UsePrime = True
+                else:                    SvF.UsePrime = readBool();
+                continue
             elif Is(Q, "TabSize"):
                 TabSize = readInt();   SvF.TabString = ' ' * TabSize;  continue
             elif Is(Q, "Default_step"):
@@ -406,9 +411,10 @@ def ReadMng ( ) :
 #                    printS ( '*******************  change CWD:', getcwd() )
     elif Is(Q, "SetStartDir") :
                     os.chdir(SvF.startDir);
-    elif Is(Q, "DataLineWidth"): print ( '*********************** use DLW' );  exit (-1)  ##########################
-    elif Is(Q, "SELECT:") :
-        WriteSelect30(Treat_FieldNames('Select '+buf))
+    elif Is(Q, "COMPILE:"):     COMPILE_RUN_option (buf)
+    elif Is(Q, 'RUN:'):         COMPILE_RUN_option (buf)  #WriteRUNoption (buf)
+
+    elif Is(Q, "SELECT:") :    WriteSelect30(Treat_FieldNames('Select '+buf))
 
     elif(Is(Q, "GRID:") or
          Is(Q, "SET:")  ) :
@@ -438,31 +444,31 @@ def ReadMng ( ) :
 #                        if objective == 'N':  buf = 'OBJ: N';
                         print ('OptMode', SvF.OptMode)
                         print ('EoF ************', Q, ' in READ MNG ********************* EoF')
+                        if SvF.ShowAll:
+                            Swr('\nif SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")')
                         if not SvF.SModelFile is None:  SvF.SModelFile.close()
                         if Q == 'EOTASK' :  SvF.EofTask = True
                         else:               SvF.EofTask = False
- #                       SvF.Compile = False
                         return Task
 
     elif Is(Q, 'CV:'):    WriteCV (Treat_FieldNames(buf))
     elif Is(Q, 'DRAW:'):  Swr('Task.Draw ( \'' + buf + '\' )')
-    elif Is(Q, 'RUN:'):   WriteRUNoption (buf)
 
     elif Is(Q, "MakeSets_byParam") :                #  out of date      24-12-26
             args = buf.split(' ');  #args[0] = '\''+ args[0] + '\''
             SvF.numCV += 1
             col_name = '.dat(\''+args[0]+'\')'
-            Swr('SvF_MakeSets_byParam ( SvF.curentTabl'+col_name+', '+','.join(args[1:])+' )' )
+            Swr('SvF_MakeSets_byParam ( SvF.currentTab'+col_name+', '+','.join(args[1:])+' )' )
             wr('    Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
 
     elif Is(Q, "MakeSets_byParts") :                #  out of date      24-12-26
             args = buf.split(' ')
             SvF.numCV += 1
-            Swr('SvF.ValidationSets, SvF.notTrainingSets = MakeSets_byParts ( SvF.curentTabl.NoR, '+','.join(args)+' )' )
+            Swr('SvF.ValidationSets, SvF.notTrainingSets = MakeSets_byParts ( SvF.currentTab.NoR, '+','.join(args)+' )' )
             wr('    Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
     elif Is(Q, "WriteSvFtbl" ):
-                    Swr( '\nSvF.curentTabl.WriteSvFtbl (  \'' + buf + '\' )')
-## 30                    if not SvF.Preproc: SvF.curentTabl.WriteSvFtbl ( readEqStr() )
+                    Swr( '\nSvF.currentTab.WriteSvFtbl (  \'' + buf + '\' )')
+## 30                    if not SvF.Preproc: SvF.currentTab.WriteSvFtbl ( readEqStr() )
     elif Is(Q, "DataPath")  : SvF.DataPath = readEqStr(); nSwr( 'SvF.DataPath = \''+SvF.DataPath+'\'')
     elif Is(Q, "SavePoints" )     :
                         if len (buf) >= 4 :  SvF.SavePoints = readBool()
@@ -474,7 +480,7 @@ def ReadMng ( ) :
                             r_line = raw_line.split("CODE:")
                             if len(r_line)==2 : raw_line = r_line[1]    # 17.01.22 убираем CODE:
                             WriteModelCode26 ( raw_line ) #buf )
-    elif Is(Q, "EoD")   :    SvF.curentTabl = None;   Swr('SvF.curentTabl = None')
+    elif Is(Q, "EoD")   :    SvF.currentTab = None;   Swr('SvF.currentTab = None')
 
 ############################################# 27
     elif Is(Q, "TBL:") :  Tab.TblOperation(buf)
@@ -502,6 +508,7 @@ def ReadMng ( ) :
                 WriteString31(raw_line)
             buf = ''
     if EmptyBuf : buf = ''
+
 
 
 

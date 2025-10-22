@@ -4,15 +4,19 @@ class SPWLFun (Fun) :
     def __init__(self, Vname='', As=[], param=False, Finitialize=0, DataReadFrom='', Data=[], Type='', Domain=None, ReadFrom=''):
         Fun.__init__(self, Vname, As, param, -1, Finitialize, DataReadFrom, Data, Type, Domain, ReadFrom)
 #        if SvF.Compile: return  # ???
+ #    def interpol(self, lev, X, Y=0, Z=0):  # X,Y,Z  в шагах
 
-    def interpol(self, lev, X, Y=0, Z=0):  # X,Y,Z  в шагах
+    def interpolNode(self, argNode, lev=1):  # argNode =[ X,Y,..]  в шагах
+        X = argNode[0]
         if self.param or not SvF.Use_var:           gr = self.grd
         else:                                       gr = self.var  # 29
         if lev == 2:
+
             if self.type == 'gSPWLi':  # 'G_ind':
                 def ind_0_1(x):
                     return 0.5 * x / py.sqrt(SvF.Epsilon + x ** 2) - 0.5 * (x - 1) / py.sqrt(
                         SvF.Epsilon + (x - 1) ** 2)
+                Y = argNode[1]
                 ret = 0  # tetta(1 - dX) * tetta(dX)
                 for i in self.A[0].NodSm:
                     dX = X - i

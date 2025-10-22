@@ -29,6 +29,13 @@ def Var_to_Grd():
         if not f.param:
             f.var_to_grd()
 
+def setUse_var(tru=True):
+        SvF.Use_var = tru
+        for f in SvF.Task.Funs:
+            if f.param == False :
+                f.set_gr_grd_or_var()
+
+
 def Grd_to_Var():
     for f in SvF.Task.Funs:
         if not f.param:
@@ -61,7 +68,7 @@ class TaskClass :
         self.print_res = None
         self.OBJ_U     = None
 
-    #    Table('', 'SvF.curentTabl')
+    #    Table('', 'SvF.currentTab')
 
 
     def ReadSols (self, ext = '' ) : #, printL = 0 ) :
@@ -78,7 +85,6 @@ class TaskClass :
     def SaveSols (self, ext = '' ) : #, printL = 0 ) :
         for f in self.Funs :
             if f.param : continue
-            print ("E", ext)
             if ext == ''       :  f_n = ''
             elif f.type == 'p' :  f_n = f.nameFun() + '.p' + ext
             else               :  f_n = f.nameFun() + ext
