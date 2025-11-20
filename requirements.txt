@@ -1,0 +1,12 @@
+# Work for Python 3.10.19
+# to avoid AttributeError: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead
+numpy==1.26.4
+sympy
+openpyxl
+pyproj
+ezodf
+lxml
+docx2python
+matplotlib
+future
+
