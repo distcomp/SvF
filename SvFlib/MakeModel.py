@@ -22,8 +22,14 @@ def getKeyFromBuf (keys, part):                     # 'usehomeforPower' -> 'UseH
                         eq = ''
                     else :
                         eq = '='
-
-            return key[1], eq, val
+            if key[2] == None :          return key[1], eq, val
+            if val    == 'True':         return key[1], eq, True
+            if val    == 'False':        return key[1], eq, False
+            val = val.strip('"').strip("'")
+            return key[1], eq, '"' + val + '"'     #   str
+       #     if type(key[2]) == str and val != 'True' and val != 'False':
+        #        val = '"' + val + '"'
+         #   return key[1], eq, val
     return None, None, None
 
 
@@ -36,7 +42,7 @@ def COMPILE_RUN_option(buf):
             ['UsePrime',    'UsePrime',         'True'],
             ['NumOfIter',   'CVNumOfIter',      None],
             ['MaxIter',     'CVNumOfIter',      None],
-            ['RunMode',     'RunMode',          None]
+            ['RunMode',     'RunMode',          '']
            ]
     if len(buf) == 0: return
     if buf[-1:] == ';': buf = buf[:-1]
@@ -47,10 +53,10 @@ def COMPILE_RUN_option(buf):
         if key is None or eq == '':
             print ("Unknown key or no \'=\' in ", opt)
             exit (-1)
-        writeBuf += 'SvF.' + key + '=' + val + '; '
+        writeBuf += 'SvF.' + key + '=' + str(val) + '; '
         if  key in ['ShowAll','UseHomeforPower', 'UsePrime']:
-            if   val == 'True':   setattr(SvF, key, True)
-            elif val == 'False':  setattr(SvF, key, False)
+            if   val == True:   setattr(SvF, key, True)
+            elif val == False:  setattr(SvF, key, False)
             else :
                 print('Для ', key, ' должно писать =True или =False а не ', val)
                 exit(-1)
@@ -60,11 +66,13 @@ def COMPILE_RUN_option(buf):
 def WriteCV(buf):
                     # заменяем          на            значение
             keys = [['NumOfSets',   'CV_NumSets', None],
+                    ['CV_NumSets',  'CV_NumSets', None],
                     ['Unit',        'GroupBy', None],
                     ['GroupByNum',  'GroupBy', None],
                     ['GroupByParam','GroupBy', None],
                     ['GroupBy',     'GroupBy', None],
-                    ['Margin',      'CV_Margin', None]
+                    ['Margin',      'CV_Margin', None],
+                    ['CV_Margin',   'CV_Margin', None]
                    ]
             if buf[-1:] == ';': buf = buf[:-1]
             buf = buf.replace(';;',';')
@@ -246,7 +254,7 @@ def WriteDomain_24_12(buf):
 
 
 def WriteSet_24_12(buf):        #  в память и в файл
-    keys = [  ['Data', 'Data', None], ['Index', "Index", None]  ]
+    keys = [  ['Data', 'Data', ''], ['Index', "Index", None]  ]
     buf = buf.replace(' ','')    #  пробел после  '\\inn'
     if buf == '': return
     print('buf', buf)
@@ -459,23 +467,6 @@ def make_smbFun(smbF, fun):
         variables = sy.symbols(fun.A[0] + ',' + fun.A[1])
 #    smbF = smbF.replace('[', '(').replace(']', ')')  # Заменяем  []  ->  ()   25.10
 
-    def Write_def_smbFun(f_name, f_txt, d1=0, d2=0):
-        if f_txt is None : return
-        obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION(f_txt, [])
-        for fu in SvF.Task.Funs:
-            if fu.dim != 0:
-                eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name)
-            else:
-                eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name + '()')
-        f_txt = eqPars.join()
-        Swr('def ' + fun.name + '_' + f_name + '(Args) :')
-        Swr('   ' + fun.A[0] + ' = Args[0]')
-        if fun.dim == 2: Swr('   ' + fun.A[1] + ' = Args[1]')
-        f_txt = add_py_to_fun( f_txt )                                    # добавляем к функциям py.
-        Swr('   return ' + f_txt)
-        Swr(fun.name + '.' + f_name + ' = ' + fun.name + '_' + f_name + '')
-
-        Swr(fun.name + '.IntegDer2['+str(d1)+']['+str(d2)+'] = ' + fun.name + '_' + f_name + '')
 
     def Write123 (f_name, d0=0, d1=0):
         if   f_name == 'smbF' : f_txt = smbF
@@ -503,16 +494,27 @@ def make_smbFun(smbF, fun):
             Swr('def ' + fun.name + '_' + f_name +str(d0) + '(Args) :')
         else :
             Swr('def ' + fun.name + '_' + f_name +str(d0)+str(d1) + '(Args) :')
-        Swr('   ' + fun.A[0] + ' = Args[0]')
-        if fun.dim == 2: Swr('   ' + fun.A[1] + ' = Args[1]')
+        for na, a in enumerate (fun.A) :
+            Swr('   ' + a + ' = Args['+str(na)+']')
+#        Swr('   ' + fun.A[0] + ' = Args[0]')
+ #       if fun.dim == 2: Swr('   ' + fun.A[1] + ' = Args[1]')
         f_txt = add_py_to_fun( f_txt )                                    # добавляем к функциям py.
-        Swr('   return ' + f_txt)
+#        print (fun.ArgNorm, type(fun.ArgNorm) )
+ #       1/0
+        if fun.ArgNorm:    # заплатка для ArgNorm для fNi_fon(X,Y) символ функции   Ni(X,Y)  = Ni_fon(X,Y) + fon
+            Swr('   SvF.F_Arg_Type = "N"')
+        Swr('   ret = ' + f_txt)
+        if fun.ArgNorm:    # заплатка для ArgNorm для fNi_fon(X,Y) символ функции   Ni(X,Y)  = Ni_fon(X,Y) + fon
+            Swr('   SvF.F_Arg_Type = ""')
+        Swr('   return ret')
         if   f_name == 'smbF' :
             Swr(fun.name + '.' + f_name + ' = ' + fun.name + '_' + f_name +str(d0)+str(d1) )
         elif f_name == 'Deriv1' :
             Swr(fun.name + '.'+ f_name + '['+str(d0)+'] = ' + fun.name + '_' + f_name +str(d0))
         else :
             Swr(fun.name + '.'+ f_name + '['+str(d0)+']['+str(d1)+'] = ' + fun.name + '_' + f_name +str(d0)+str(d1))
+  #      print ('AA', fun.ArgNorm)
+   #     1/0
 
     Write123('smbF')
     for d0 in range(fun.dim):
@@ -640,7 +642,9 @@ def WriteVarParam26 ( buf, param ) :
                 elif 'SymbolInteg' == key and eq == '=':
                             SymbolInteg = val;    fun.SymbolInteg = val
                 elif 'ArgNorm' == key and eq == '=':
+                            if type(val)==str : val = (val=='True')
                             ArgNorm = val
+                            fun.ArgNorm = ArgNorm
                 elif 'AddGap' == key and eq == '=':     #up_part == 'ADDGAP' :
                             AddGap = val
                 elif 'InitBy'== key and eq == '=':   #  InitBy = 99       # ?? Param:  H(X,Y) = DEM_Kostica.asc?   or H(X,Y) = 1  ???

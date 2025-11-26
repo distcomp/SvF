@@ -23,8 +23,8 @@ class Object :
     def Oprint (self):
         print ( self.Otype, self.name )
 
-def addObject(object):
-    object.Add()
+#def addObject(object):
+ #   object.Add()
 
 def getObject(name):
     for o in SvF.Task.Objects :

@@ -249,7 +249,7 @@ class Table (Object):
         if SvF.printL : print (_fields)
         for fld in _fields :
             part = SplitIgnor ( fld.strip(), ' AS ' )
-            src_name = part[0]
+            src_name = part[0].strip("'").strip('"')
             if len(part) == 2 : name = part[1]              # As
             else              : name = part[0]              # the same name
             self.Flds.append ( Field ( name, src_name ) )

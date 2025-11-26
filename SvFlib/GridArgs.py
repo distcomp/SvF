@@ -125,8 +125,6 @@ class Set (Object):
         self.mFlNodSm = self.FlNodS[1:-1]         # myrange(self.min+self.step, self.max-self.step, self.step)
         self.FlNodSm  = self.FlNodS[0:-1]        #myrange(self.min,           self.max-self.step, self.step)
         self.mFlNodS  = self.FlNodS[1:]         #myrange(self.min+self.step, self.max,           self.step)
-     #   print (self.NodS)
- #       print('_____________________________________________', self.FlNodS)
 
 
     def ValToInd(self, val):         # узел снизу

@@ -83,6 +83,7 @@ class TaskClass :
         return
 
     def SaveSols (self, ext = '' ) : #, printL = 0 ) :
+   #     return
         for f in self.Funs :
             if f.param : continue
             if ext == ''       :  f_n = ''

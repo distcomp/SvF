@@ -57,9 +57,9 @@ def MngFile ( ) :
 #    clipboard
         clipboardNum = -1
         clipboardBuf = ''
-        root = tk.Tk()  # clipboard
-        root.withdraw()  # не показывать окно
         try:
+                root = tk.Tk()  # clipboard
+                root.withdraw()  # не показывать окно
                 clipboardBuf = root.clipboard_get()
                 if len(clipboardBuf) >= 400:
                     TaskName = 'NoName.mng'

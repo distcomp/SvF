@@ -520,10 +520,10 @@ class  parser:
 
                     dif_minus.append ( gr_name)
                     dif_plus.append ( gr_name)
-                    print (self.join ())
+#                    print (self.join ())
       #              1/0
         self.reparse_funs ( Sets )
-        print ('DIF2 END ', self.join ())
+ #       print ('DIF2 END ', self.join ())
 
         return  dif_minus, dif_plus
 

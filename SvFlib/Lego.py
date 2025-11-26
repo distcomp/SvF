@@ -38,7 +38,7 @@ from Lego_Tensor import *
 
 class BaseFun (Tensor) :
     def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 1, DataReadFrom = '',Data=[],
-                  Type='g', Domain = None, ReadFrom = '' ) :
+                  Type='g', Domain = None, ArgNorm = True, ReadFrom = '' ) :
         Tensor.__init__ (self, Vname )
         from Table import getCurrentFieldData
 #        Object.__init__(self, Vname, 'Fun')
@@ -48,7 +48,7 @@ class BaseFun (Tensor) :
 
         self.grd = None
         self.var = None
-        self.gr = None
+        self.gr  = None
 
         #    self.smbF = ''
         self.dim = len (self.A)  #-1
@@ -63,6 +63,8 @@ class BaseFun (Tensor) :
         if self.PolyPow != -1:  self.type  = 'p'
 
     #    self.Int_smbFxx_2 = None
+
+        self.ArgNorm = ArgNorm
         self.SymbolInteg  = False      # Для передачи в MakeMod...
         self.SymbolDiffer = False
         self.Deriv1 = False
@@ -168,6 +170,12 @@ class BaseFun (Tensor) :
 
     def Node_to_Real(self, nodeArgs):  #         сетку [0, Ub] -> реальные
         return [ nodeArgs[i] * a.step + a.min   for i, a in enumerate(self.A) ]
+
+    def Norm01_to_Real ( self, ArS_01 ) :    #  [0,1] в  реальные
+        return [ArS_01[i] * a.ma_mi + a.min  for i, a in enumerate(self.A)]
+        if self.ArgNorm  :  return  [(ArS_real[i]-a.min)/a.ma_mi for i, a in enumerate(self.A)]
+        else                    :  return ArS_real
+
 
     """
     def Initialize ( self, InitFloat = None ) :
@@ -439,6 +447,7 @@ class BaseFun (Tensor) :
         self.DataReadFrom = DataFrom.DataReadFrom
         self.ReadFrom = DataFrom.ReadFrom
 
+        self.ArgNorm = DataFrom.ArgNorm
 
 
  #       self.domain_  = DataFrom.domain_
@@ -813,9 +822,6 @@ class BaseFun (Tensor) :
             else:
                 for n in self.sR:
                     if not np.isnan(self.V.dat[n]):
-#                        print ('______________________________', self.delta(n))
- #                       print (self.name)
-  #                      print( self.mu[n])
                         ret += self.mu[n] * self.delta(n)**2
                         num += self.mu[n]
                 ret = ret / self.V.sigma2 / num
@@ -959,12 +965,11 @@ class BaseFun (Tensor) :
             Bor = self.makeBorder ()
             ret = 0
             NoB = 0
-            if self.param or not SvF.Use_var:   gr = self.grd
-            else:                               gr = self.var  # 20/02/2023
             for b in Bor :
                   NoB += 1
-      #            ret += self.grd[b[0],b[1]]**2
-                  ret += gr[b[0], b[1]] ** 2
+          #        print(b, self.gr[b[0], b[1]], self.Node_to_Real(b),self.F(self.Node_to_Real( b )))
+                  ret += self.F(self.Node_to_Real( b )) ** 2
+            #      ret += self.gr[b[0], b[1]] ** 2
             return ret/NoB
 
     def Norma_L2mL2Border3DXY ( self ) :    # для 3 переменных по первым двум
@@ -1139,6 +1144,8 @@ class BaseFun (Tensor) :
   #          return
 
 #      if self.type[0] == 'g'  or self.type == 'smbFun':   # 2505
+#      ArgNorm = self.ArgNorm
+ #     self.ArgNorm = False
       fi, fName = self.File_SaveSol('.sol', fName)
       if not fi is None:
 #      if True :
@@ -1203,6 +1210,8 @@ class BaseFun (Tensor) :
       """
       fi.close()
       if SvF.printL > 0 : print ("END of SaveSol to ", fName, self.type)
+
+ #     self.ArgNorm = ArgNorm
 
       return
 
@@ -1519,7 +1528,8 @@ class BaseFun (Tensor) :
 
 
 
-    def F1 ( self, Ar_real ) :   return self.F ( [ Ar_real ] )
+    def F1 ( self, Ar_real ) :
+            return self.F ( [ Ar_real ] )
     
     def F1_extra_const ( self, Ar_real ) :
             Ar_real = max (Ar_real, self.A[0].min )
@@ -1640,7 +1650,8 @@ class BaseFun (Tensor) :
         for i in self.A[0].NodS :
             for j in self.A[1].NodS :
                 if self.Border(i,j) :
-                    Border.append([i,j])    
+                    Border.append([i,j])
+ #       print ('L', len(Border))
         return Border
 
 
@@ -2035,15 +2046,24 @@ class BaseFun (Tensor) :
 # ********************************************************************************************** #
 class Fun (BaseFun) :
     def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 1, DataReadFrom = '',Data=[],
-                  Type='g', Domain = None, ReadFrom = '' ) :
+                  Type='g', Domain = None, ArgNorm = True, ReadFrom = '' ) :
         BaseFun.__init__ (self, Vname,  As, param, Degree,  Finitialize, DataReadFrom, Data,
-                  Type, Domain, ReadFrom)
+                  Type, Domain, ArgNorm, ReadFrom)
 
     def F ( self, ArS_real ) :
           if self.dim == 0:                           #  31
                 if SvF.Use_var: return self.var
                 else          : return self.grd
+ #         print (self.ArgNorm)
+  #        1/0
+   #       if self.ArgNorm :  ArS_real = self.Norm01_to_Real(ArS_real)
+          if   len(ArS_real) > self.dim :
+              if ArS_real[self.dim] == 'N' :
+                  ArS_real = self.Norm01_to_Real(ArS_real)
+          elif SvF.F_Arg_Type == 'N' :  ArS_real = self.Norm01_to_Real(ArS_real)    #  заплатка для ArgNorm для fNi_fon(X,Y) символ функции   Ni(X,Y)  = Ni_fon(X,Y) + fon
+
           ar =  self.Real_to_Node ( ArS_real )
+ #         print ('N', ar)
           return self.interpolNode(ar)
 #          if ( self.type[0] == 'g' ) and self.dim==1 :       # 2407
  #           return self.interpol ( 1, ar[0] )
@@ -2054,23 +2074,9 @@ class Fun (BaseFun) :
 
     def Ftbl ( self, n ) :
       if self.type[0] == 'g':      # 2407
-        args = [(a.dat[n]-a.min)/a.step   for a in self.A]
-        return self.interpolNode (args)
-    """""        
-        if   self.dim==1 :
-            return self.interpolNode (  [(self.A[0].dat[n]-self.A[0].min)/self.A[0].step] )
- #           return self.interpol ( 1, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step )
-        elif self.dim==2 :
-            return self.interpolNode (  [(self.A[0].dat[n]-self.A[0].min)/self.A[0].step,          # 25/07
-                                      (self.A[1].dat[n]-self.A[1].min)/self.A[1].step] )
- #           return self.interpol ( 2, (self.A[0].dat[n]-self.A[0].min)/self.A[0].step,          # 25/07
-  #                                    (self.A[1].dat[n]-self.A[1].min)/self.A[1].step )
-
-        elif self.dim==3 :
-            return self.interpol ( 3, ( self.A[0].dat[n]-self.A[0].min )/self.A[0].step,        # 25/07  not tested
-                                       ( self.A[1].dat[n]-self.A[1].min )/self.A[1].step,
-                                       ( self.A[2].dat[n]-self.A[2].min )/self.A[2].step )
-    """""
+        argsNode = [(a.dat[n]-a.min)/a.step   for a in self.A]
+        return self.interpolNode (argsNode)
+    """
     def interpol ( self, lev, X,Y=0,Z=0 ) :   # X,Y,Z  в шагах
         if self.param or not SvF.Use_var: gr = self.grd
         else                            : gr = self.var            # 29
@@ -2109,12 +2115,9 @@ class Fun (BaseFun) :
 #                if self.dim == 2 :  return  gr[Xi ,Y    ] * (1-dX) + gr[Xi+1 ,Y    ] * dX
                 if self.dim == 2 :  return  gr[int(Xi) ,int(Y)    ] * (1-dX) + gr[int(Xi+1) ,int(Y)    ] * dX
                 if self.dim == 3 :  return  gr[Xi ,Y , Z] * (1-dX) + gr[Xi+1 ,Y , Z] * dX
+    """
 
     def interpolNode ( self, argNode, lev=None ) :   # argNode =[ X,Y,..]  в шагах
-     #   if self.param or not SvF.Use_var: self.gr = self.grd
-      #  else                            : self.gr = self.var            # 29
- #       print ("Use", SvF.Use_var,argNode)
- #       self.set_gr_grd_or_var()
         if lev is None :
             lev = len(argNode)
         if lev > 0 :
@@ -2122,16 +2125,22 @@ class Fun (BaseFun) :
             Zi = int(floor ( Z ))
             if Zi < 0            : Zi = 0
             if Zi==self.A[lev-1].Ub  : Zi=self.A[lev-1].Ub-1
-            dZ = Z-Zi
-   #         print('btg', lev, argNode, Z, Zi, dZ)
-            if abs(dZ) < 1e-10   :  dZ = 0
-            elif abs(dZ-1) < 1e-10 : dZ = 1
             argZi = copy (argNode)
             argZi[lev-1] = Zi
             argZi_1 = copy (argNode)
             argZi_1[lev-1] = Zi+1
-    #        print ('bZi', lev, Zi, dZ, Zi+1, argZi, argZi_1)
-            ret = self.interpolNode ( argZi, lev-1 ) * (1-dZ) + + self.interpolNode ( argZi_1, lev-1 ) * dZ
+            dZ = Z-Zi
+   #         print('btg', lev, argNode, Z, Zi, dZ)
+            if abs(dZ) < 1e-10   :        # dZ = 0
+                ret = self.interpolNode(argZi, lev - 1)
+            elif abs(dZ-1) < 1e-10 :       #  dZ = 1
+                ret = self.interpolNode ( argZi_1, lev-1 )
+            else:
+#            argZi = copy (argNode)
+ #           argZi[lev-1] = Zi
+  #          argZi_1 = copy (argNode)
+   #         argZi_1[lev-1] = Zi+1
+                ret = self.interpolNode ( argZi, lev-1 ) * (1-dZ) + self.interpolNode ( argZi_1, lev-1 ) * dZ
      #       print ('ret', lev, ret)
             return ret
             return  self.interpol ( lev-1, X,Y,Zi ) * (1-dZ) + self.interpol ( lev-1, X,Y,Zi+1 ) * dZ
@@ -2142,6 +2151,8 @@ class Fun (BaseFun) :
         else :
    #         print (argNode, gr[int(argNode[0]),int(argNode[1])] )
             if self.dim == 1:  return self.gr[int(argNode[0])]
-            if self.dim == 2:  return self.gr[int(argNode[0]),int(argNode[1])]
+            if self.dim == 2:
+ #               print ('No', int(argNode[0]),int(argNode[1]),self.gr[int(argNode[0]),int(argNode[1])])
+                return self.gr[int(argNode[0]),int(argNode[1])]
             if self.dim == 3:  return self.gr[int(argNode[0]),int(argNode[1]),int(argNode[2])]
 

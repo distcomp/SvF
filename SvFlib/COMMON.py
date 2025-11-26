@@ -2,6 +2,13 @@
 from sys  import float_info
 #from Object import *   #################################  НИ КАКОГО  ИМПОРТА!
 
+F_Arg_Type = ''            #  заплатка для ArgNorm для fNi_fon(X,Y) символ функции   Ni(X,Y)  = Ni_fon(X,Y) + fon
+
+
+DrawMode = 'Screen&File'
+LocalSolverName  = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'
+SolverName       = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'  # 3.14.09
+
 
 feasibleSol = None          #  function feasibleSol(Peal) - перед оптимизацией
 OptMode = 'SvF'
@@ -14,7 +21,7 @@ max_workers = 3
 jobId_s = []
 maxJobs = 0
 
-DrawMode = 'Screen&File'
+
 ShowAll = True
 DrawFileName = ''
 Resources = [ "pool-scip-ipopt" ]
@@ -96,7 +103,7 @@ optEstim = float_info.max
 SchemeD1  = ['Forward'] # 'Backward'  #'Central'  #
 #SchemeD1  = ['Backward']  #'Central'
 # #DIF1 = 'Forward' # 'Backward'  #'Central'  #  # Central  Backward
-UseHomeforPower = False #True   # 29
+UseHomeforPower = True   #False #True   # 29
 #ReadFrom = ''
 
 
@@ -153,12 +160,6 @@ optFact          = None
 token      =  ''
 optFile    =  'peipopt.opt'
 
-#LocalSolverName  = 'ipopt' #3_11_1'
-LocalSolverName  = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'
-
-#SolverName       = 'ipopt'
-SolverName       = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'  # 3.14.09
-#RunSolver   = 'Local'   #   LocalParallel   ServerParallel
 
 solverOptVal =  {  "linear_solver"              : 'ma57'\
                  , 'max_iter'                   : 50000 \

@@ -73,7 +73,6 @@ def DrawComb( param ):
 #    print ("LLL", LineColor )
     LineStyle = '-'
     DataColor = SvF.DataColor
-#    name = ''
     file_name = ''
 
     parts = param.split(' ')
@@ -97,9 +96,9 @@ def DrawComb( param ):
                 ob = getObjectNotSet(par)   #  Для  drawSvF
 #                print ("OOOOOOOOOOOOOOOO")
 #                ob.Oprint()
-                name = ''
+                name = None
                 if ob is None:
-#                    print ( 'PP', par )
+         #           print ( 'PP', par )
                     if par.find('.sol') >=0 :
                         fun = FunFromSolFile(par)             # FROM Sol FILE
 #                        print ("F", fun.grd)
@@ -113,13 +112,16 @@ def DrawComb( param ):
                             p_tabs = ta.split('.')
                             if len(p_tabs) ==1:
                                 p_name = ta
-  #                              print ('p_name',ta)
+          #                      print ('p_name',ta)
                             else:
                                 ob = getObjectNotSet(p_tabs[0])
+              #                  print ('ob.Otype',ob.Otype)
                                 if ob.Otype == 'Table':
+                                    p_name = p_tabs[1]
                                     if nta ==0: y = ob.dat(p_tabs[1])
                                     else:       x = ob.dat(p_tabs[1])
                                 elif ob.Otype == 'Fun':                     #  Fun np.array
+                                    p_name = ob.V.name
                                     if nta ==0:  y = ob.grd
                                     else:        x = ob.grd
 #                                    print('par22222', par, p_tabs,y,x)
@@ -130,8 +132,11 @@ def DrawComb( param ):
  #                                   polyline = Polyline(tb.dat('X'), tb.dat('Y'), None, par)
                         if len(y) > 0:
                             if len(x) == 0:  x = [i for i in range(len(y))]
+#                            print (len(SvF.Task.Objects))
                             polyline = Polyline(x, y, None, p_name)
-  #                          print ('polXY',polyline.Y, polyline.X, p_name)
+                            SvF.Task.Objects = SvF.Task.Objects[1:]     #  чтоб не засорять
+ #                           print(len(SvF.Task.Objects))
+#                         print ('polXY',polyline.Y, polyline.X, p_name, len(SvF.Task.Objects))
  #                           ob = polyline
                 elif ob.Otype == 'Fun': # 'Fun'
                         fun = ob
@@ -162,6 +167,7 @@ def DrawComb( param ):
             elif par.split(':')[0] == 'MS':  MarkerSize = float(par.split(':')[1])   #  MarkerSize
             elif par.split(':')[0] == 'MEC': MarkerEdgeColor = par.split(':')[1]     #  MarkerEdgeColor
             elif par.split(':')[0] == 'MEW': MarkerEdgeWidth = float(par.split(':')[1]) # MarkerEdgeWidth - размер краёв
+            elif par.split(':')[0] == 'Name': name = par.split(':')[1].strip('"').strip("'"); # print ("NAME", name, par, len(name))
             elif par.upper() == 'TRANSP'  :  Transp = True
             elif par == 'DrawErr'         :  DrawErr = True
             elif par == 'Flow'            :  Flow = True
@@ -170,7 +176,7 @@ def DrawComb( param ):
   #              ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator (base=Xstep))
             else: print ('Draw  ????????????? ************************ par =', par)
         if not fun is None :
-            if name == '': name = fun.V.name
+            if  name == None: name = fun.V.name
             if to_draw == 'Fun2' :
                 mii, maa = fun.grd_min_max()
 #                levelFmt = ''  # '%.2f'                              # number of digits
@@ -364,7 +370,7 @@ def DrawComb( param ):
                          markersize=DataMarkerSize, marker='o', markerfacecolor= MarkerColor,
                          markeredgecolor= MarkerColor, linestyle=LineStyle, linewidth=DataLineWidth)
         else :  #  to_draw == 'Polyline'
-                if name == '' : name = polyline.name
+                if name == None : name = polyline.name
                 print ('Pname',name, MarkerSize)
                 if Transp:
                     plt.plot(polyline.Y, polyline.X, LineColor, label=name, markersize=MarkerSize,

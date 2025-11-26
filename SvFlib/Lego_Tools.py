@@ -56,64 +56,6 @@ def cnstrFun2 (args, V_name, NDT) :   #
 #def Read_gFun1 ( ReadFrom ) :      #  outofdate  27
 #def Read_gFun2 ( ReadFrom ) :      #  outofdate  27
 
-def oFunFromSolFile(ReadFrom, Vnum=1):  # для tbl   нулевая  колонка - аргумент. по умолчанию первая функция
-    if SvF.printL: print ('FunFromFile', ReadFrom)
-    with open(ReadFrom, "r") as fi:
-        ret_fun = Fun()
-        ret_fun.param = True
-        #            fnames = fi.readline().split()
-        head = fi.readline()
-        Ver, Typ, cols = Get_Ver_Typ_cols(head)
-
-        if Typ == 'tbl':
-            ret_fun.dim = 1
-            ret_fun.V = Vari(cols[Vnum])   # для tbl   нулевая  колонка - аргумент. Vnum - функция
-        else:
-            ret_fun.dim = 2
-            ret_fun.V = Vari(cols[-1])
-        #          dim   = len (fnames) - 2
-        #            ret_fun.dim   = dim
- #       ret_fun.V = Vari(cols[Vnum])
-        #            if SvF.printL :
-        #           print "Read from", ReadFrom, cols, 'dim=', ret_fun.dim
-        tmp_currentTab = SvF.currentTab  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  ###
-        SvF.currentTab = None
-        if ret_fun.dim == 1:
-            tb = np.loadtxt(fi, 'double')
-            ret_fun.A = [Set(cols[0], tb[0][0], tb[-1][0], -(tb.shape[0] - 1))]
-            ret_fun.grd = np.zeros(ret_fun.A[0].Ub + 1, np.float64)
-            for x in ret_fun.A[0].NodS:
-                ret_fun.A[0].Val[x] = tb[x][0]
-                ret_fun.grd[x] = tb[x][Vnum]
-        #                ret_fun.grd = ravel( np.delete (tb, range(0,1), 1 ) )
-        #                for x in ret_fun.A[0].NodS :
-        #                       ret_fun.A[0].Val[x] = tb[x][0]
-        #                        ret_fun.grd[x]      = tb[x][1]
-        #                return  ret_fun
-
-        elif ret_fun.dim == 2:
-            x_gr = fi.readline().split()
-            tb = np.loadtxt(fi, 'double')
-            if len(tb.shape) == 1:
-#                print ("SSSSSSSSSSSSSSSSSSSSSSSSS", tb.shape[0])
-                tb = reshape(tb, (1, tb.shape[0]))
-#                print ("SSSSSSSSS", tb.shape[0], tb.shape[1])
-                print (tb)
-            ret_fun.A = [Set(cols[0], float(x_gr[0]), float(x_gr[-1]), -(len(x_gr) - 1)),
-                         Set(cols[1], tb[0][0], tb[-1][0], -(tb.shape[0] - 1))]
-            ###                ret_fun.A = [ Grid ( fnames[0], float(x_gr[0]), float(x_gr[-1]), -(len (x_gr)-1) ),
-            ###                           Grid ( fnames[1], tb[ 0][0],      tb[-1][0],       -(tb.shape[0]-1) ) ]
-            #                ret_fun.A = [ Arg ( fnames[0], -(len (x_gr)-1), float(x_gr[0]), float(x_gr[-1]) ),
-            #                             Arg ( fnames[1], -(tb.shape[0]-1), tb[ 0][0], tb[-1][0] ) ]
-            for x in ret_fun.A[0].NodS:  ret_fun.A[0].Val[x] = float(x_gr[x])
-            for x in ret_fun.A[1].NodS:  ret_fun.A[1].Val[x] = tb[x][0]
-            ret_fun.grd = np.delete(tb, range(0, 1), 1).transpose()
-        SvF.currentTab = tmp_currentTab
-        return ret_fun
-
-    #      except IOError as e:
-    print ("**********************не удалось открыть файл  !" + ReadFrom + '!')
-    return None;
 
 
 def FunFromSolFile(ReadFrom, AddObj = False):
@@ -127,9 +69,9 @@ def FunFromSolFile(ReadFrom, AddObj = False):
 #    print 'BBB', grd.shape
     from Lego import Fun
     if AddObj :
-        ret_fun = Fun(cols[-1])
+        ret_fun = Fun(cols[-1],ArgNorm=False)
     else :
-        ret_fun = Fun('')
+        ret_fun = Fun('',ArgNorm=False)
         ret_fun.V = Vari(cols[-1])
     if len(xp) == 0 and len(yp) == 0: ret_fun.dim = 0
     elif len(xp) == 0:                ret_fun.dim = 1
