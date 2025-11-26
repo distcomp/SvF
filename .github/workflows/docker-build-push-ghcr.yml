@@ -1,0 +1,41 @@
+name: Docker Build and Push (GHCR)
+
+on:
+  push:
+    branches:
+      - docker
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push-ghcr:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/svf
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Clone external repositories
+      run: |
+        git clone https://github.com/distcomp/pyomo-everest.git
+        git clone https://gitlab.com/everest/python-api.git pyomo-everest/python-api
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Docker image
+      run: |
+        docker build -t $IMAGE_NAME:latest -f docker/Dockerfile .
+
+    - name: Push Docker image
+      run: |
+        docker push $IMAGE_NAME:latest
+
