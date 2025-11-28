@@ -17,14 +17,15 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends zip && \
-    rm -rf /var/lib/apt/lists/* && \
-    chmod +x /usr/local/bin/*.sh
+    rm -rf /var/lib/apt/lists/*
 
 COPY docker/bin/ /usr/local/bin/
 
 COPY . /home/vvv/git_work/SvF/
 
 COPY svf-service/runSvF-remote.sh /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/*.sh
 
 RUN echo "GIT_COMMIT=${GIT_COMMIT}"      > /etc/svf_version && \
     echo "GIT_BRANCH=${GIT_BRANCH}"     >> /etc/svf_version && \
