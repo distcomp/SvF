@@ -1,5 +1,11 @@
 FROM registry.gitlab.com/everest/agent:master-3.8-bullseye
 
+# Install Docker CLI so bootstrap scripts can call `docker` against the
+# host Docker daemon exposed via /var/run/docker.sock.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends docker.io && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy bootstrap scripts into the agent image. They will be installed to
 # fixed paths expected by Everest plans:
 #   - /usr/local/bin/runSvF-remote.sh  – SvF scenario runner via SvF+solvers image
@@ -17,4 +23,4 @@ RUN chmod +x /usr/local/bin/runSvF-remote.sh \
     /usr/local/bin/run-ipopt.sh \
     /usr/local/bin/run-scip.sh
 
-
+LABEL org.opencontainers.image.source=https://github.com/distcomp/SvF

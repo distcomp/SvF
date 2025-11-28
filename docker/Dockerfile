@@ -1,4 +1,4 @@
-FROM distcomp/solvers:py-3.8-mkl-latest AS solvers
+FROM distcomp/solvers:py-3.10-mkl-latest AS solvers
 
 ARG GIT_COMMIT=unknown
 ARG GIT_BRANCH=unknown
@@ -12,7 +12,7 @@ ARG DOCKER_TAG=dev
 # COPY --from=solvers /usr/lib/ /usr/lib/
 # COPY --from=solvers /etc/alternatives/ /etc/alternatives/
 
-COPY docker/requirements.txt /tmp/requirements.txt
+COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 RUN apt-get update && \

@@ -10,3 +10,4 @@ docx2python
 matplotlib
 future
 pyomo
+requests
