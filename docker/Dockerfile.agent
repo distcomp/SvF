@@ -1,0 +1,20 @@
+FROM registry.gitlab.com/everest/agent:master-3.8-bullseye
+
+# Copy bootstrap scripts into the agent image. They will be installed to
+# fixed paths expected by Everest plans:
+#   - /usr/local/bin/runSvF-remote.sh  – SvF scenario runner via SvF+solvers image
+#   - /usr/local/bin/run-ipopt.sh      – Ipopt runner via SvF+solvers image
+#   - /usr/local/bin/run-scip.sh       – SCIP runner via SvF+solvers image
+#
+# All three scripts expect the first positional argument to be the SvF+solvers
+# Docker image tag (for example, "docker" or "cached-docker-a1b2c3d").
+
+COPY svf-service/runSvF-remote-agent.sh /usr/local/bin/runSvF-remote.sh
+COPY svf-service/run-ipopt-agent.sh /usr/local/bin/run-ipopt.sh
+COPY svf-service/run-scip-agent.sh /usr/local/bin/run-scip.sh
+
+RUN chmod +x /usr/local/bin/runSvF-remote.sh \
+    /usr/local/bin/run-ipopt.sh \
+    /usr/local/bin/run-scip.sh
+
+

@@ -88,5 +88,15 @@ Run that command in **SvF/pyomo-everest/python-api** folder and *.token* file wi
 After that switch to **SvF/Examples/3-ThermalConductivity/MSD...** folder and try to run SvF-application   
    `$ bash ../../../runSvF30.sh`
 
-	
+## Container publishing workflow
+
+The GitHub Actions workflow `.github/workflows/docker-build-push-ghcr.yml` builds the Docker image defined in `docker/Dockerfile` and publishes it to the GitHub Container Registry (`ghcr.io`).
+
+- **Trigger**: any push to the `master`, `docker`, or `release/*` branches.
+- **Image name**: `ghcr.io/distcomp/svf`.
+- **Tags**:
+  - `<branch>` — floating tag that always points to the latest successful build of that branch (for example, `docker`, `master`).
+  - `cached-<branch>-<short_sha>` — pinned tag that uniquely identifies a specific commit (for example, `cached-docker-a1b2c3d`).
+
+The workflow uses the built-in `GITHUB_TOKEN` to push to GHCR, so make sure **Settings → Actions → General → Workflow permissions** is set to “Read and write permissions” (or otherwise grants `packages: write`).
 
