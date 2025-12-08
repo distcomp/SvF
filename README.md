@@ -18,6 +18,9 @@ Technologies, 2018, 6(9) C. 33-41, [PDF](http://injoit.org/index.php/j1/article/
 # References
 This mathematical technology has been successfully used in various fields of applied research. [Here you can find a list of references to publications concerning application of SvF-technology](https://github.com/distcomp/SvF/blob/main/svf-reference.md).
 
+## Review of references
+Brief review of publications are [here](https://github.com/distcomp/SvF/blob/main/svf-articles-summary.md).
+
 # How to install
 Current implementation of the SvF-technolosy is based on [Everest Python API](https://gitlab.com/everest/python-api) and [SSOP Everest Application](https://optmod.distcomp.org/apps/vladimirv/solve-set-opt-probs), which have to be cloned from their Git-repos. **So, use the following command for correct cloning**
 
