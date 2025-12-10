@@ -28,7 +28,8 @@ class Object :
 
 def getObject(name):
     for o in SvF.Task.Objects :
-#        o.Oprint()
+        print ('name', o.name)
+ #       o.Oprint()
         if o.name == name: return o
     return None
 

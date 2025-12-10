@@ -33,6 +33,7 @@ def setUse_var(tru=True):
         SvF.Use_var = tru
         for f in SvF.Task.Funs:
             if f.param == False :
+ #               print("f.set_gr_grd_or_var()++++++++++++++++", f.name)
                 f.set_gr_grd_or_var()
 
 
@@ -125,3 +126,16 @@ class TaskClass :
                 if f.dim > 0 and f.param == False and \
                     not ((f.A[0].dat is None) or (f.V.dat is None)):
                        DrawComb(f.V.name+';DrawErr')
+
+    def PlotAll (self ) :
+
+#            for f in self.Funs:
+            for f in self.Objects:
+                #if f.type == 'tensor' : continue
+                print (f.Otype, f.name, "RRRRRRRRRRRRRRR")
+                if f.Otype == 'Fun' :
+                    if f.type == 'tensor': continue
+                    if f.dim > 0: Plot([[f]])
+                if f.Otype == 'Polyline' :
+                    Plot([[f]])
+            return

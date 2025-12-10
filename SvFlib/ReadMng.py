@@ -426,6 +426,8 @@ def ReadMng ( ) :
 
     elif Is(Q, "VAR:"   ) :  WriteVarParam26 ( buf, False )
     elif Is(Q, "PARAM:" ) :  WriteVarParam26 ( buf, True )
+    elif (Is(Q, "POLYLINE:" )
+       or Is(Q, "POLY:" ) ) :  WritePolyline ( buf )
     elif Is(Q, "EQ:")     :  WriteModelEQ31 ( buf )
 
     elif (Is(Q, "PENALTY:")
@@ -453,6 +455,8 @@ def ReadMng ( ) :
 
     elif Is(Q, 'CV:'):    WriteCV (Treat_FieldNames(buf))
     elif Is(Q, 'DRAW:'):  Swr('Task.Draw ( \'' + buf + '\' )')
+    elif Is(Q, 'PLOT:'):  WritePLOT (Treat_FieldNames(buf)) #( buf )
+
 
     elif Is(Q, "MakeSets_byParam") :                #  out of date      24-12-26
             args = buf.split(' ');  #args[0] = '\''+ args[0] + '\''
@@ -493,8 +497,6 @@ def ReadMng ( ) :
                             if len(buf) == 0 :  Task.SaveSol()
                             else             :  getFun(readStr()).SaveSol('')
     elif Is(Q, "Prefix"   )    :  SvF.Prefix = readStr()
-
- #   elif Is(Q,"OptMode")     : SvF.OptMode = readEqStr()
 
     else :
             raw_upp = raw_line.upper()

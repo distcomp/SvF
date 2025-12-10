@@ -66,20 +66,21 @@ def SvFstart19 ( Task ) :
                     print ('read PENALTY:', Penal)
         except IOError as e:
                 print ("******* Can''t open RES file: ", co.resF)
-                if len (Penal) == 0 :  exit(-1)
+        #        if len (Penal) == 0 :  exit(-1)
         co.Penalty = Penal
     # print (co.Penalty); exit(22)
     co.Penalty = [0.1 if x is None else x for x in co.Penalty]
-
+#    print (Penal, co.Penalty)
+ #   1/0
 
 #    maxSigEst = 0           # оценка сигмы скольз. среднем
 
     co.optFact = Factory(co.optFile)
-    print('co.optFactST', co.optFact)
+#    print('co.optFactST', co.optFact)
 
-    print ('')
-    for f in Task.Funs :  f.Oprint()
-    print ('')
+#    print ('')
+ #   for f in Task.Funs :  f.Oprint()
+  #  print ('')
 
     if type(co.OptStep) is str :
         co.OptStep = [float(co.OptStep) * p for p in co.Penalty[:]]
@@ -88,7 +89,7 @@ def SvFstart19 ( Task ) :
     elif co.CVNumOfIter == 0:
             get_sigCV(co.Penalty, -1)
     else :
-        print (co.OptStep, co.Penalty)
+      #  print ('co.OptStep',co.OptStep, 'co.Penalty', co.Penalty)
         points, step = SurMin ( co.CVNumOfIter, co.OptStep, co.ExitStep, co.Penalty, get_sigCV )   ######## START ###########
         with open(co.resF,'a') as f:      #  RES filewrite
             f.write( 'Step: '+ str(step) + '\nPoints:' )
@@ -145,6 +146,9 @@ def testEstim (Gr, k) :  # k - ValidationSets
             if not co.Task.DeltaVal is None: err = Task.DeltaVal(Gr, ifu, fu.V.dat, s) #** 2
             elif  fu.MSDmode == 'MSDrel':    err = fu.delta_rel(s) #** 2          # 21.02.2023
             else:                            err = fu.delta(s) #** 2
+   #         if s==0 :
+    #            print ('err=', err)
+     #           1/0
             spart += err ** 2
             npart += 1
             fu.CVerr[s] = err                                   # 04.2023
@@ -169,7 +173,7 @@ def testEstim (Gr, k) :  # k - ValidationSets
 
 
 def getEstimCV(Gr) :
-        printS ("\Parts |")
+        printS ("\nParts |")      #    printS ("\n???????Parts |")
         Estim = 0
         NumOfFuns = 0
         for ifu, fu in enumerate (co.Task.Funs ):
@@ -275,7 +279,7 @@ def get_sigCV( Penal, itera ):
                     testEstim(Gr, nres)
             else:       ## co.RunMode[2] == 'L' :
                 res_num = 0
-                print(co.CV_NoSets, "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+ #               print(co.CV_NoSets, "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
                 for k in range(co.CV_NoSets):                                  # LOAD RES,  culculation
                     #               if co.NotCulcBorder :  #  границ не считаем
                     #                  if k == 0 or k == len(ValidationSets) - 1:   1/0;  continue  #########  ???????????????????

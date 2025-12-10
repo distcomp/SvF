@@ -11,9 +11,7 @@ from Task import *
 class Polyline (Object):
     def __init__( self, X, Y, Z=None, name='' ):     #  Polyline([1,2,3],..)    Polyline("X","Y",..)    Polyline(fun1,fun2,..)
             Object.__init__(self, name, 'Polyline')
-#            self.name = name
-## 30            if name != '' :  addObject ( name, 'Polyline', self )
- #           print (type(X))
+            if X is None : return               # дл€ регистрации на этапе компил€ции
             if ( type(X) == type ([])
                 or str(type(X)) == '<class \'range\'>'
                 or str(type(X)) == '<class \'numpy.ndarray\'>'

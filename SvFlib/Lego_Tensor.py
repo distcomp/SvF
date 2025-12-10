@@ -57,7 +57,8 @@ class Tensor (Object) :
         self.Sizes = Sizes
         dim = len (Sizes)
         if dim == 0:
-                self.grd = self.Finitialize
+                self.grd = np.ones((1), np.float64)         #  ###################  25.12.03
+                self.grd[:] = self.Finitialize
         elif dim == 1:
                 self.grd = np.ones((Sizes[0]), np.float64)
                 self.grd[:] = self.Finitialize                     #  by default = 1
@@ -71,12 +72,14 @@ class Tensor (Object) :
     def set_gr_grd_or_var(self):
         if SvF.Use_var == True and self.param != True:
             self.gr = self.var
+  #          print ("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", self.gr, self.var)
         else :
             self.gr = self.grd
 
     def F ( self, ij ) :
           if self.dim == 0:                           #  31
-                return self.gr
+  #              print ("self.gr--", self.gr[0], self.grd[0], self.var[0].value)
+                return self.gr[0]
 #                if SvF.Use_var: return self.var
  #               else          : return self.grd
           elif self.dim == 1:
@@ -106,7 +109,7 @@ class Tensor (Object) :
         print("ReadSol from", fName) #, head)
         dat = np.loadtxt(fi, 'double')
         if self.dim == 0:
-            self.grd = float(dat)
+            self.grd[0] = float(dat)
         elif self.dim == 1:
 #            print(Etc)            #  ['cl[1]']
             if Type == 'tensor' and Etc[0].split('[')[1].split(']')[0] =='1': dat_size = 1 #  ['cl[1]']
@@ -152,7 +155,7 @@ class Tensor (Object) :
             if not fi is None:
                 if self.dim == 0:
                     fi.write(self.name + '\t#SvFver_70_tensor')
-                    v = self.grdNaNreal()
+                    v = self.grdNaNreal(0)
                     fi.write( '\n' + str_val(v))
                 elif self.dim == 1:
                     fi.write(self.name + '[' + str(self.Sizes[0]) + ']\t#SvFver_70_tensor')
@@ -166,7 +169,7 @@ class Tensor (Object) :
 
     def grdNaNreal (self, i=None,j=None,k=None) :
         if self.dim == 0 :
-            return self.grd
+            return self.grd[0]
         elif self.dim == 1 :
             return self.grd[i]
 
@@ -194,7 +197,9 @@ class Tensor (Object) :
     def var_to_grd (self) :
             if self.var is None:  return
             if self.param : return
-            if   self.dim == 0:   self.grd = self.var.value
+            if   self.dim == 0:
+                self.grd[0] = self.var[0].value
+#                print ('self.grd0_________________', self.grd[0])
             elif self.dim == 1:
                 for i in range(self.Sizes[0]):  self.grd[i] = self.var[i].value
 #                for i in self.A[0].NodS:  self.grd[i] = self.var[i].value
@@ -212,7 +217,9 @@ class Tensor (Object) :
         if self.var is None:  return
         if self.param: return
         if self.dim == 0:
-                self.var.value = self.grd
+  #              print ('@@@@@@@@@@@@@@@@@@@@@@@@@@@@self.grd[0]')
+   #             print ('self.grd[0]', self.grd[0])
+                self.var[0].value = self.grd[0]
         elif self.dim == 1:
 #                for i in self.A[0].NodS:
                 for i in range(self.Sizes[0]):

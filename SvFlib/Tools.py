@@ -14,6 +14,33 @@ GRADpRAD = 180/np.pi
 CLASS_TXT = type('a')
 CLASS_INT = type(1)
 
+def smart_split(s):   # ”ниверсальна€ функци€ split, игнорирующа€ кавычки и []
+    result = []
+    buf = []
+    in_single = False
+    in_double = False
+    bracket_level = 0
+
+    for ch in s:
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        elif ch == '[' and not in_single and not in_double:
+            bracket_level += 1
+        elif ch == ']' and bracket_level > 0 and not in_single and not in_double:
+            bracket_level -= 1
+        elif ch == ',' and not in_single and not in_double and bracket_level == 0:
+            result.append(''.join(buf).strip())
+            buf = []
+            continue
+        buf.append(ch)
+
+    result.append(''.join(buf).strip())
+    return result
+
+
+
 def ireplace(s: str, old: str, new: str, count: int = 0) -> str:
     # замен€ет old ? new без учЄта регистра; count=0 Ч все вхождени€
     pattern = re.compile(re.escape(old), flags=re.IGNORECASE)

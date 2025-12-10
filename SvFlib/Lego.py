@@ -750,8 +750,9 @@ class BaseFun (Tensor) :
                     self.grd[x,y]=1     ########################################
 
     def delta( self, n ) :
-        return	 self.Ftbl ( n ) - self.V.dat[n]   #  13.03.2023
- #       return	 self.V.dat[n] - self.Ftbl ( n )
+ #       print	( self.Ftbl ( n ), self.V.dat[n] )   #  13.03.2023
+        return self.Ftbl(n) - self.V.dat[n]  # 13.03.2023
+#       return	 self.V.dat[n] - self.Ftbl ( n )
 
     def delta_rel ( self, n ) :
         return	 (self.delta(n)/ max(self.V.dat[n],self.measurement_accur))
@@ -2075,6 +2076,7 @@ class Fun (BaseFun) :
     def Ftbl ( self, n ) :
       if self.type[0] == 'g':      # 2407
         argsNode = [(a.dat[n]-a.min)/a.step   for a in self.A]
+ #       print (argsNode)
         return self.interpolNode (argsNode)
     """
     def interpol ( self, lev, X,Y=0,Z=0 ) :   # X,Y,Z  в шагах
@@ -2118,6 +2120,7 @@ class Fun (BaseFun) :
     """
 
     def interpolNode ( self, argNode, lev=None ) :   # argNode =[ X,Y,..]  в шагах
+ #       if lev==3 : print (argNode)
         if lev is None :
             lev = len(argNode)
         if lev > 0 :

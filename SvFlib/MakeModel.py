@@ -22,6 +22,7 @@ def getKeyFromBuf (keys, part):                     # 'usehomeforPower' -> 'UseH
                         eq = ''
                     else :
                         eq = '='
+#            print (key[1], eq, val)
             if key[2] == None :          return key[1], eq, val
             if val    == 'True':         return key[1], eq, True
             if val    == 'False':        return key[1], eq, False
@@ -131,6 +132,43 @@ def WritePenalty ( buf ):       # Penalty:   [Inf.Period, Imm.Period]=0.999; RR=
    #     print (SvF.OptNames)
         return
 
+
+def WritePLOT ( plots_str ) :
+    if len (plots_str) == 0: return
+ #   print ('::::::::::::::::', plots_str)
+    if plots_str == '*' :
+        Swr('Task.PlotAll ( )')
+        return
+    plots = plots_str.split("+")
+    print (plots)
+    str = 'Plot( [ '
+    for ipl, pl in enumerate (plots):
+        if ipl==0: str += '[ '
+        else :     str += ', ['
+  #      print (pl)
+        parts_pl = smart_split(pl)   #pl.split(',')
+        print (parts_pl)
+        ob_Otype = None
+        for np, p in enumerate (parts_pl):
+            if np > 0: str +=  ', '
+            if np==0 :
+                ob = getObject(p)
+                print ("JJJJJJJJJ", p, ob)
+                if not ob is None :
+                    ob_Otype = ob.Otype
+                    print ('ob_Otype',ob_Otype)
+            if np == 0:   str += p
+            elif np == 1 and ob_Otype != 'Fun' and ob_Otype != 'Polyline':   str += p
+            else:
+                if p.find("'") >= 0:     str += '"' + p + '"'
+                else:                    str += '\'' + p + '\''
+        str +=  ']'
+        print(parts_pl)
+    str += ' ] )'
+    print (str)
+ #   1/0
+    Swr (str)
+ #   1/0
 
 def Sets_add ( all_Sets, from_ ) :    # пополняет из from_,  если уже нет в  all_Sets
         for g in from_:                                           
@@ -862,6 +900,7 @@ def WriteVarParam26 ( buf, param ) :
                             wrs('range (' + f_name + '.Sizes[' + str(di) + ']),')
                         else :
                             wrs(f_name + '.A[' + str(di) + '].NodS,')
+                    if dim == 0:  wrs('range (1), ')
                     wrs('domain=Reals')
                     if not (Lbound is None and Ubound is None):
                         wrs(', bounds=(' + str(Lbound) + ',' + str(Ubound) + ')')
@@ -1594,12 +1633,7 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
             for p in range(obj.count('Penal[')) : SvF.Penalty.append (.1)
 
         if SvF.numCV == -1 and SvF.OptMode == 'SvF':   # CV по умолчанию  2023.11
-#            wr('\n    SvF.ValidationSets, SvF.notTrainingSets = MakeSets_byParts(SvF.currentTab.NoR, SvF.CVstep)')  # CV_Sets (fu )
-#            wr('\n    MakeSets_byParts(SvF.currentTab.NoR, SvF.CVstep)')  # CV_Sets (fu )
-            #wr('\n    make_CV_Sets(0, 7)')  # CV_Sets (fu )
             wr('\n    make_CV_Sets(0, SvF.CVstep)')  # CV_Sets (fu )    -   25.05
-#make_CV_Sets ( NoR =0, NoSubSets =7, Param ='', Data =None ) :
-#            wr('\n    Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )')  # 23.11
             wr('\n    if len (SvF.CV_NoRs) > 0 :')  # 23.11
             wr('\n       Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )')  # 23.11
 
@@ -1691,3 +1725,12 @@ def WriteModelOBJ_U (buf) :
         endObjStartModel()
 
 
+def WritePolyline ( buf ) :
+        first = buf.find('(')
+        last = buf.rfind(')')
+        str = buf[:first] + ' = Polyline' + buf[first:last] + ', "' + buf[:first] + '")'
+#        print (str)
+ #       1/0
+        Swr (str)
+        from GIS import Polyline
+        Polyline (None,None,None,buf[:first])           # для регистрации на этапе компиляции
