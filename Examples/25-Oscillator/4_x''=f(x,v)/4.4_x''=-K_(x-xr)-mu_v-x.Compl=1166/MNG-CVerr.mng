@@ -1,9 +1,6 @@
-CVNumOfIter     1
+Select:  x, t  from  Spring5.dat
 
-Select x, t  from  Spring5.dat
-
-GRID:	
-        t  ∈ [ -1.,  2.5, 0.025 ]
+SET:	t  ∈ [ -1.,  2.5, 0.025 ]
 
 Var:    x ( t ) 
 	v ( t )
@@ -17,17 +14,14 @@ EQ:
  	v == d/dt(x)
 
 CV:     CV_NumSets=21			# кол-во подмножеств для процедуры кросс-валидации
+RUN:	MaxIter= 1
+
 OBJ:    x.Complexity ( Penal[0] ) / x.V.sigma2 + x.MSD()
 
-if not ( x.CVerr is None ) :
-  for i in x.sR :
-    print ( i, x.CVerr[i] )
+POLY:	CVer (x.A[0].dat, x.CVerr) 
+	P0 ([x.A[0].dat[0],x.A[0].dat[-1]], [0,0])
 
-  CVer = Polyline (x.sR, x.CVerr, None, 'CVer' )
-  Draw CVer
-
-
-Draw
+PLOT: 	x + CVer,c=c + P0,c=gray,ls=-.
 
 EOF
 

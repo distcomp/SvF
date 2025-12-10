@@ -16,9 +16,8 @@ from GIS import *
 SvF.Task = TaskClass()
 Task = SvF.Task
 SvF.mngF = 'MNG-dif-2.mng'
-SvF.CVNumOfIter = 1
-Table ( 'Spring5.dat','curentTabl','t,x' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+currentTab = Table ( 'Spring5.dat','currentTab','*' )
+t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),0.025,'','t')
 X = Set('X',-0.1,2.2,0.1,'','X')
 x = Fun('x',[t])
 def fx(t) : return x.F([t])
@@ -26,23 +25,15 @@ f = smbFun('f',[X])
 def ff(X) : return f.F([X])
 c_f = Tensor('c_f',[7])
 def fc_f(i) : return c_f.F([i])
-def f_smbF(Args) :
+def f_smbF00(Args) :
    X = Args[0]
-   return fc_f(0)+fc_f(1)*X+fc_f(2)*X**2+fc_f(3)*X**3+fc_f(4)*X**4+fc_f(5)*X**5+fc_f(6)*X**6
-f.smbF = f_smbF
-def f_smbFx(Args) :
-   X = Args[0]
-   return 6*X**5*fc_f(6) + 5*X**4*fc_f(5) + 4*X**3*fc_f(4) + 3*X**2*fc_f(3) + 2*X*fc_f(2) + fc_f(1) 
-f.smbFx = f_smbFx
-def f_smbFxx(Args) :
-   X = Args[0]
-   return 30*X**4*fc_f(6) + 20*X**3*fc_f(5) + 12*X**2*fc_f(4) + 6*X*fc_f(3) + 2*fc_f(2) 
-f.smbFxx = f_smbFxx
-def f_Int_smbFxx_2(Args) :
-   X = Args[0]
-   return 100*X**9*fc_f(6)**2 + 150*X**8*fc_f(5)*fc_f(6) + X**7*(720*fc_f(4)*fc_f(6)/7 + 400*fc_f(5)**2/7) + X**6*(60*fc_f(3)*fc_f(6) + 80*fc_f(4)*fc_f(5)) + X**5*(24*fc_f(2)*fc_f(6) + 48*fc_f(3)*fc_f(5) + 144*fc_f(4)**2/5) + X**4*(20*fc_f(2)*fc_f(5) + 36*fc_f(3)*fc_f(4)) + X**3*(16*fc_f(2)*fc_f(4) + 12*fc_f(3)**2) + 12*X**2*fc_f(2)*fc_f(3) + 4*X*fc_f(2)**2
-f.Int_smbFxx_2 = f_Int_smbFxx_2
-CVmakeSets ( CV_NumSets=21 )
+   SvF.F_Arg_Type = "N"
+   ret =  ( fc_f(0)+fc_f(1)*X+fc_f(2)*X**2+fc_f(3)*X**3+fc_f(4)*X**4+fc_f(5)*X**5+fc_f(6)*X**6 ) 
+   SvF.F_Arg_Type = ""
+   return ret
+f.smbF = f_smbF00
+CVmakeSets (  CV_NumSets=7 )
+SvF.CVNumOfIter=1; 
 import  numpy as np
 
 from Lego import *
@@ -54,17 +45,16 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     x.var = py.Var ( x.A[0].NodS,domain=Reals )
+    x.gr =  x.var
     Gr.x =  x.var
 
     c_f.var = py.Var ( range (c_f.Sizes[0]),domain=Reals )
+    c_f.gr =  c_f.var
     Gr.c_f =  c_f.var
-
-    f.var = py.Var ( f.A[0].NodS,domain=Reals )
-    Gr.f =  f.var
- 								# d2/dt2(x)==f(x)
+ 								# x''=f(x)
     def EQ0 (Gr,_it) :
         return (
-          ((fx((_it+t.step))+fx((_it-t.step))-2*fx(_it))/t.step**2)==ff(fx(_it))
+          x.by_xx(_it)==ff(fx(_it))
         )
     Gr.conEQ0 = py.Constraint(t.mFlNodSm,rule=EQ0 )
 
@@ -122,4 +112,6 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-Task.Draw ('')
+Task.PlotAll ( )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")

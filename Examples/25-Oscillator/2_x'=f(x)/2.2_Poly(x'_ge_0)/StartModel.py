@@ -16,15 +16,24 @@ from GIS import *
 SvF.Task = TaskClass()
 Task = SvF.Task
 SvF.mngF = 'MNG-dif-1.mng'
-SvF.CVNumOfIter = 0
-Table ( 'Spring5.dat','curentTabl','*' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
-X = Set('X',-0.1,2.0,0.1,'','X')
+currentTab = Table ( 'Spring5.dat','currentTab','*' )
+t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),-50,'','t')
+X = Set('X',-0.1,2.0,-50,'','X')
 x = Fun('x',[t])
 def fx(t) : return x.F([t])
-f = pFun('f',[X], Degree=5)
+f = smbFun('f',[X])
 def ff(X) : return f.F([X])
-CVmakeSets ( CV_NumSets=21 )
+c_f = Tensor('c_f',[7])
+def fc_f(i) : return c_f.F([i])
+def f_smbF00(Args) :
+   X = Args[0]
+   SvF.F_Arg_Type = "N"
+   ret =  ( fc_f(0)+fc_f(1)*X+fc_f(2)*X**2+fc_f(3)*X**3+fc_f(4)*X**4+fc_f(5)*X**5+fc_f(6)*X**6 ) 
+   SvF.F_Arg_Type = ""
+   return ret
+f.smbF = f_smbF00
+CVmakeSets (  CV_NumSets=7 )
+SvF.CVNumOfIter=21; 
 import  numpy as np
 
 from Lego import *
@@ -36,14 +45,16 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     x.var = py.Var ( x.A[0].NodS,domain=Reals )
+    x.gr =  x.var
     Gr.x =  x.var
 
-    f.var = py.Var ( range (f.sizeP) )
-    Gr.f =  f.var
+    c_f.var = py.Var ( range (c_f.Sizes[0]),domain=Reals )
+    c_f.gr =  c_f.var
+    Gr.c_f =  c_f.var
  								# d/dt(x)=f(x)
     def EQ0 (Gr,_it) :
         return (
-          ((fx((_it+t.step))-fx(_it))/t.step)==ff(fx(_it))
+          x.by_x(_it)==ff(fx(_it))
         )
     Gr.conEQ0 = py.Constraint(t.FlNodSm,rule=EQ0 )
 
@@ -101,25 +112,6 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-t21 = Set('t21',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.175,'','t')
-x_f = Fun('x_f',[t21], param=True)
-def fx_f(t21) : return x_f.F([t21])
-sqrt_x_f__x=sqrt ( sum((fx_f(va)-fx(va))**2 for va in x_f.A[0].Val)/SvF.curentTabl.NoR)/x.V.sigma*100
-print('\nSDz= ',sqrt_x_f__x,'NoR',SvF.curentTabl.NoR)
-SvF.addStrToRes='SDz= '+str(sqrt_x_f__x)
-x2 = Fun('x2',[t], param=True, ReadFrom="x2(t).sol")
-def fx2(t) : return x2.F([t])
-X2 = Set('X2',1.2,1.5,0.1,'','X2')
-f2 = Fun('f2',[X2], param=True, ReadFrom="f2(X).sol")
-def ff2(X2) : return f2.F([X2])
-Reg=Polyline([-1,-1,2.5,2.5,-1],[-0.1,2.2,2.2,-0.1,-0.1],None,'Region')
-x.V.oname="x1: (x'>0)"
-x2.V.oname="x2: (x'<0)"
-x2.V.draw_name='x'
-Task.Draw ( 'Region;LC:green;LSt:dashed x;LC:r;LSt:solid x2;LC:b' )
-f.V.oname="f1: (x'>0)"
-f2.V.oname="f2: (x'<0)"
-f2.V.draw_name='f'
-f2.A[0].oname="x"
-Line0=Polyline([-0.1,2],[0,0],None,'f=0')
-Task.Draw ( 'f=0;LC:green;LSt:dashed f;LC:r;LSt:solid f2;LC:b' )
+Task.PlotAll ( )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")
