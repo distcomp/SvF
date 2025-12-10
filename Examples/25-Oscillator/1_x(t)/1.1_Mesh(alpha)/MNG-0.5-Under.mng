@@ -1,0 +1,28 @@
+CVNumOfIter  = 1			# максимальное кол-во итераций поиска весов регуляризации
+
+DAT= Select 	*  from  Spring5.dat 	# считывание всех столбцов из файла  ../Spring5.dat
+
+SET:	t  = [ , ,  0.025]		# множество t от min до max значений t из файла с шагом 0.025
+
+VAR:    x ( t )		  	  	# неизвестная функция, заданная на множестве t
+
+CV:     CV_NumSets=21			# кол-во подмножеств для процедуры кросс-валидации
+
+OBJ:   	x.MSD() + x.Complexity(Penal[0]) # целевая функция
+  
+Draw	x				# отображение нацденной функции x(t)
+
+:x.SaveSol ('xUnder(t).sol')
+
+SET:	t21  = [ , ,  0.175, i__t21, t]	# множество t исходное 
+Param:  x_f (t21)
+sqrt_x_f__x = sqrt ( sum (  (fx_f(va)-fx(va))**2 for va in x_f.A[0].Val  )/DAT.NoR) / x.V.sigma*100
+print ('\nsqrt_x_f__x',sqrt_x_f__x,   'NoR', DAT.NoR)	
+SvF.addStrToRes = 'sqrt_x_f-x= '+ str(sqrt_x_f__x)
+
+
+EOF					# конец файла, все что дальше опускается
+
+
+
+
