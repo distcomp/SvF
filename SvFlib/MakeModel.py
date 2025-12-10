@@ -1728,9 +1728,7 @@ def WriteModelOBJ_U (buf) :
 def WritePolyline ( buf ) :
         first = buf.find('(')
         last = buf.rfind(')')
-        str = buf[:first] + ' = Polyline' + buf[first:last] + ', "' + buf[:first] + '")'
-#        print (str)
- #       1/0
+        str = buf[:first] + ' = Polyline' + buf[first:last] + ', None, "' + buf[:first] + '")'
         Swr (str)
         from GIS import Polyline
         Polyline (None,None,None,buf[:first])           # для регистрации на этапе компиляции

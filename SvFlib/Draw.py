@@ -35,7 +35,12 @@ def Plot (plots) :
     plt.xticks(fontsize=SvF.axisNUM_FONT_SIZE, rotation=0)
     if SvF.xaxis_step != 0:     ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=SvF.xaxis_step))
     if SvF.yaxis_step != 0:     ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=SvF.yaxis_step))
+    TRANSPOSE = False
 
+    def swapTRANS(x, y) :
+        if TRANSPOSE : return y, x
+        else         : return x, y
+    FileName = None
     file_name = ''
 
     C = 'red';  LW = 1.5;  LS = '-'
@@ -73,8 +78,10 @@ def Plot (plots) :
                         D = '2Dfun1'
                         xx = part_plot.A[0].Val
                         xx_dat = part_plot.A[0].dat
+                        xLAB = part_plot.A[0].name
                         yy = part_plot.grd
                         yy_dat = part_plot.V.dat
+                        yLAB = part_plot.V.name
                     elif part_plot.dim == 2:
                         D = '2Dfun2'
                         xx = part_plot.A[0].Val
@@ -115,10 +122,12 @@ def Plot (plots) :
                 elif PAR in ['ylabel', 'ylab' ] :               yLAB = VAL                   # Текст названия Axe y
                 elif PAR in ['tlabel', 'tlab' ] :               tLAB = VAL              # Текст названия Title
 
+                elif PAR in ['filename', 'file']:               FileName = VAL          # сохраняем в файл  FileName
+                elif PAR in ['transpose', 'trans']:             TRANSPOSE = not TRANSPOSE
                 elif PAR in ['cmap' ]          :                CMAP = VAL              # цветовая карта
                 elif PAR in ['levels', 'levs' ] :
-                    if VAL[0] == '[' :              LEVS = VAL[1:-1].split(",")       # число уровней или список уровней
-                    else :                          LEVS = int(VAL)
+                    if VAL[0] == '[' :                  LEVS = VAL[1:-1].split(",")       # число уровней или список уровней
+                    else :                              LEVS = int(VAL)
 
                 else:  print('PLOT  ????????????? ************************ PAR =', PAR, VAL)
 
@@ -131,24 +140,30 @@ def Plot (plots) :
 
   #      print ("IIIIIIIIII", ip, MS, MFC, MARK, LAB)
 
+        xLAB, yLAB = swapTRANS(xLAB, yLAB)
         if D == '2Dfun1' or D == '2Dfun2' :
+            xx_dat, yy_dat = swapTRANS (xx_dat, yy_dat)
             if not ((xx_dat is None) or (yy_dat is None)):  # DRAW  data    #  точки  данные
                 ax.plot(xx_dat, yy_dat, color=dC, lw=dLW, linestyle=dLS,
                     marker=dMARK, markersize=dMS, markerfacecolor=dMFC, markeredgecolor=dMEC, markeredgewidth=dMEW,
                     label=dLAB )
         if D == '2Dfun1' or D == '2Dxy' or D == '2Dpoly' :
+            xx, yy = swapTRANS(xx, yy)
             ax.plot(xx, yy, color=C, lw=LW, linestyle=LS,
                 marker=MARK, markersize=MS, markerfacecolor=MFC, markeredgecolor=MEC, markeredgewidth=MEW,
                 label=LAB )
 
         elif D == '2Dfun2' :
+            xx, yy = swapTRANS(xx, yy)
+            if TRANSPOSE:   Z=zz
+            else        :   Z=zz.T
             X, Y = np.meshgrid(xx, yy)
-            cs = ax.contourf(X, Y, zz.T, LEVS, cmap=CMAP)
+            cs = ax.contourf(X, Y, Z, LEVS, cmap=CMAP)
             cbar = plt.colorbar(cs)
        #     if SvF.CommaFormatter:
         #        cbar.ax.yaxis.set_major_formatter(FuncFormatter(comma_formatter_pos))
        #     if (not mii is None) and mii != maa:
-            cs1 = ax.contour(X, Y, zz.T, LEVS, colors=C, linewidths=LW) #, levs, )
+            cs1 = ax.contour(X, Y, Z, LEVS, colors=C, linewidths=LW) #, levs, )
         #        if SvF.CommaFormatter:
          #           ax.clabel(cs1, inline=1, fontsize=NUM_FONT_SIZE, fmt=comma_formatter)
           #      else:
@@ -172,10 +187,10 @@ def Plot (plots) :
 
     plt.tight_layout()
     if SvF.DrawMode.find('File') >= 0 :
-        if SvF.DrawFileName != '':  file_name = SvF.DrawFileName
-#        if DrawErr:  plt.savefig(file_name+'Err.' + SvF.graphic_file_type, dpi=SvF.DPI)  # (os.path.join('%s'%dir,'inner_int_gamma_%g%s.%s'%(fun.gamma, suffix, fmt)), dpi = dpi)
- #       else:        plt.savefig(file_name + '.'+ SvF.graphic_file_type, dpi=SvF.DPI)
-        plt.savefig(file_name + '.' + SvF.graphic_file_type, dpi=SvF.DPI)
+        if FileName is None:  FileName = file_name
+#        if DrawErr:  plt.savefig(File_name+'Err.' + SvF.graphic_file_type, dpi=SvF.DPI)  # (os.path.join('%s'%dir,'inner_int_gamma_%g%s.%s'%(fun.gamma, suffix, fmt)), dpi = dpi)
+ #       else:        plt.savefig(File_name + '.'+ SvF.graphic_file_type, dpi=SvF.DPI)
+        plt.savefig(FileName + '.' + SvF.graphic_file_type, dpi=SvF.DPI)
     if SvF.DrawMode.find('Screen') >= 0 :
             if SvF.ShowAll :  plt.show(block=False)
             else           :  plt.show()
