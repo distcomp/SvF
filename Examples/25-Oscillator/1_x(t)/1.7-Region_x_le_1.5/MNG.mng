@@ -14,7 +14,7 @@ OBJ:   	x.MSD() + x.Complexity(Penal[0]) # целевая функция
 SET:	t21  = [ , ,  0.175]; Data ='t'	# множество t исходное 
 Param:  x_f (t21)
 sqrt_x_f__x = sqrt ( sum (  (fx_f(va)-fx(va))**2 for va in x_f.A[0].Val  )/SvF.curentTabl.NoR) / x.V.sigma*100
-print ('\nSDz=  ',sqrt_x_f__x,   'NoR', SvF.curentTabl.NoR)	
+print ('\nSDz=  ',sqrt_x_f__x,   'NoR', SvF.currentTabl.NoR)	
 SvF.addStrToRes = 'SDz= ' + str(sqrt_x_f__x)
 
 Reg = Polyline ([-1,-1,2.5,2.5,-1], [-0.1,1.5,1.5,-0.1,-0.1], None, 'Region')

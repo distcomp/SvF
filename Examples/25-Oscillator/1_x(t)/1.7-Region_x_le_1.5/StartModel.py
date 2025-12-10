@@ -17,11 +17,11 @@ SvF.Task = TaskClass()
 Task = SvF.Task
 SvF.mngF = 'MNG.mng'
 SvF.CVNumOfIter = 1
-Table ( 'Spring5.dat','curentTabl','*' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+currentTab = Table ( 'Spring5.dat','currentTab','*' )
+t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),0.025,'','t')
 x = Fun('x',[t])
 def fx(t) : return x.F([t])
-CVmakeSets ( CV_NumSets=21 )
+CVmakeSets (  CV_NumSets=21 )
 import  numpy as np
 
 from Lego import *
@@ -33,6 +33,7 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     x.var = py.Var ( x.A[0].NodS,domain=Reals, bounds=(-0.1,1.5) )
+    x.gr =  x.var
     Gr.x =  x.var
 
     if len (SvF.CV_NoRs) > 0 :
@@ -87,7 +88,7 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-t21 = Set('t21',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.175,'','t')
+t21 = Set('t21',SvF.currentTab.dat("t")[:].min(),SvF.currentTab.dat("t")[:].max(),0.175,'',"t")
 x_f = Fun('x_f',[t21], param=True)
 def fx_f(t21) : return x_f.F([t21])
 sqrt_x_f__x=sqrt ( sum((fx_f(va)-fx(va))**2 for va in x_f.A[0].Val)/SvF.curentTabl.NoR)/x.V.sigma*100
@@ -95,3 +96,5 @@ print('\nSDz= ',sqrt_x_f__x,'NoR',SvF.curentTabl.NoR)
 SvF.addStrToRes='SDz= '+str(sqrt_x_f__x)
 Reg=Polyline([-1,-1,2.5,2.5,-1],[-0.1,1.5,1.5,-0.1,-0.1],None,'Region')
 Task.Draw ( 'Region;LC:green;LSt:dashed x;LC:r;LSt:solid' )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")

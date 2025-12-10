@@ -19,8 +19,8 @@ SvF.mngF = 'MNG-Draw_alpha.mng'
 SvF.CVNumOfIter = 0
 D = Table ( 'CV(alpha).dat','D','*' )
 for d in D.sR:
-    print(D.dat('alpha')[d],sqrt(D.dat('CV')[d]**2-D.dat('delta')[d]**2),(D.dat('CV')[d]**2-D.dat('delta')[d]**2))
-alpha = Set('alpha',SvF.curentTabl.dat('alpha')[:].min(),SvF.curentTabl.dat('alpha')[:].max(),-50,'','alpha')
+  print(D.dat('alpha')[d],sqrt(D.dat('CV')[d]**2-D.dat('delta')[d]**2),(D.dat('CV')[d]**2-D.dat('delta')[d]**2))
+alpha = Set('alpha',SvF.currentTab.dat('alpha')[:].min(),SvF.currentTab.dat('alpha')[:].max(),-50,'','alpha')
 CV = Fun('CV',[alpha])
 def fCV(alpha) : return CV.F([alpha])
 SD = Fun('SD',[alpha])
@@ -38,12 +38,15 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     CV.var = py.Var ( CV.A[0].NodS,domain=Reals )
+    CV.gr =  CV.var
     Gr.CV =  CV.var
 
     SD.var = py.Var ( SD.A[0].NodS,domain=Reals )
+    SD.gr =  SD.var
     Gr.SD =  SD.var
 
     delta.var = py.Var ( delta.A[0].NodS,domain=Reals )
+    delta.gr =  delta.var
     Gr.delta =  delta.var
 
     make_CV_Sets(0, SvF.CVstep)
@@ -138,3 +141,5 @@ delta.V.draw_name = '%'
 delta.A[0].oname = 'α'
 delta.V.oname = 'SDz'
 Task.Draw ( 'CV;MS:0 SD;LC:blue delta;LC:green' )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")

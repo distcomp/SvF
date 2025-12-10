@@ -16,52 +16,29 @@ from GIS import *
 SvF.Task = TaskClass()
 Task = SvF.Task
 SvF.mngF = 'MNG-dif-2.mng'
-SvF.CVNumOfIter = 1
 SvF.OptStep=[0,0.0001,0.0001]
-Table ( 'Spring5.dat','curentTabl','t,x' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+currentTab = Table ( 'Spring5.dat','currentTab','t,x' )
+t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),0.025,'','t')
 X = Set('X',-0.1,2.2,0.1,'','X')
 V = Set('V',-1,1.5,0.1,'','V')
 x = Fun('x',[t])
 def fx(t) : return x.F([t])
 v = Fun('v',[t])
 def fv(t) : return v.F([t])
-f = smbFun('f',[X,V])
+f = smbFun('f',[X,V], SymbolInteg=False)
 def ff(X,V) : return f.F([X,V])
 c = Tensor('c',[28])
 def fc(i) : return c.F([i])
-def f_smbF(Args) :
+def f_smbF00(Args) :
    X = Args[0]
    V = Args[1]
-   return fc(0)+fc(1)*V+fc(2)*X+fc(3)*V**2+fc(4)*X*V+fc(5)*X**2+fc(6)*V**3+fc(7)*X*V**2+fc(8)*X**2*V+fc(9)*X**3+fc(10)*V**4+fc(11)*X*V**3+fc(12)*X**2*V**2+fc(13)*X**3*V+fc(14)*X**4+fc(15)*V**5+fc(16)*X*V**4+fc(17)*X**2*V**3+fc(18)*X**3*V**2+fc(19)*X**4*V+fc(20)*X**5+fc(21)*V**6+fc(22)*X*V**5+fc(23)*X**2*V**4+fc(24)*X**3*V**3+fc(25)*X**4*V**2+fc(26)*X**5*V+fc(27)*X**6
-f.smbF = f_smbF
-def f_smbFx(Args) :
-   X = Args[0]
-   V = Args[1]
-   return V**5*fc(22) + 2*V**4*X*fc(23) + V**4*fc(16) + 3*V**3*X**2*fc(24) + 2*V**3*X*fc(17) + V**3*fc(11) + 4*V**2*X**3*fc(25) + 3*V**2*X**2*fc(18) + 2*V**2*X*fc(12) + V**2*fc(7) + 5*V*X**4*fc(26) + 4*V*X**3*fc(19) + 3*V*X**2*fc(13) + 2*V*X*fc(8) + V*fc(4) + 6*X**5*fc(27) + 5*X**4*fc(20) + 4*X**3*fc(14) + 3*X**2*fc(9) + 2*X*fc(5) + fc(2) 
-f.smbFx = f_smbFx
-def f_smbFxx(Args) :
-   X = Args[0]
-   V = Args[1]
-   return 2*V**4*fc(23) + 6*V**3*X*fc(24) + 2*V**3*fc(17) + 12*V**2*X**2*fc(25) + 6*V**2*X*fc(18) + 2*V**2*fc(12) + 20*V*X**3*fc(26) + 12*V*X**2*fc(19) + 6*V*X*fc(13) + 2*V*fc(8) + 30*X**4*fc(27) + 20*X**3*fc(20) + 12*X**2*fc(14) + 6*X*fc(9) + 2*fc(5) 
-f.smbFxx = f_smbFxx
-def f_smbFy(Args) :
-   X = Args[0]
-   V = Args[1]
-   return 6*V**5*fc(21) + 5*V**4*X*fc(22) + 5*V**4*fc(15) + 4*V**3*X**2*fc(23) + 4*V**3*X*fc(16) + 4*V**3*fc(10) + 3*V**2*X**3*fc(24) + 3*V**2*X**2*fc(17) + 3*V**2*X*fc(11) + 3*V**2*fc(6) + 2*V*X**4*fc(25) + 2*V*X**3*fc(18) + 2*V*X**2*fc(12) + 2*V*X*fc(7) + 2*V*fc(3) + X**5*fc(26) + X**4*fc(19) + X**3*fc(13) + X**2*fc(8) + X*fc(4) + fc(1) 
-f.smbFy = f_smbFy
-def f_smbFxy(Args) :
-   X = Args[0]
-   V = Args[1]
-   return 5*V**4*fc(22) + 8*V**3*X*fc(23) + 4*V**3*fc(16) + 9*V**2*X**2*fc(24) + 6*V**2*X*fc(17) + 3*V**2*fc(11) + 8*V*X**3*fc(25) + 6*V*X**2*fc(18) + 4*V*X*fc(12) + 2*V*fc(7) + 5*X**4*fc(26) + 4*X**3*fc(19) + 3*X**2*fc(13) + 2*X*fc(8) + fc(4) 
-f.smbFxy = f_smbFxy
-def f_smbFyy(Args) :
-   X = Args[0]
-   V = Args[1]
-   return 30*V**4*fc(21) + 20*V**3*X*fc(22) + 20*V**3*fc(15) + 12*V**2*X**2*fc(23) + 12*V**2*X*fc(16) + 12*V**2*fc(10) + 6*V*X**3*fc(24) + 6*V*X**2*fc(17) + 6*V*X*fc(11) + 6*V*fc(6) + 2*X**4*fc(25) + 2*X**3*fc(18) + 2*X**2*fc(12) + 2*X*fc(7) + 2*fc(3) 
-f.smbFyy = f_smbFyy
-f.ArgNormalition=True
-CVmakeSets ( CV_NumSets=21 )
+   SvF.F_Arg_Type = "N"
+   ret =  ( fc(0)+fc(1)*V+fc(2)*X+fc(3)*V**2+fc(4)*X*V+fc(5)*X**2+fc(6)*V**3+fc(7)*X*V**2+fc(8)*X**2*V+fc(9)*X**3+fc(10)*V**4+fc(11)*X*V**3+fc(12)*X**2*V**2+fc(13)*X**3*V+fc(14)*X**4+fc(15)*V**5+fc(16)*X*V**4+fc(17)*X**2*V**3+fc(18)*X**3*V**2+fc(19)*X**4*V+fc(20)*X**5+fc(21)*V**6+fc(22)*X*V**5+fc(23)*X**2*V**4+fc(24)*X**3*V**3+fc(25)*X**4*V**2+fc(26)*X**5*V+fc(27)*X**6 ) 
+   SvF.F_Arg_Type = ""
+   return ret
+f.smbF = f_smbF00
+CVmakeSets (  CV_NumSets=21 )
+SvF.CVNumOfIter=0; 
 import  numpy as np
 
 from Lego import *
@@ -73,26 +50,26 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     x.var = py.Var ( x.A[0].NodS,domain=Reals )
+    x.gr =  x.var
     Gr.x =  x.var
 
     v.var = py.Var ( v.A[0].NodS,domain=Reals )
+    v.gr =  v.var
     Gr.v =  v.var
 
     c.var = py.Var ( range (c.Sizes[0]),domain=Reals )
+    c.gr =  c.var
     Gr.c =  c.var
-
-    f.var = py.Var ( f.A[0].NodS,f.A[1].NodS,domain=Reals )
-    Gr.f =  f.var
  								# d2/dt2(x)==f(x,v)
     def EQ0 (Gr,_it) :
         return (
-          ((fx((_it+t.step))+fx((_it-t.step))-2*fx(_it))/t.step**2)==ff(fx(_it),fv(_it))
+          x.by_xx(_it)==ff(fx(_it),fv(_it))
         )
     Gr.conEQ0 = py.Constraint(t.mFlNodSm,rule=EQ0 )
  								# v==d/dt(x)
     def EQ1 (Gr,_it) :
         return (
-          fv(_it)==((fx((_it+t.step))-fx(_it))/t.step)
+          fv(_it)==x.by_x(_it)
         )
     Gr.conEQ1 = py.Constraint(t.FlNodSm,rule=EQ1 )
 
@@ -154,9 +131,9 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-Reg=Polyline([-1,-1,2.5,2.5,-1],[-0.1,2.2,2.2,-0.1,-0.1],None,'Region')
-Task.Draw ( 'Region;LC:green;LSt:dashed x;LC:r;LSt:solid' )
-Pl = Polyline (x, v, None, 'Trajectory')
-Pl.Y[0]=Pl.Y[1]
-Pl.Y[-1]=Pl.Y[-2]
-Task.Draw ( 'f Trajectory;LC:red' )
+Region = Polyline([-1,-1,2.5,2.5,-1],[-0.1,2.2,2.2,-0.1,-0.1], None, "Region")
+Plot( [ [ Region, 'c=green', 'ls=dashed'], [x, 'c=r', 'ls=solid'] ] )
+Trajectory = Polyline(x.grd[:-1],v.grd[:-1], None, "Trajectory")
+Plot( [ [ f], [Trajectory, 'c=red', 'lw=1.2'] ] )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")

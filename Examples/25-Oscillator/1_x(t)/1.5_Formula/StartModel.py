@@ -17,29 +17,24 @@ SvF.Task = TaskClass()
 Task = SvF.Task
 SvF.mngF = 'MNG-short.mng'
 SvF.CVNumOfIter = 0
-Table ( 'Spring5.dat','curentTabl','*' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+currentTab = Table ( 'Spring5.dat','currentTab','*' )
+t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),0.025,'','t')
 K = Tensor('K',[])
 def fK() : return K.F([])
 muu = Tensor('muu',[])
 def fmuu() : return muu.F([])
 xr = Tensor('xr',[])
 def fxr() : return xr.F([])
-x = smbFun('x',[t])
+x = smbFun('x',[t], SymbolInteg=False)
 def fx(t) : return x.F([t])
-def x_smbF(Args) :
+def x_smbF00(Args) :
    t = Args[0]
-   return py.sin(py.sqrt(fK())*t)*py.exp(-fmuu()/2*t)+fxr()
-x.smbF = x_smbF
-def x_smbFx(Args) :
-   t = Args[0]
-   return py.sqrt(fK())*py.exp(-fmuu()*t/2)*py.cos(py.sqrt(fK())*t) - fmuu()*py.exp(-fmuu()*t/2)*py.sin(py.sqrt(fK())*t)/2 
-x.smbFx = x_smbFx
-def x_smbFxx(Args) :
-   t = Args[0]
-   return -py.sqrt(fK())*fmuu()*py.exp(-fmuu()*t/2)*py.cos(py.sqrt(fK())*t) - fK()*py.exp(-fmuu()*t/2)*py.sin(py.sqrt(fK())*t) + fmuu()**2*py.exp(-fmuu()*t/2)*py.sin(py.sqrt(fK())*t)/4 
-x.smbFxx = x_smbFxx
-CVmakeSets ( CV_NumSets=21 )
+   SvF.F_Arg_Type = "N"
+   ret = py.sin(py.sqrt(fK())*t)*py.exp(-fmuu()/2*t)+fxr()
+   SvF.F_Arg_Type = ""
+   return ret
+x.smbF = x_smbF00
+CVmakeSets (  CV_NumSets=21 )
 import  numpy as np
 
 from Lego import *
@@ -51,16 +46,16 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     K.var = py.Var ( domain=Reals )
+    K.gr =  K.var
     Gr.K =  K.var
 
     muu.var = py.Var ( domain=Reals )
+    muu.gr =  muu.var
     Gr.muu =  muu.var
 
     xr.var = py.Var ( domain=Reals )
+    xr.gr =  xr.var
     Gr.xr =  xr.var
-
-    x.var = py.Var ( x.A[0].NodS,domain=Reals )
-    Gr.x =  x.var
 
     if len (SvF.CV_NoRs) > 0 :
         Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )
@@ -115,3 +110,5 @@ from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
 Task.Draw ( 'x' )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")

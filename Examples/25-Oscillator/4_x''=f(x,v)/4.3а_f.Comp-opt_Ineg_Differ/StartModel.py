@@ -17,8 +17,8 @@ SvF.Task = TaskClass()
 Task = SvF.Task
 SvF.mngF = 'MNG.mng'
 SvF.CVNumOfIter = 1
-Table ( 'Spring5.dat','curentTabl','t,x' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+currentTab = Table ( 'Spring5.dat','currentTab','t,x' )
+t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),0.025,'','t')
 X = Set('X',-0.1,2.2,0.1,'','X')
 V = Set('V',-1,1.5,0.1,'','V')
 x = Fun('x',[t])
@@ -32,10 +32,12 @@ def fc(i) : return c.F([i])
 def f_smbF00(Args) :
    X = Args[0]
    V = Args[1]
-   return  ( fc(0)+fc(1)*V+fc(2)*X+fc(3)*V**2+fc(4)*X*V+fc(5)*X**2+fc(6)*V**3+fc(7)*X*V**2+fc(8)*X**2*V+fc(9)*X**3+fc(10)*V**4+fc(11)*X*V**3+fc(12)*X**2*V**2+fc(13)*X**3*V+fc(14)*X**4 ) 
+   SvF.F_Arg_Type = "N"
+   ret =  ( fc(0)+fc(1)*V+fc(2)*X+fc(3)*V**2+fc(4)*X*V+fc(5)*X**2+fc(6)*V**3+fc(7)*X*V**2+fc(8)*X**2*V+fc(9)*X**3+fc(10)*V**4+fc(11)*X*V**3+fc(12)*X**2*V**2+fc(13)*X**3*V+fc(14)*X**4 ) 
+   SvF.F_Arg_Type = ""
+   return ret
 f.smbF = f_smbF00
-f.ArgNormalition=False
-CVmakeSets ( CV_NumSets=21 )
+CVmakeSets (  CV_NumSets=21 )
 import  numpy as np
 
 from Lego import *
@@ -47,26 +49,26 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     x.var = py.Var ( x.A[0].NodS,domain=Reals )
+    x.gr =  x.var
     Gr.x =  x.var
 
     v.var = py.Var ( v.A[0].NodS,domain=Reals )
+    v.gr =  v.var
     Gr.v =  v.var
 
     c.var = py.Var ( range (c.Sizes[0]),domain=Reals )
+    c.gr =  c.var
     Gr.c =  c.var
-
-    f.var = py.Var ( f.A[0].NodS,f.A[1].NodS,domain=Reals )
-    Gr.f =  f.var
  								# d2/dt2(x)==f(x,v)
     def EQ0 (Gr,_it) :
         return (
-          ((fx((_it+t.step))+fx((_it-t.step))-2*fx(_it))/t.step**2)==ff(fx(_it),fv(_it))
+          x.by_xx(_it)==ff(fx(_it),fv(_it))
         )
     Gr.conEQ0 = py.Constraint(t.mFlNodSm,rule=EQ0 )
  								# v==d/dt(x)
     def EQ1 (Gr,_it) :
         return (
-          fv(_it)==((fx((_it+t.step))-fx(_it))/t.step)
+          fv(_it)==x.by_x(_it)
         )
     Gr.conEQ1 = py.Constraint(t.FlNodSm,rule=EQ1 )
 
@@ -130,3 +132,5 @@ Pl = Polyline (x, v, None, 'Trajectory')
 Pl.Y[0]=Pl.Y[1]
 Pl.Y[-1]=Pl.Y[-2]
 Task.Draw ( 'f Trajectory;LC:red' )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")

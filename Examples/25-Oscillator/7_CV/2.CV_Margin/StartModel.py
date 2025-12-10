@@ -17,10 +17,10 @@ SvF.Task = TaskClass()
 Task = SvF.Task
 SvF.mngF = 'MNG_Margin.mng'
 DAT = Table ( 'Spring5.dat','DAT','*' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),0.025,'','t')
 x = Fun('x',[t])
 def fx(t) : return x.F([t])
-CVmakeSets ( CV_NumSets=7,CV_Margin=1 )
+CVmakeSets (  CV_NumSets=7, CV_Margin=1 )
 SvF.CVNumOfIter = 1
 import  numpy as np
 
@@ -33,6 +33,7 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     x.var = py.Var ( x.A[0].NodS,domain=Reals )
+    x.gr =  x.var
     Gr.x =  x.var
 
     if len (SvF.CV_NoRs) > 0 :
@@ -87,6 +88,6 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-print(SvF.notTrainingSets[2],SvF.ValidationSets[2])
-print(SvF.TrainingSets[2])
 Task.Draw ( 'x' )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")

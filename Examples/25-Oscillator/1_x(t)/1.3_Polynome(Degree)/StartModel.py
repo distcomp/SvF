@@ -17,29 +17,20 @@ SvF.Task = TaskClass()
 Task = SvF.Task
 SvF.mngF = 'MNG-short.mng'
 SvF.CVNumOfIter = 31
-Table ( 'Spring5.dat','curentTabl','*' )
-t = Set('t',SvF.curentTabl.dat('t')[:].min(),SvF.curentTabl.dat('t')[:].max(),0.025,'','t')
+currentTab = Table ( 'Spring5.dat','currentTab','*' )
+t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),0.025,'','t')
 b = Tensor('b',[6])
 def fb(i) : return b.F([i])
 x = smbFun('x',[t])
 def fx(t) : return x.F([t])
-def x_smbF(Args) :
+def x_smbF00(Args) :
    t = Args[0]
-   return fb(0)+fb(1)*t+fb(2)*t**2+fb(3)*t**3+fb(4)*t**4+fb(5)*t**5
-x.smbF = x_smbF
-def x_smbFx(Args) :
-   t = Args[0]
-   return 5*t**4*fb(5) + 4*t**3*fb(4) + 3*t**2*fb(3) + 2*t*fb(2) + fb(1) 
-x.smbFx = x_smbFx
-def x_smbFxx(Args) :
-   t = Args[0]
-   return 20*t**3*fb(5) + 12*t**2*fb(4) + 6*t*fb(3) + 2*fb(2) 
-x.smbFxx = x_smbFxx
-def x_Int_smbFxx_2(Args) :
-   t = Args[0]
-   return 400*t**7*fb(5)**2/7 + 80*t**6*fb(4)*fb(5) + t**5*(48*fb(3)*fb(5) + 144*fb(4)**2/5) + t**4*(20*fb(2)*fb(5) + 36*fb(3)*fb(4)) + t**3*(16*fb(2)*fb(4) + 12*fb(3)**2) + 12*t**2*fb(2)*fb(3) + 4*t*fb(2)**2
-x.Int_smbFxx_2 = x_Int_smbFxx_2
-CVmakeSets ( CV_NumSets=21 )
+   SvF.F_Arg_Type = "N"
+   ret =  ( fb(0)+fb(1)*t+fb(2)*t**2+fb(3)*t**3+fb(4)*t**4+fb(5)*t**5 ) 
+   SvF.F_Arg_Type = ""
+   return ret
+x.smbF = x_smbF00
+CVmakeSets (  CV_NumSets=21 )
 import  numpy as np
 
 from Lego import *
@@ -51,10 +42,8 @@ def createGr ( Task, Penal ) :
     Task.Gr = Gr
 
     b.var = py.Var ( range (b.Sizes[0]),domain=Reals )
+    b.gr =  b.var
     Gr.b =  b.var
-
-    x.var = py.Var ( x.A[0].NodS,domain=Reals )
-    Gr.x =  x.var
 
     if len (SvF.CV_NoRs) > 0 :
         Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )
@@ -109,3 +98,5 @@ from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
 Task.Draw ( 'x' )
+
+if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")

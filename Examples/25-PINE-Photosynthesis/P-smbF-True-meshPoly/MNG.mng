@@ -1,5 +1,3 @@
-
-
 CVNumOfIter     1
 
 useNaN				#  use NaN values
@@ -8,8 +6,6 @@ useNaN				#  use NaN values
 
 Select   ROWNUM AS t, I AS Q1, Ta AS T, WPD AS VPD, PhX2 AS P, PhX2 AS P, Dat, NN, PRel, ERel    from ../Phot-7shoX5.xlsx 
  
-#MakeSets_byParam Dat 11			# CV procedure parameters
-
 SET:	 Q1    = [     ,      ,-50] 
 	 T    = [     ,      ,-50]
 

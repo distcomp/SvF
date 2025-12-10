@@ -1,26 +1,19 @@
-
-
-CVNumOfIter     1
-
 useNaN				#  use NaN values
 
-#INCLUDE:  ../../get_data_0822.mng
-
-Select   ROWNUM AS t, I AS Q1, Ta AS T, WPD AS VPD, PhX2 AS P, PhX2 AS P, Dat, NN, PRel, ERel    from ../Phot-7shoX5.xlsx 
+SELECT:  ROWNUM AS t, I AS Q1, Ta AS T, WPD AS VPD, PhX2 AS P, PhX2 AS P, Dat, NN, PRel, ERel    from ../Phot-7shoX5.xlsx 
  
 #MakeSets_byParam Dat 11			# CV procedure parameters
 
 SET:	 Q1    = [     ,      ,-50] 
 	 T    = [     ,      ,-50]
 
-
 Var:     P ( Q1,T ) = Polynome (5, c, Q1, T);   SymbolInteg =False;  SymbolDiffer =False  
 P.ArgNormalition = False
 
-RunMode = 'S&S'
-SvF.solverOptVal [ 'max_iter' ] = 500000 
-
 CV:        CV_NumSets=21
+CVNumOfIter     1
+#RunMode = 'S&S'
+#SvF.solverOptVal [ 'max_iter' ] = 500000 
 
 Obj:     P.Complexity ( Penal[0],Penal[1] ) + P.MSD()
 
