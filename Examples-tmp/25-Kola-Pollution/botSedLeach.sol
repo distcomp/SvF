@@ -1,2 +1,0 @@
-botSedLeach	#SvFver_70_tensor
-0.001499990009347007
