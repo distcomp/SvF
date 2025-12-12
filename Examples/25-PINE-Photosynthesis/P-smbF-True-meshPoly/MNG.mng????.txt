@@ -1,0 +1,49 @@
+
+
+CVNumOfIter     1
+
+useNaN				#  use NaN values
+
+#INCLUDE:  ../../get_data_0822.mng
+
+Select   ROWNUM AS t, I AS Q1, Ta AS T, WPD AS VPD, PhX2 AS P, PhX2 AS P, Dat, NN, PRel, ERel    from ../Phot-7shoX5.xlsx 
+ 
+#MakeSets_byParam Dat 11			# CV procedure parameters
+
+SET:	 x    = [    0 ,     1 ,-50] 
+	 y    = [     ,      ,-50]
+
+
+Var:    P0 ( y ) = Polynome (18, cc1 );
+...
+...
+...
+Var:    P6 ( y ) = Polynome (18, cc6 );
+
+
+Var:	f(x,y) = mesh(x,Pi(y))
+
+18*51
+
+Tensor   c[51]
+
+Var:   F(x) = mesh (x, c)
+Var:  M0(T)
+      M1(T)
+      
+      M18(T)
+!8*51
+
+Var:     P ( Q1,T ) = Polynome (18, Mi(T), Q1 );   SymbolInteg =False;  SymbolDiffer =False  # Polynome (18, c(T), Q1 );
+Var:     P ( Q1,T ) = Polynome (18, c, Q1, T);   SymbolInteg =False;  SymbolDiffer =False  # Polynome (18, Polynome(T), Q1 );
+P.ArgNormalition = True
+
+RunMode = 'S&S'
+
+Obj:     P.Complexity ( Penal[0],Penal[1] ) + P.MSD()
+
+Draw
+
+EOF
+
+

@@ -1,0 +1,30 @@
+SELECT: * from  Spring5.dat		# считывание всех столбцов из файла  Spring5.dat
+
+SET:	t = [     ,    , 0.025] 	# область определения функции x(t)
+	X = [ 0., 2.0, 0.1  ] 		# область значений (с запасом) функции x(t)
+
+VAR:    x ( t ) = Polynome (6); #ArgNorm =False # SymbolDiffer #; x''<0  #SymbolDiffer # ArgNorm =False			# искомая функция
+VAR:	f ( X ) = Polynome (6); #ArgNorm =False; 		# искомая правая часть - полином 6-ой степени от x 
+#PARAM:	f ( X ) = Polynome (6); ArgNorm =False; <<		# искомая правая часть - полином 6-ой степени от x 
+
+#Task.ReadSols()
+#:for _it in t.mFlNodSm:
+#	 print ('TTTT', x.by_xx(_it),ff(fx(_it)))
+  
+
+EQ:	d2/dt2(x) -  f(x) > -.01	# дифференциальное ур-ие 2-ого порядка
+	x'' -  f(x) < .01		# дифференциальное ур-ие 2-ого порядка
+
+CV:     NumOfSets=7			# кол-во подмножеств для процедуры кросс-валидации
+RUN:	MaxIter = 1;  RunMode ='P&P'			# максимальное кол-во итераций поиска весов регуляризации
+
+OBJ:   f.Complexity(Penal[0]) + x.MSD()  # критерий выбора x(t) и f(x)
+#OBJ:   x.Complexity(Penal[0]) + x.MSD()  # критерий выбора x(t) и f(x)
+  
+PLOT: 	x
+	f
+
+EOF
+
+
+

@@ -1,0 +1,27 @@
+CVNumOfIter     1
+
+useNaN				#  use NaN values
+
+#INCLUDE:  ../../get_data_0822.mng
+
+Select   ROWNUM AS t, I AS Q1, Ta AS T, WPD AS VPD, PhX2 AS P, PhX2 AS P, Dat, NN, PRel, ERel \ 
+         from ../Phot-7shoX5.xlsx 
+ 
+#MakeSets_byParam Dat 11			# CV procedure parameters
+
+SET:	 Q1    = [     ,      ,-50] 
+	 T    = [     ,      ,-50]
+
+
+Var:     P ( Q1,T ) = Polynome (19, c, Q1, T);   SymbolInteg =False
+P.ArgNormalition = True
+
+RunMode ='S&S'
+
+Obj:     P.Complexity ( Penal[0],Penal[1] ) + P.MSD()
+
+Draw
+
+EOF
+
+

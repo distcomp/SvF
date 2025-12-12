@@ -1,0 +1,23 @@
+
+Start at   2025-08-11 22:31:25.953315
+Var:  c[210] was added
+2.823609486040115 was added while reading fName #190
+0.2823609486040115 was added while reading fName #191
+0.028236094860401153 was added while reading fName #192
+0.0028236094860401156 was added while reading fName #193
+0.0002823609486040116 was added while reading fName #194
+2.823609486040116e-05 was added while reading fName #195
+2.823609486040116e-06 was added while reading fName #196
+2.823609486040116e-07 was added while reading fName #197
+2.8236094860401164e-08 was added while reading fName #198
+2.8236094860401168e-09 was added while reading fName #199
+2.823609486040117e-10 was added while reading fName #200
+2.823609486040117e-11 was added while reading fName #201
+2.823609486040117e-12 was added while reading fName #202
+2.823609486040117e-13 was added while reading fName #203
+2.823609486040117e-14 was added while reading fName #204
+2.8236094860401173e-15 was added while reading fName #205
+2.8236094860401177e-16 was added while reading fName #206
+2.8236094860401176e-17 was added while reading fName #207
+2.8236094860401176e-18 was added while reading fName #208
+2.8236094860401177e-19 was added while reading fName #209
