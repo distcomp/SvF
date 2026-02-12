@@ -18,14 +18,15 @@ def CVmakeSets ( NoR =0, CV_NumSets =7, GroupBy=1,  CV_Margin=0, NumOfIter=None 
                 return
             NoR = SvF.currentTab.NoR
         CVarray = [ int(i/GroupBy) for i in range(NoR)]
-#        print (CVarray)
+    #    print ("GGGGGGGGGG", CVarray)
     else:
+        print("GGGGGGGGGG", GroupBy )#CVarray)
         if type(GroupBy) is str:
             GroupBy = SvF.currentTab.dat(GroupBy)
         CVarray = GroupBy.tolist()
 
     NoR = len(CVarray)
-#    print ('CVarray',CVarray)
+ #   print ('CVarray',CVarray)
     unique_par = list(set(CVarray))
 #    print('unique_par', NoR, len(unique_par), unique_par)
 
@@ -113,7 +114,7 @@ def SvF_MakeSets_byParam( arr, CVstep=0, CVmargin=0, border=None ):  # sort if m
 
     for set in range(CVstep):
         TrainingSets[set] = Substract (range(NoR), ValidationSets[set])  #[x for x in range(NoR) if x not in ValidationSets[set] ]
-    print ('********************************************',TrainingSets[set])
+#    print ('********************************************',TrainingSets[set])
 
 
     if CVmargin == 0:
@@ -163,7 +164,7 @@ def MakeSets_byParts ( NoR, CVstep=7, CVpart_size=1, CVmargin=0) :
     TrainingSets = [[] for _ in range(CVstep)]
     for set in range(CVstep):
         TrainingSets[set] = Substract (range(NoR), ValidationSets[set])  #[x for x in range(NoR) if x not in ValidationSets[set] ]
-    print ('********************************************',TrainingSets[set])
+ #   print ('********************************************',TrainingSets[set])
 
 #    for set in range(CVstep):
  #       TrainingSets[set] = [x for x in range(NoR) if x not in notTrainingSets[set] ]

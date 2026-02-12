@@ -45,13 +45,15 @@ def Plot (plots) :
 
     C = 'red';  LW = 1.5;  LS = '-'
     MS = 6.0;  MEC = 'auto';  MFC = 'auto'; MARK = None; MEW = 1
-    LAB = None
+#    LAB = None
+    LAB = ''
 
     dC = 'red';  dLW = 0;  dLS = '-'
     dMS = 3.0;  dMEC = 'b';  dMFC = 'none'; dMARK = 'o'; dMEW = 1
     dLAB = None
 
     xLAB = None;  yLAB = None; tLAB = None   # title
+    xLAB_x = 1;     xLAB_y = -0.02;   yLAB_x = -0.01;  yLAB_y = 1.02;  tLAB_x =0.5; tLAB_y =1
     LEVS = 10; CMAP='PuBu'
 
 
@@ -93,13 +95,21 @@ def Plot (plots) :
                         zz = part_plot.grd
                         tLAB = part_plot.V.name
                         C = 'k'; LW = 0.5           #  для линий уровня
-                    LAB = part_plot.V.name
+                    LAB = part_plot.nameFun()    #V.name
             elif ip==1 and D=='2Dxy' :  yy = part_plot
             else :
-                PAR = part_plot.split('=')[0]
-                VAL = None
-                if len ( part_plot.split('=') ) == 2:  VAL = part_plot.split('=')[1].strip('"').strip("'")
-
+                eq = part_plot.find('=')
+                if eq < 0 :
+                    PAR = part_plot
+                    VAL = None
+                else :
+                    PAR = part_plot[:eq]
+                    VAL = part_plot[eq+1:].strip('"').strip("'")
+       #         PAR = part_plot.split('=')[0]
+        #        print (PAR)
+         #       VAL = None
+          #      if len ( part_plot.split('=') ) == 2:  VAL = part_plot.split('=')[1].strip('"').strip("'")
+                print (PAR,VAL)
                 if   PAR in ['color', 'c' ] :                   C  = VAL                	# Цвет линии или маркера (например, 'red', '#FF0000')
                 elif PAR in ['linewidth', 'lw']:                LW = float(VAL)	            # Толщина линии (в пунктах, float)
                 elif PAR in ['linestyle', 'ls'] :               LS = VAL                    # Стиль линии (например, '-', '--', '-.', ':')
@@ -118,9 +128,15 @@ def Plot (plots) :
                 elif PAR in ['dmarkerfacecolor', 'dmfc'] :      dMFC = VAL                   # Цвет заливки (внутренней части) маркера mfc=none-не заливать
                 elif PAR in ['dmarkeredgecolor', 'dmec'] :      dMEC = VAL                   # Цвет границы маркера
                 elif PAR in ['dmarkeredgewidth', 'dmew'] :      dMEW = float(VAL)            # Толщина границы маркера
-                elif PAR in ['xlabel', 'xlab' ] :               xLAB = VAL                   # Текст названия Axe x
+                elif PAR in ['xlabel', 'xlab' ] :                 xLAB = VAL                   # Текст названия Axe x
+                elif PAR in ['xlabel_x', 'xlab_x' ] :             xLAB_x = float(VAL)                 #  Axe y  координата x
+                elif PAR in ['xlabel_y', 'xlab_y' ] :             xLAB_y = float(VAL)                 #                    y
                 elif PAR in ['ylabel', 'ylab' ] :               yLAB = VAL                   # Текст названия Axe y
-                elif PAR in ['tlabel', 'tlab' ] :               tLAB = VAL              # Текст названия Title
+                elif PAR in ['ylabel_x', 'ylab_x' ] :           yLAB_x = float(VAL)                 #  Axe x  координата x
+                elif PAR in ['ylabel_y', 'ylab_y' ] :           yLAB_y = float(VAL)                 #                    y
+                elif PAR in ['tlabel', 'tlab' ] :                 tLAB = VAL              # Текст названия Title
+                elif PAR in ['tlabel_x', 'tlab_x' ] :           tLAB_x = float(VAL)                 #  Title x  координата x
+                elif PAR in ['tlabel_y', 'tlab_y' ] :           tLAB_y = float(VAL)                 #                    y
 
                 elif PAR in ['filename', 'file']:               FileName = VAL          # сохраняем в файл  FileName
                 elif PAR in ['transpose', 'trans']:             TRANSPOSE = not TRANSPOSE
@@ -137,7 +153,6 @@ def Plot (plots) :
                 alpha	нет	Прозрачность (от 0.0 до 1.0)
                 zorder	нет	Порядок отрисовки слоев (чем выше число, тем "выше" слой)
                 """""
-
   #      print ("IIIIIIIIII", ip, MS, MFC, MARK, LAB)
 
         xLAB, yLAB = swapTRANS(xLAB, yLAB)
@@ -171,25 +186,17 @@ def Plot (plots) :
             ax.clabel(cs1, inline=1, fontsize=NUM_FONT_SIZE)   #, fmt=levelFmt)  # сторо !
 
         file_name += LAB
-#    if Transp:
- #       ax.set_xlabel(V.axe_name, size=FONT_SIZE)
-  #      ax.set_ylabel(A.axe_name, size=FONT_SIZE, rotation=yRotation)
-   # else:
-
+# ОСИ
     ax.set_ylabel(yLAB, size=FONT_SIZE, rotation=0)  # , yRotation)
     ax.set_xlabel(xLAB, size=FONT_SIZE)
-    ax.xaxis.set_label_coords( SvF.Xlabel_x, SvF.Xlabel_y ) #-0.01 ) # SvF.Xlabel_x ) #-0.01)
-    ax.yaxis.set_label_coords( SvF.Ylabel_x, SvF.Ylabel_y ) #1.02)  # в длиннах оси
+    ax.xaxis.set_label_coords( xLAB_x, xLAB_y ) #SvF.Xlabel_x, SvF.Xlabel_y ) #-0.01 ) # SvF.Xlabel_x ) #-0.01)
+    ax.yaxis.set_label_coords( yLAB_x, yLAB_y )#SvF.Ylabel_x, SvF.Ylabel_y ) #1.02)  # в длиннах оси
 
-    plt.title(tLAB, fontsize=FONT_SIZE + 1, style=FONTstyle, y=1.01, x=SvF.title_x)  # , pad = 3)
-
+    plt.title(tLAB, fontsize=FONT_SIZE + 1, style=FONTstyle, y=tLAB_y, x=tLAB_x)  # , pad = 3)
     ax.legend(fancybox=True, prop={'size': FONT_SIZE}, framealpha=0)  # framealpha -
-
     plt.tight_layout()
     if SvF.DrawMode.find('File') >= 0 :
         if FileName is None:  FileName = file_name
-#        if DrawErr:  plt.savefig(File_name+'Err.' + SvF.graphic_file_type, dpi=SvF.DPI)  # (os.path.join('%s'%dir,'inner_int_gamma_%g%s.%s'%(fun.gamma, suffix, fmt)), dpi = dpi)
- #       else:        plt.savefig(File_name + '.'+ SvF.graphic_file_type, dpi=SvF.DPI)
         plt.savefig(FileName + '.' + SvF.graphic_file_type, dpi=SvF.DPI)
     if SvF.DrawMode.find('Screen') >= 0 :
             if SvF.ShowAll :  plt.show(block=False)
@@ -198,9 +205,7 @@ def Plot (plots) :
             x = Ax.Val #linspace(Ax.min, Ax.max, Ax.Ub + 1)
             y = Ay.Val #linspace(Ay.min, Ay.max, Ay.Ub + 1)
             z = np.zeros((Ay.Ub + 1, Ax.Ub + 1), np.float64)
-
             X, Y = np.meshgrid(x, y)
-
             if Flow:
                 DX, DY = makeDXDY(fun, False)
                 mDX = MultVal(DX, -1)
@@ -222,6 +227,13 @@ def Plot (plots) :
                 if mii == maa and type(levs) == type(1): levs = [mii - 1, mii, mii + 1]     #28
                 cs = ax.contourf(X, Y, z, levs, locator=SvF.locator, cmap=colorMap)  # cm.PuBu_r  cm.autumn   cm.gray
             """""
+
+
+
+
+
+
+
 
 def DrawComb( param ):
     if SvF.DrawMode == '' :  return

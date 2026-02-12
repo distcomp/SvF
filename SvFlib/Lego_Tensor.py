@@ -106,7 +106,7 @@ class Tensor (Object) :
         fi, Etc, Ver, Type = Get_File_Etc_Ver_Type (fName)
 #        print ('FFFFFFFFFFFFFFFFFFfi', Etc, Ver, Type)
         if fi is None : return False
-        print("ReadSol from", fName) #, head)
+ #       print("ReadSol from", fName) #, head)
         dat = np.loadtxt(fi, 'double')
         if self.dim == 0:
             self.grd[0] = float(dat)

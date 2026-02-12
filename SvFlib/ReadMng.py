@@ -445,9 +445,10 @@ def ReadMng ( ) :
          Is(Q, "EoTask") ):
 #                        if objective == 'N':  buf = 'OBJ: N';
                         print ('OptMode', SvF.OptMode)
-                        print ('EoF ************', Q, ' in READ MNG ********************* EoF')
-                        if SvF.ShowAll:
-                            Swr('\nif SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")')
+                        print ('EoF ************', Q, ' in READ MNG ********************* EoF or EoTask')
+                        if  Is(Q, "EoF"):
+                            if SvF.ShowAll:
+                                Swr('\nif SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")')
                         if not SvF.SModelFile is None:  SvF.SModelFile.close()
                         if Q == 'EOTASK' :  SvF.EofTask = True
                         else:               SvF.EofTask = False

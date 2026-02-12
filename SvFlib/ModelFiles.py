@@ -314,7 +314,7 @@ def wrs(str):
 def to_logOut (aaa) :
         if SvF.LogOutFile is None :  SvF.LogOutFile = open('SvF_Log.Out', 'w')
         st = str(aaa)
-        print ('LogOutFile' + st)
+ #       print ('LogOutFile' + st)
         SvF.LogOutFile.write( '\n'+st )
 
 

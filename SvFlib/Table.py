@@ -273,6 +273,7 @@ class Table (Object):
         else :
             self.fromFile = com.DataPath + self.fromFile
             if     '.XLSX' == ext :                   self.Read30_XLSX( )
+            elif   '.JSON' == ext :                   self.Read30_JSON( )
             elif   '.KML'  == ext :                   self.Read21_KML ( where_condition )  # надо переписать
             elif   '.ASC'  == ext :                   self.Read27_ASC ( where_condition )  # надо переписать
             else :                                    self.Read30_TXT ( )
@@ -441,6 +442,70 @@ class Table (Object):
         return self.where_condition (*t_args)
 
 
+    def Read30_JSON(self):
+        import json
+        import pandas as pd
+
+        # —читываем JSON
+        with open(self.fromFile, "r", encoding="utf-8") as f:
+            obj = json.load(f)
+
+            columns = obj["columns"]  # список имЄн столбцов
+            data = obj["data"]  # список строк (кажда€ строка Ч список значений)
+            print ("TablesNames", columns, type(columns))
+       #     print(data)
+            self.setField_src_num(columns)
+
+            self.where_con_list()       #   30
+
+            self.NoC = len(self.Flds)  # (self.cols)
+            maxNoR = len(data)
+            print ('maxNoR', maxNoR)
+            for fld in self.Flds: fld.tb = np.zeros(maxNoR, np.float64)
+
+            NoR = 0
+            for ro in data:
+                try:
+                    if str (ro[0]) == '#END#' :
+                        print('#END#', NoR)
+                        break
+                    if str(ro[0])[0] == '#': continue
+                except ValueError:
+                    pass
+                OK = True
+                AllNaN = True
+                for fld in self.Flds:
+                    #                  print (pceil.value, pceil.data_type )
+                    if fld.src_num == -1:
+                        fld.tb[NoR] = NoR
+                        continue
+                    pceil = ro[fld.src_num]  #   ws.cell(row=ro, column=fld.src_num + 1)
+                    if SvF.TaskName[:5] == 'COVID' and fld.name == 'iso_code':  ############################  COVID
+                        fld.tb[NoR] = strTOnum(str(pceil.value))
+                    elif SvF.TaskName[:8] == 'COVID-RW' and fld.name == 'date':  ############################  COVID
+                        fld.tb[NoR] = float(str(pceil.value).replace('-', ''))
+                    else:
+         #               print (NoR, pceil)
+                        fld.tb[NoR] = floatGradNaN(pceil)     #ws.cell(row=ro, column=fld.src_num + 1).value)
+                    if not self.useNaN and np.isnan(fld.tb[NoR]): OK = False; break  # continue
+                    if not np.isnan(fld.tb[NoR]):  AllNaN = False  # 2024.3.10
+                if AllNaN: continue  # 2024.3.10
+                if not OK: continue
+                if self.CheckWhere(NoR) == False: continue  # 30
+                NoR += 1
+                if NoR >= maxNoR:  # resize
+                    maxNoR *= 2
+                    #                 print ('resize to',  maxNoR)
+                    for fld in self.Flds: fld.tb = np.resize(fld.tb, maxNoR)
+            for fld in self.Flds: fld.tb = np.resize(fld.tb, NoR)
+
+            self.NoR = NoR
+            print(NoR)
+
+            return
+        #print ('No file ', self.fromFile)
+        #exit (-1)
+
 
     def Read30_XLSX ( self ) :
         try :
@@ -468,16 +533,6 @@ class Table (Object):
  ##           print ("TablesNames", self.fromFile, ":", names)
 
             self.setField_src_num(names)
-##            for fld in self.Flds : fld.Mprint()
-
-#            for fld in self.Flds :
- #               if np.isnan(fld.src_num) :              # not  ROWNUM
-  #                try :
-   #                 fld.src_num = names.index ( fld.src_name )
-    #              except :
-     #               print ("No Column for", fld.src_name, "*****************************")
-      #              exit (-1)
-       #         fld.Mprint()
 
             self.where_con_list()       #   30
 
@@ -536,6 +591,8 @@ class Table (Object):
                     self.Flds.append(Field('ROWNUM', 'ROWNUM'))
                 elif fld.src_name == 'ROWNUM':   fld.src_num = -1
                 else:
+                    print (names)
+                    print ((fld.src_name))
                     fld.src_num = names.index(fld.src_name)
                     if fld.src_num == -1:
                         print("No Column for", fld.src_name, "*****************************")

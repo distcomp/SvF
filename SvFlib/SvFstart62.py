@@ -22,6 +22,7 @@ from Pars    import *
 from Tools   import *
 #from Task    import Grd_to_Var
 from Task    import Var_to_Grd, FillNaNAll, setUse_var
+from ModelFiles import to_logOut
 
 #from StartModel import Model
 #import Model as Model
@@ -314,8 +315,9 @@ def get_sigCV( Penal, itera ):
                       str_wr += ' SD% ' + str(np.sqrt(fu.MSDv)*100) + " CV " + str(fu.sCrVa) \
                                 +' SD ' + str(np.sqrt(fu.MSDv)*fu.V.sigma) + ' sig '+str(fu.V.sigma)
 
-                      f.write( str_wr )
+                      f.write ( str_wr )
                       print (str_wr)
+                      to_logOut ( str_wr )
                 f.write( '\n'+'Estim ' + str(Estim))
 #                print >> f, 'Estim',Estim
  #               print ('(((((((((((', Gr.OBJ ())

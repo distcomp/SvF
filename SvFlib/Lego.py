@@ -256,20 +256,20 @@ class BaseFun (Tensor) :
                 if np.isnan(self.V.dat[i]) or self.V.dat[i] == self.NDT:
                     if SvF.useNaN == False:
                         print('Rec', i, 'deleted')
-                        to_logOut('W:   Record  ' + str(i) + '  was deleted from data set of function   ' + self.V.name)
+                        to_logOut('WF:   Record  ' + str(i) + '  was deleted from data set of function   ' + self.V.name + ' valF=' + str(self.V.dat[i]))
                         continue
                 self.V.dat[self.NoR] = self.V.dat[i]
             OK = 1
             for a in self.A:
                 if a.dat is None: continue
-                if np.isnan(a.dat[i]): OK = 0; break
-                if a.dat[i] == self.NDT: OK = 0; break
-                if a.dat[i] < a.min   or   a.dat[i] > a.max:   OK = 0; break
+                if np.isnan(a.dat[i]): OK = 0; a_dat = a.dat[i];  break
+                if a.dat[i] == self.NDT: OK = 0; a_dat = a.dat[i]; break
+                if a.dat[i] < a.min   or   a.dat[i] > a.max:   OK = 0; a_dat = str(a.dat[i]) +' '+ str(a.min)+' '+str(a.max); break
 #                if a.dat[i] < 0   or   a.dat[i] > a.ma_mi :   OK = 0; break
                 a.dat[self.NoR] = a.dat[i]
             if  OK:  self.NoR += 1
             else :
-                to_logOut('W:   Record  ' + str(i) + '  was deleted from data set of function   ' + self.V.name)
+                to_logOut('WA:   Record  ' + str(i) + '  was deleted from data set of function   ' + self.V.name + ' valA=' + str(a_dat) )
                 print('Rec', i, 'deleted')
 
         if isnotNone(self.V.dat):  # resize
@@ -1232,7 +1232,7 @@ class BaseFun (Tensor) :
             print ("Can''t open file: ", fName)
             return False
       head = fi.readline().split()
-      print ("ReadSol from", fName,  head )
+#      print ("ReadSol from", fName,  head )
 ######################################################
       if head[0][0:4] == '#SvF' :    #New   бросил, не отладил...
          ver = head[0].split('_')

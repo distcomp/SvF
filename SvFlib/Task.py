@@ -132,7 +132,7 @@ class TaskClass :
 #            for f in self.Funs:
             for f in self.Objects:
                 #if f.type == 'tensor' : continue
-                print (f.Otype, f.name, "RRRRRRRRRRRRRRR")
+#                print (f.Otype, f.name, "RRRRRRRRRRRRRRR")
                 if f.Otype == 'Fun' :
                     if f.type == 'tensor': continue
                     if f.dim > 0: Plot([[f]])

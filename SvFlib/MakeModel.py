@@ -37,14 +37,18 @@ def getKeyFromBuf (keys, part):                     # 'usehomeforPower' -> 'UseH
 def COMPILE_RUN_option(buf):
           # заменяем          на            значение
     keys = [['TaskName',    'TaskName',         'NoName'],
-            ['UseNaN',      'UseNaN',           'True'],
+            ['useNaN',      'useNaN',           'True'],
+            ['UseNaN',      'useNaN',           'True'],
             ['ShowAll',     'ShowAll',          None],
             ['UseHomeforPower', 'UseHomeforPower', 'True'],
             ['UsePrime',    'UsePrime',         'True'],
+            ['ResFile',     'resF',             'NoName'],
+            ['resF',        'resF',             'NoName'],
             ['NumOfIter',   'CVNumOfIter',      None],
             ['MaxIter',     'CVNumOfIter',      None],
             ['RunMode',     'RunMode',          '']
-           ]
+            ]
+
     if len(buf) == 0: return
     if buf[-1:] == ';': buf = buf[:-1]
     buf = buf.replace(';;',';')
@@ -52,7 +56,7 @@ def COMPILE_RUN_option(buf):
     for opt in buf.split(';'):
         key, eq, val = getKeyFromBuf (keys, opt)
         if key is None or eq == '':
-            print ("Unknown key or no \'=\' in ", opt)
+            print ("Unknown key or no \'=\' in ", opt, '.....', key, eq, val)
             exit (-1)
         writeBuf += 'SvF.' + key + '=' + str(val) + '; '
         if  key in ['ShowAll','UseHomeforPower', 'UsePrime']:
@@ -153,7 +157,7 @@ def WritePLOT ( plots_str ) :
             if np > 0: str +=  ', '
             if np==0 :
                 ob = getObject(p)
-                print ("JJJJJJJJJ", p, ob)
+      #          print ("JJJJJJJJJ", p, ob)
                 if not ob is None :
                     ob_Otype = ob.Otype
                     print ('ob_Otype',ob_Otype)

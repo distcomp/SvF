@@ -41,9 +41,15 @@ while (1) :
         SvF.ModelBuf = None
         SvF.resF = ''
         SvF.OptStep = '0.01'
-        SvF.optEstim = np.float_info.max
+        SvF.optEstim = sys.float_info.max
         SvF.currentTab = None
-        SvF.useNaN = False
+        SvF.useNaN = True    #      26.02.01  False
+        ValidationSets = []
+        notTrainingSets = []  # notTrainingSets содержит кого выбрасываем
+        TrainingSets = []  # TrainingSets содержит точки обучени
+        SvF.CV_NoRs = []
+        SvF.numCV = -1
+
     else :  break
 
 print ('END OF FILE!')

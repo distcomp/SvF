@@ -55,7 +55,7 @@ class SPWLFun (Fun) :
                     ret += (gr[n + 1] - 2 * gr[n] + gr[n - 1]) * η(X - n)
                 return ret * 0.5
 
-            if self.type == 'gSPWLi':  # 'G_ind':      #      0       1
+            if self.type == 'gSPWLi':  # 'G_ind':      #      0       1   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 def ind_0_1(x):  # _____|-------\_______
                     return 0.5 * x / py.sqrt(SvF.Epsilon + x ** 2) - 0.5 * (x - 1) / py.sqrt(
                         SvF.Epsilon + (x - 1) ** 2)
