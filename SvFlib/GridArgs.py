@@ -16,8 +16,11 @@ def  getName ( obj ) :
         if type (obj) == type ('abc') : return obj
         return obj.name
 
-                               #  Для интегрирования
-def myrange(mi_, ma_, st):  # mi <= ret  <= ma   ret[0] = mi  ret[-1] = ma  возможно округление 1е-10. Последний шаг - остаток.
+          #  Для интегрирования  # mi <= ret  <= ma   ret[0] = mi  ret[-1] = ma  возможно округление 1е-10. Последний шаг - остаток.
+def myrange ( mi_ : float,
+              ma_ : float,
+              st : float
+            ) -> list:
         if mi_ > ma_:  return []    # 08/07/2021
         mi = float(mi_)        #    conflict    float <-> np.float64   ???????????????????  #########################
         ma = float(ma_)

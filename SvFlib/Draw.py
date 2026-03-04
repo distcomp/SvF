@@ -551,7 +551,8 @@ def DrawComb( param ):
  #                   leg_name = fun.V.draw_name
   #                  if leg_name == '' : leg_name = fun.onameFun()
    #                 plt.title(leg_name, fontsize=FONT_SIZE + 1, style=FONTstyle, y=1.01, x=SvF.title_x )# , pad = 3)
-                    if fun.V.title_name == '' : fun.V.title_name = fun.onameFun()
+#                    if fun.V.title_name == '' : fun.V.title_name = fun.onameFun()
+                    if fun.V.title_name == '' : fun.V.title_name = fun.nameFun()        #  26.02
                     plt.title(fun.V.title_name, fontsize=FONT_SIZE + 1, style=FONTstyle, y=1.01, x=SvF.title_x )# , pad = 3)
                     cbar = plt.colorbar(cs)
                     if SvF.CommaFormatter:
