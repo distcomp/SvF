@@ -27,7 +27,7 @@ def tFx(j: int, x: pyo.Var):
     """
     if j < 0 or j > Ny:
         raise IndexError(f"tF(j,x), j={j} is out of range {0}:{Ny}")
-    return (1/2)*(m.F[0,j] + A(1,j)*(x - m.X[0]) + m.F[0,j] + A(Nx,j)*(x - m.X[Nx])) + \
+    return (1/2)*(m.F[0,j] + A(1,j)*(x - m.X[0]) + m.F[Nx,j] + A(Nx,j)*(x - m.X[Nx])) + \
             (1/2)*pyo.quicksum((m.F[i,j] - 2*m.F[i-1,j] + m.F[i-2,j])*pyo.sqrt( (x - m.X[i-1])**2 + m.eps**2) for i in pyo.RangeSet(2, Nx))
 
 
