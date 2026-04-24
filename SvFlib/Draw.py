@@ -159,11 +159,13 @@ def Plot (plots) :
         if D == '2Dfun1' or D == '2Dfun2' :
             xx_dat, yy_dat = swapTRANS (xx_dat, yy_dat)
             if not ((xx_dat is None) or (yy_dat is None)):  # DRAW  data    #  точки  данные
+    #            print ('******', dMFC, '******')
                 ax.plot(xx_dat, yy_dat, color=dC, lw=dLW, linestyle=dLS,
                     marker=dMARK, markersize=dMS, markerfacecolor=dMFC, markeredgecolor=dMEC, markeredgewidth=dMEW,
                     label=dLAB )
         if D == '2Dfun1' or D == '2Dxy' or D == '2Dpoly' :
             xx, yy = swapTRANS(xx, yy)
+            print (LAB,LW)
             ax.plot(xx, yy, color=C, lw=LW, linestyle=LS,
                 marker=MARK, markersize=MS, markerfacecolor=MFC, markeredgecolor=MEC, markeredgewidth=MEW,
                 label=LAB )

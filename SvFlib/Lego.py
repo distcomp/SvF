@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 
 from __future__ import division
+
+import numpy as np
 #from   numpy import *
 #from   pyomo.environ import *
 import pyomo.environ as py
@@ -172,8 +174,8 @@ class BaseFun (Tensor) :
 
     def Norm01_to_Real ( self, ArS_01 ) :    #  [0,1] в  реальные
         return [ArS_01[i] * a.ma_mi + a.min  for i, a in enumerate(self.A)]
-        if self.ArgNorm  :  return  [(ArS_real[i]-a.min)/a.ma_mi for i, a in enumerate(self.A)]
-        else                    :  return ArS_real
+#        if self.ArgNorm  :  return  [(ArS_real[i]-a.min)/a.ma_mi for i, a in enumerate(self.A)]
+ #       else                    :  return ArS_real
 
 
     """
@@ -1393,36 +1395,60 @@ class BaseFun (Tensor) :
       if self.type == 'smbFun':    return
 #      print('IB*+++++++++++++', self.name, self.param)
 
+
       if self.dim==0 :
         if self.V.dat[0] != self.NDT :
                 self.grd = self.V.dat[0]
       elif self.dim==1 :
-#        print   (self.name, self.A[0].name, self.A[0].dat, self.sR)
+        self.grd[:] = np.nan
         for m in self.sR :
-#            print (m)
             if self.V.dat[m] == self.NDT or np.isnan (self.V.dat[m]): continue
-#            self.grd[int(floor(0.499999999 + self.A[0].dat[m]/self.A[0].step))] = self.V.dat[m]
             self.grd[self.A[0].IndByVal(self.A[0].dat[m])] = self.V.dat[m]
- #           print ('HH', m)
-        for x in self.A[0].NodS:   ####   ??????????????????
-            if self.fneNDT(x) == 0:
-                self.grd[x] = nan
-
       elif self.dim==2 :
+        self.grd[:,:] = np.nan
         for m in self.sR :
             if self.V.dat[m] == self.NDT or np.isnan (self.V.dat[m]):  continue
-#            self.grd [ int (floor(0.499999999 + self.A[0].dat[m]/self.A[0].step)),
- #                      int (floor(0.499999999 + self.A[1].dat[m]/self.A[1].step))
-  #                   ] = self.V.dat[m]
             self.grd [ self.A[0].IndByVal(self.A[0].dat[m]),                # не проверенр
                        self.A[1].IndByVal(self.A[1].dat[m])
                      ] = self.V.dat[m]
 
+      from scipy import ndimage
+      def fill_by_nearest_seed(grd, missing_value=np.nan):     # 2026.03
+          """
+          Заполняет многомерный массив значениями ближайших затравочных точек.
+          grd: ndarray
+              Массив, где в затравочных точках уже есть значения,
+              а в остальных — np.nan (или другой missing_value).
+          """
+          grd = np.asarray(grd)
 
+          if np.isnan(missing_value):
+              mask_missing = np.isnan(grd)
+          else:
+              mask_missing = (grd == missing_value)
+          # Для каждой пустой точки находим индексы ближайшей непустой
+          nearest_idx = ndimage.distance_transform_edt(
+              mask_missing,
+              return_distances=False,
+              return_indices=True
+          )
+          # Берём значения ближайших затравок
+          filled = grd[tuple(nearest_idx)]
+          return filled
+
+      if self.dim != 0:
+            self.grd = fill_by_nearest_seed(self.grd)
+
+      if self.dim == 1:
+            for x in self.A[0].NodS:  ####   ??????????????????
+                if self.fneNDT(x) == 0:
+                    self.grd[x] = nan
+      elif self.dim == 2:
         for y in self.A[1].NodS :
             for x in self.A[0].NodS :
                 if self.fneNDT(x,y)==0 :
                     self.grd[x,y] = nan
+
       self.grd_to_var()
 
 
@@ -2066,8 +2092,9 @@ class Fun (BaseFun) :
 
     def F ( self, ArS_real ) :
           if self.dim == 0:                           #  31
+                print (self.grd[0],'&&&&&&&&&&&&&&&&&&&&&&&')
                 if SvF.Use_var: return self.var
-                else          : return self.grd
+                else          : return self.grd                   #    ?????????????????????????? [0]
  #         print (self.ArgNorm)
   #        1/0
    #       if self.ArgNorm :  ArS_real = self.Norm01_to_Real(ArS_real)
