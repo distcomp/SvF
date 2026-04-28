@@ -219,9 +219,7 @@ def printMSD () :
 def get_sigCV( Penal, itera ):
     co.CV_Iter = itera
     Task = co.Task
-#    reload (Model)
     Task.ReadSols('')
-#    SvF.Penalty = Penal
     if not (SvF.feasibleSol is None) : SvF.feasibleSol(Penal)
 
     print ('for Penal: ', Penal ) #, end=' ')
@@ -263,7 +261,6 @@ def get_sigCV( Penal, itera ):
         Var_to_Grd()
 
         Task.SaveSols('.tmp')
-
         print ('OBJ',Gr.OBJ())
         printMSD()
 
@@ -296,7 +293,7 @@ def get_sigCV( Penal, itera ):
 
             Estim = getEstimCV(Gr)
             print ('\tEstim% '+str(Estim)+"\tTime  "+ str(time.time() - star))
-
+    #        print('OBJ', Gr.OBJ())
         else : Estim = -1
 
     elif SvF.OptMode == 'SurMin':
@@ -308,15 +305,14 @@ def get_sigCV( Penal, itera ):
 
             setMuToTeach_k('')     #  mu = 1   ##############  26/04/24
             Task.ReadSols()                    ##############  26/04/24
+            Grd_to_Var()                        ##############  28/04/24
 
             with open(co.resF,'w') as f:      #  RES filewrite
 #                print >> f, [p for  p in Penal]
                 f.write (str(Penal))
                 for fu in Task.Funs :           # v21
-#                      if fu.mu is None: continue                     #  2023.11
                       if fu.type == 'tensor': continue
                       if fu.V.dat is None or fu.param: continue  # 23.11
-#                      str_wr = '\n'+fu.nameFun()+' '
                       str_wr = fu.nameFun()+' '
                       if co.CVNumOfIter > 0 :
                           if fu.MSDmode == 'MSDrel':   str_wr += " CV% " + str(fu.sCrVa*100)
