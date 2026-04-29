@@ -1,0 +1,21 @@
+{
+  "config": {
+    "url": "https://api.deepseek.com/v1",
+    "model": "deepseek-chat",
+    "apiKey": "sk-881f7385f8e84c068fde1f9ef44a46d6"
+  },
+  "dialog_state": {
+    "prompt": "Идентифицировать химическую модель.\nВ файлу \"../oregonator_results_noisy.xlsx\" находятся концинтрации X, Y, Z (в nM) во времени t (в s).\nНужно считать данные до t<2050.\nИспользуй модель Орейгонатор:\nКонстанты:\nA = 0.016406707120152755  \nB = 0.5  \nalpha = 2\nДифуры:\nd/dt(X) = k1 * A * Y - k2 * X * Y + k3 * A * X - 2.0 * k4 * X**2\nd/dt(Y) = -k1 * A * Y - k2 * X * Y + (k5 / alpha) * Z\nd/dt(Z) = 2.0 * k3 * A * X - k5 * Z\nНужно идентифицировать нейзвестные коефициенты k1 - k5 и траектории концентраций во времени. Шаг по времени 0.175.\nРегуляризация не нужна.",
+    "system": "В конце mng-файла пиши EoF.",
+    "model": "deepseek-chat",
+    "url": "https://api.deepseek.com/v1",
+    "apiKey": "sk-881f7385f8e84c068fde1f9ef44a46d6",
+    "file_paths": [],
+    "file_contents": [],
+    "temperature": "0.2",
+    "max_tokens": "4096",
+    "timeout": "180",
+    "last_response": "COMPILE: TaskName = Oregonator\n\nSELECT: t, X, Y, Z FROM \"../oregonator_results_noisy.xlsx\" as DB WHERE t < 2050\n\nSET: t = [ , , 0.175]\n\nVAR: X(t)\nVAR: Y(t)\nVAR: Z(t)\n\nVAR: k1 > 0\nVAR: k2 > 0\nVAR: k3 > 0\nVAR: k4 > 0\nVAR: k5 > 0\n\nA = 0.016406707120152755\nB = 0.5\nalpha = 2\n\nEQ: d/dt(X) = k1 * A * Y - k2 * X * Y + k3 * A * X - 2.0 * k4 * X**2\nEQ: d/dt(Y) = -k1 * A * Y - k2 * X * Y + (k5 / alpha) * Z\nEQ: d/dt(Z) = 2.0 * k3 * A * X - k5 * Z\n\nRUN: MaxIter = 1\n\nOBJ: X.MSD() + Y.MSD() + Z.MSD()\n\nPLOT: X + Y + Z\nPLOT: \tX\n\tY\n\tZ\nPLOT: DB.X, DB.Z, lw=0, c=green, marker='.', ms=3, label='XZ data' + \\\n\tX.grd, Z.grd, c=red, lw=2, label='X(t),Z(t)', xlab='X',xlab_x=1.06,ylab='Z' \n\nEoF\n```",
+    "last_response_error": false
+  }
+}

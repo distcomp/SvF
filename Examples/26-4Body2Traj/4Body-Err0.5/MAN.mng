@@ -1,0 +1,110 @@
+SELECT: t, x1, y1, z1, x2, y2, z2, x1a, y1a, z1a, x2a, y2a, z2a, \
+	x3a as x3, y3a as y3, z3a as z3, x4a as x4, y4a as y4, z4a as z4 \
+	FROM "../4bdn-1_0.9_0.2_0.06-abc.xlsx" as DB
+DB.x1[:] = (DB.x1[:]+DB.x1a[:]) *.5
+DB.y1[:] = (DB.y1[:]+DB.y1a[:]) *.5 	
+DB.z1[:] = (DB.z1[:]+DB.z1a[:]) *.5	
+DB.x2[:] = (DB.x2[:]+DB.x2a[:]) *.5
+DB.y2[:] = (DB.y2[:]+DB.y2a[:]) *.5 	
+DB.z2[:] = (DB.z2[:]+DB.z2a[:]) *.5	
+
+SET: t = [ , , 0.01]
+
+VAR: x1(t)
+     y1(t)
+     z1(t)
+     x2(t)
+     y2(t)
+     z2(t)
+     x3(t)  #  иниц из DB
+     y3(t)
+     z3(t)
+     x4(t)
+     y4(t)
+     z4(t)
+
+G = 1
+
+VAR: m1 > 0
+     m2 > 0
+     m3 > 0
+     m4 > 0
+
+EQ: x1'' = G * m2 * (x2 - x1) / ((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2)^(3/2) + \
+           G * m3 * (x3 - x1) / ((x3 - x1)^2 + (y3 - y1)^2 + (z3 - z1)^2)^(3/2) + \
+           G * m4 * (x4 - x1) / ((x4 - x1)^2 + (y4 - y1)^2 + (z4 - z1)^2)^(3/2)
+
+EQ: y1'' = G * m2 * (y2 - y1) / ((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2)^(3/2) + \
+           G * m3 * (y3 - y1) / ((x3 - x1)^2 + (y3 - y1)^2 + (z3 - z1)^2)^(3/2) + \
+           G * m4 * (y4 - y1) / ((x4 - x1)^2 + (y4 - y1)^2 + (z4 - z1)^2)^(3/2)
+
+EQ: z1'' = G * m2 * (z2 - z1) / ((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2)^(3/2) + \
+           G * m3 * (z3 - z1) / ((x3 - x1)^2 + (y3 - y1)^2 + (z3 - z1)^2)^(3/2) + \
+           G * m4 * (z4 - z1) / ((x4 - x1)^2 + (y4 - y1)^2 + (z4 - z1)^2)^(3/2)
+
+EQ: x2'' = G * m1 * (x1 - x2) / ((x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2)^(3/2) + \
+           G * m3 * (x3 - x2) / ((x3 - x2)^2 + (y3 - y2)^2 + (z3 - z2)^2)^(3/2) + \
+           G * m4 * (x4 - x2) / ((x4 - x2)^2 + (y4 - y2)^2 + (z4 - z2)^2)^(3/2)
+
+EQ: y2'' = G * m1 * (y1 - y2) / ((x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2)^(3/2) + \
+           G * m3 * (y3 - y2) / ((x3 - x2)^2 + (y3 - y2)^2 + (z3 - z2)^2)^(3/2) + \
+           G * m4 * (y4 - y2) / ((x4 - x2)^2 + (y4 - y2)^2 + (z4 - z2)^2)^(3/2)
+
+EQ: z2'' = G * m1 * (z1 - z2) / ((x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2)^(3/2) + \
+           G * m3 * (z3 - z2) / ((x3 - x2)^2 + (y3 - y2)^2 + (z3 - z2)^2)^(3/2) + \
+           G * m4 * (z4 - z2) / ((x4 - x2)^2 + (y4 - y2)^2 + (z4 - z2)^2)^(3/2)
+
+EQ: x3'' = G * m1 * (x1 - x3) / ((x1 - x3)^2 + (y1 - y3)^2 + (z1 - z3)^2)^(3/2) + \
+           G * m2 * (x2 - x3) / ((x2 - x3)^2 + (y2 - y3)^2 + (z2 - z3)^2)^(3/2) + \
+           G * m4 * (x4 - x3) / ((x4 - x3)^2 + (y4 - y3)^2 + (z4 - z3)^2)^(3/2)
+
+EQ: y3'' = G * m1 * (y1 - y3) / ((x1 - x3)^2 + (y1 - y3)^2 + (z1 - z3)^2)^(3/2) + \
+           G * m2 * (y2 - y3) / ((x2 - x3)^2 + (y2 - y3)^2 + (z2 - z3)^2)^(3/2) + \
+           G * m4 * (y4 - y3) / ((x4 - x3)^2 + (y4 - y3)^2 + (z4 - z3)^2)^(3/2)
+
+EQ: z3'' = G * m1 * (z1 - z3) / ((x1 - x3)^2 + (y1 - y3)^2 + (z1 - z3)^2)^(3/2) + \
+           G * m2 * (z2 - z3) / ((x2 - x3)^2 + (y2 - y3)^2 + (z2 - z3)^2)^(3/2) + \
+           G * m4 * (z4 - z3) / ((x4 - x3)^2 + (y4 - y3)^2 + (z4 - z3)^2)^(3/2)
+
+EQ: x4'' = G * m1 * (x1 - x4) / ((x1 - x4)^2 + (y1 - y4)^2 + (z1 - z4)^2)^(3/2) + \
+           G * m2 * (x2 - x4) / ((x2 - x4)^2 + (y2 - y4)^2 + (z2 - z4)^2)^(3/2) + \
+           G * m3 * (x3 - x4) / ((x3 - x4)^2 + (y3 - y4)^2 + (z3 - z4)^2)^(3/2)
+
+EQ: y4'' = G * m1 * (y1 - y4) / ((x1 - x4)^2 + (y1 - y4)^2 + (z1 - z4)^2)^(3/2) + \
+           G * m2 * (y2 - y4) / ((x2 - x4)^2 + (y2 - y4)^2 + (z2 - z4)^2)^(3/2) + \
+           G * m3 * (y3 - y4) / ((x3 - x4)^2 + (y3 - y4)^2 + (z3 - z4)^2)^(3/2)
+
+EQ: z4'' = G * m1 * (z1 - z4) / ((x1 - x4)^2 + (y1 - y4)^2 + (z1 - z4)^2)^(3/2) + \
+           G * m2 * (z2 - z4) / ((x2 - x4)^2 + (y2 - y4)^2 + (z2 - z4)^2)^(3/2) + \
+           G * m3 * (z3 - z4) / ((x3 - x4)^2 + (y3 - y4)^2 + (z3 - z4)^2)^(3/2)
+
+CV: NumOfSets=7
+RUN: MaxIter=1
+
+OBJ: x1.MSD() + y1.MSD() + z1.MSD() + \
+     x2.MSD() + y2.MSD() + z2.MSD()
+
+   
+POLY: 	P1 ([x1.grd[0]], [y1.grd[0]])
+	P2 ([x2.grd[0]], [y2.grd[0]])
+	P3 ([x3.grd[0]], [y3.grd[0]])
+	P4 ([x4.grd[0]], [y4.grd[0]])
+
+PLOT: DB.x1, DB.y1, lw=0, c=red, marker='o', ms=2, label='Data1', xlab='x',xlab_x=1.01,ylab='y' + \
+      DB.x2, DB.y2, lw=0, c=green, marker='o', ms=2, label='Data2' +  \
+      DB.x3, DB.y3, lw=0, c=blue, marker='o', ms=1, label='Data3' + \
+      DB.x4, DB.y4, lw=0, c=gray, marker='o', ms=1, label='Data4' + \
+      x1.grd,y1.grd,  c=red,    lw=2, label='Planet1',ms=0 + P1, ms=5, label='' + \
+      x2.grd, y2.grd, c=green,  lw=2, label='Planet2',ms=0 + P2, ms=5, label=''+ \ 
+      x3.grd, y3.grd, c=blue,   lw=2, label='Planet3',ms=0 + P3, ms=5, label='' + \
+      x4.grd, y4.grd, c=gray,   lw=2, label='Planet4',ms=0 + P4, ms=5, label='' 
+   
+   
+      
+PLOT: 	x1,c=r          + y1,c=g + z1,c=b, ylab='x1,y1,z1', ylab_x=.02
+	x2,c=r          + y2,c=g + z2,c=b, ylab='x2,y2,z2', ylab_x=.02
+	x3,c=r, dms=0.5 + y3,c=g + z3,c=b, ylab='x3,y3,z3', ylab_x=.02
+	x4,c=r, dms=0.5 + y4,c=g + z4,c=b, ylab='x4,y4,z4', ylab_x=.02
+
+EoF
+```

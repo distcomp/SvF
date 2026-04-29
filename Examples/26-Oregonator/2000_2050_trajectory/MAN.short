@@ -1,0 +1,16 @@
+SELECT: t, X, Y, Z FROM "../oregonator_results_noisy.xlsx" \
+          as DB WHERE t < 2050
+SET: t = [ , 2050, 0.175]
+VAR: X(t); X >= 0
+VAR: Y(t); Y >= 0
+VAR: Z(t); Z >= 0
+CV: NumOfSets = 7
+RUN: MaxIter = 1;
+OBJ: X.MSD() + Y.MSD() + Z.MSD() \
+     + X.Complexity(Penal[0]) + Y.Complexity(Penal[1]) \
+     + Z.Complexity(Penal[2])
+PLOT: 	X
+	Y	
+	Z
+EoF
+

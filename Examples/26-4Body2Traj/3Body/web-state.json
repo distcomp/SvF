@@ -1,0 +1,21 @@
+{
+  "config": {
+    "url": "https://api.deepseek.com/v1",
+    "model": "deepseek-chat",
+    "apiKey": "sk-881f7385f8e84c068fde1f9ef44a46d6"
+  },
+  "dialog_state": {
+    "prompt": "Движение планет. Вариант 3D - x,y,z.\nТаблица с данными - '../4bdn-1_0.9_0.2_0.06-abc.xlsx' содержит измерения во времени (колонка t) координат 2-х планет (x1, y1, z1, x2, y2, z2).\nПостроить модель движения 3 планет. Гравитационная постоянная G=1.\nИдентифицировать массы и траектории.\nШаг по времени модели равен 0.01.\nРегуляризация не нужна\n",
+    "system": "EoF в конце mng-файла",
+    "model": "deepseek-chat",
+    "url": "https://api.deepseek.com/v1",
+    "apiKey": "sk-881f7385f8e84c068fde1f9ef44a46d6",
+    "file_paths": [],
+    "file_contents": [],
+    "temperature": "0.2",
+    "max_tokens": "4096",
+    "timeout": "180000",
+    "last_response": "COMPILE: TaskName = '3Body3D_2obs'\n\nSELECT: t, x1, y1, z1, x2, y2, z2 FROM \"../4bdn-1_0.9_0.2_0.06-abc.xlsx\"\n\nSET: t = [ , , 0.01]\n\nVAR: x1(t)\n     y1(t)\n     z1(t)\n     x2(t)\n     y2(t)\n     z2(t)\n     x3(t)\n     y3(t)\n     z3(t)\n\nG = 1\n\nVAR: m1 > 0\n     m2 > 0\n     m3 > 0\n\nEQ: x1'' = G * m2 * (x2 - x1) / ((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2)^(3/2) + \\\n           G * m3 * (x3 - x1) / ((x3 - x1)^2 + (y3 - y1)^2 + (z3 - z1)^2)^(3/2)\n\nEQ: y1'' = G * m2 * (y2 - y1) / ((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2)^(3/2) + \\\n           G * m3 * (y3 - y1) / ((x3 - x1)^2 + (y3 - y1)^2 + (z3 - z1)^2)^(3/2)\n\nEQ: z1'' = G * m2 * (z2 - z1) / ((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2)^(3/2) + \\\n           G * m3 * (z3 - z1) / ((x3 - x1)^2 + (y3 - y1)^2 + (z3 - z1)^2)^(3/2)\n\nEQ: x2'' = G * m1 * (x1 - x2) / ((x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2)^(3/2) + \\\n           G * m3 * (x3 - x2) / ((x3 - x2)^2 + (y3 - y2)^2 + (z3 - z2)^2)^(3/2)\n\nEQ: y2'' = G * m1 * (y1 - y2) / ((x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2)^(3/2) + \\\n           G * m3 * (y3 - y2) / ((x3 - x2)^2 + (y3 - y2)^2 + (z3 - z2)^2)^(3/2)\n\nEQ: z2'' = G * m1 * (z1 - z2) / ((x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2)^(3/2) + \\\n           G * m3 * (z3 - z2) / ((x3 - x2)^2 + (y3 - y2)^2 + (z3 - z2)^2)^(3/2)\n\nEQ: x3'' = G * m1 * (x1 - x3) / ((x1 - x3)^2 + (y1 - y3)^2 + (z1 - z3)^2)^(3/2) + \\\n           G * m2 * (x2 - x3) / ((x2 - x3)^2 + (y2 - y3)^2 + (z2 - z3)^2)^(3/2)\n\nEQ: y3'' = G * m1 * (y1 - y3) / ((x1 - x3)^2 + (y1 - y3)^2 + (z1 - z3)^2)^(3/2) + \\\n           G * m2 * (y2 - y3) / ((x2 - x3)^2 + (y2 - y3)^2 + (z2 - z3)^2)^(3/2)\n\nEQ: z3'' = G * m1 * (z1 - z3) / ((x1 - x3)^2 + (y1 - y3)^2 + (z1 - z3)^2)^(3/2) + \\\n           G * m2 * (z2 - z3) / ((x2 - x3)^2 + (y2 - y3)^2 + (z2 - z3)^2)^(3/2)\n\nCV: NumOfSets=5\nRUN: MaxIter=1\n\nOBJ: x1.MSD() + y1.MSD() + z1.MSD() + \\\n     x2.MSD() + y2.MSD() + z2.MSD()\n\nPLOT: x1 + y1 + z1\n      x2 + y2 + z2\n      x3 + y3 + z3\n\nEoF\n```",
+    "last_response_error": false
+  }
+}

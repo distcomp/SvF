@@ -1,0 +1,35 @@
+COMPILE: TaskName = Oregonator
+
+SELECT: t, X, Y, Z FROM "../oregonator_results_noisy.xlsx" as DB WHERE  t < 2200
+
+SET: t = [ , , 0.175]
+
+VAR: X(t)
+VAR: Y(t)
+VAR: Z(t)
+VAR: k1 > 0
+VAR: k2 > 0
+VAR: k3 > 0
+VAR: k4 > 0
+VAR: k5 > 0
+
+A = 0.016406707120152755
+alpha = 2
+
+EQ: d/dt(X) = k1 * A * Y - k2 * X * Y + k3 * A * X - 2.0 * k4 * X**2
+EQ: d/dt(Y) = -k1 * A * Y - k2 * X * Y + (k5 / alpha) * Z
+EQ: d/dt(Z) = 2.0 * k3 * A * X - k5 * Z
+
+RUN: MaxIter = 1
+
+OBJ: X.MSD() + Y.MSD() + Z.MSD()
+
+PLOT: X + Y + Z
+PLOT: 	X
+	Y
+	Z
+PLOT: DB.X, DB.Z, lw=0, c=green, marker='.', ms=3, label='XZ data' + \
+	X.grd, Z.grd, c=red, lw=2, label='X(t),Z(t)', xlab='X',xlab_x=1.06,ylab='Z' 
+EoF
+EoF
+```

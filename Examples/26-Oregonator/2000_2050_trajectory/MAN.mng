@@ -1,0 +1,20 @@
+
+COMPILE: TaskName = 'Oregonator_trajectories'
+
+SELECT: t, X, Y, Z FROM "../oregonator_results_noisy.xlsx" WHERE t < 2050
+
+SET: t = [ , , 0.175]
+
+VAR: X(t)
+VAR: Y(t)
+VAR: Z(t)
+
+CV: NumOfSets=7
+RUN: MaxIter=1
+
+OBJ: X.MSD() + Y.MSD() + Z.MSD() + X.Complexity(Penal[0]) + Y.Complexity(Penal[1]) + Z.Complexity(Penal[2])
+
+PLOT: X + Y + Z
+
+EoF
+```

@@ -1,0 +1,52 @@
+SELECT: t, x1, y1, z1, x2, y2, z2 FROM "../4bdn-1_0.9_0.2_0.06-abc.xlsx" as DB
+
+SET: t = [ , , 0.01]  # временная ось с шагом 0.01
+
+# Положения планет как функции времени (3D)
+PARAM: 	x1(t) << # планета 1, координата x
+	y1(t) << # планета 1, координата y
+	z1(t) << # планета 1, координата z
+	x2(t) << # планета 2, координата x
+	y2(t) << # планета 2, координата y
+	z2(t) << # планета 2, координата z
+
+for nt, tt in enumerate (x1.A[0].dat):
+#	x1.V.dat[nt] -= x1(tt)
+	DB.x1[nt] -= x1(tt)
+	DB.y1[nt] -= y1(tt)
+	DB.z1[nt] -= z1(tt)
+	DB.x2[nt] -= x2(tt)
+	DB.y2[nt] -= y2(tt)
+	DB.z2[nt] -= z2(tt)
+	
+#PLOT:	x1
+
+VAR:	x1r(t);  Data = ['x1','t']
+	y1r(t);  Data = ['y1','t']
+	z1r(t);  Data = ['z1','t']
+VAR:	x2r(t);  Data = ['x2','t']
+	y2r(t);  Data = ['y2','t']
+	z2r(t);  Data = ['z2','t']
+
+
+CV: NumOfSets = 7
+RUN: MaxIter = 41  # только полная задача, без кросс-валидации
+
+# Критерий: только близость к данным (без регуляризации)
+OBJ: 	  x1r.MSD() + x1r.Complexity(Penal[0])  \
+	+ y1r.MSD() + y1r.Complexity(Penal[0]) \
+	+ z1r.MSD() + z1r.Complexity(Penal[0]) \
+ 	+ x2r.MSD() + x2r.Complexity(Penal[0])  \
+	+ y2r.MSD() + y2r.Complexity(Penal[0]) \
+	+ z2r.MSD() + z2r.Complexity(Penal[0]) 
+
+POLY: 	P0 ([x1r.A[0].min,x1r.A[0].max], [0,0])
+PLOT: 	x1r,dms=1 + P0,c=green,lab="Err=0"
+ 	y1r,dms=1 + P0,c=green,lab="Err=0"
+ 	z1r,dms=1 + P0,c=green,lab="Err=0"
+PLOT: 	x2r,dms=1 + P0,c=green,lab="Err=0"
+ 	y2r,dms=1 + P0,c=green,lab="Err=0"
+ 	z2r,dms=1 + P0,c=green,lab="Err=0"
+EoF
+
+

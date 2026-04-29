@@ -1,0 +1,6 @@
+[
+  {
+    "Промпт": "Идентифицировать химическую модель.\nВ файлу \"../oregonator_results_noisy.xlsx\" находятся концинтрации X, Y, Z (в nM) во времени t (в s).\nНужно считать данные до t<2050.\nМодель не нужна.\nНужно идентифицировать только траектории во времени. Шаг по времени 0.175.",
+    "MNG": "\nCOMPILE: TaskName = 'Oregonator_trajectories'\n\nSELECT: t, X, Y, Z FROM \"../oregonator_results_noisy.xlsx\" WHERE t < 2050\n\nSET: t = [ , , 0.175]\n\nVAR: X(t)\nVAR: Y(t)\nVAR: Z(t)\n\nCV: NumOfSets=7\nRUN: MaxIter=1\n\nOBJ: X.MSD() + Y.MSD() + Z.MSD() + X.Complexity(Penal[0]) + Y.Complexity(Penal[1]) + Z.Complexity(Penal[2])\n\nPLOT: X + Y + Z\n\nEoF\n```"
+  }
+]

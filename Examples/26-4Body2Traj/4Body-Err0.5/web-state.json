@@ -1,0 +1,21 @@
+{
+  "config": {
+    "url": "https://api.deepseek.com/v1",
+    "model": "deepseek-chat",
+    "apiKey": "sk-881f7385f8e84c068fde1f9ef44a46d6"
+  },
+  "dialog_state": {
+    "prompt": "Движение планет. Вариант 3D - x,y,z.\nТаблица с данными - '../4bdn-1_0.9_0.2_0.06-abc.xlsx' содержит измерения во времени (колонка t) координат 2-х планет (x1, y1, z1, x2, y2, z2).\nПостроить модель движения 4 планет. Гравитационная постоянная G=1.\nИдентифицировать массы и траектории.\nШаг по времени модели равен 0.01.\nРегуляризация не нужна",
+    "system": "EoF в конце mng-файла",
+    "model": "deepseek-chat",
+    "url": "https://api.deepseek.com/v1",
+    "apiKey": "sk-881f7385f8e84c068fde1f9ef44a46d6",
+    "file_paths": [],
+    "file_contents": [],
+    "temperature": "0.2",
+    "max_tokens": "4096",
+    "timeout": "180000",
+    "last_response": "",
+    "last_response_error": false
+  }
+}
