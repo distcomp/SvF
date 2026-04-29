@@ -57,8 +57,9 @@ def SvFstart19 ( Task ) :
 
         Penal = co.Penalty
 ##        if co.printL : print ('co.lenPenalty', co.lenPenalty)
+        print(Penal, co.Penalty)
 
-        print('From File: ', co.resF) #, len (co.Penalty), co.Penalty)
+      #  print('From File: ', co.resF) #, len (co.Penalty), co.Penalty)
 
         try:
                 with (open(co.resF,'r') as f):
@@ -70,9 +71,10 @@ def SvFstart19 ( Task ) :
         #        if len (Penal) == 0 :  exit(-1)
         co.Penalty = Penal
     # print (co.Penalty); exit(22)
-    co.Penalty = [0.1 if x is None else x for x in co.Penalty]
-#    print (Penal, co.Penalty)
- #   1/0
+ #   co.Penalty = [0.1 if x is None else x for x in co.Penalty]    26.04
+    co.Penalty = [0.03 if x is None else x for x in co.Penalty]
+ #   print (Penal, co.Penalty)
+  #  1/0
 
 #    maxSigEst = 0           # оценка сигмы скольз. среднем
 
@@ -217,9 +219,7 @@ def printMSD () :
 def get_sigCV( Penal, itera ):
     co.CV_Iter = itera
     Task = co.Task
-#    reload (Model)
     Task.ReadSols('')
-#    SvF.Penalty = Penal
     if not (SvF.feasibleSol is None) : SvF.feasibleSol(Penal)
 
     print ('for Penal: ', Penal ) #, end=' ')
@@ -249,7 +249,7 @@ def get_sigCV( Penal, itera ):
 
         Gr = Task.createGr(Task, Penal)   # обновлем на каждой итерации
         Grd_to_Var()
-#        co.Use_var = False       # 29
+        #        co.Use_var = False       # 29
         setUse_var(False)  # 25.10
 
         for fu in Task.Funs :  fu.CVresult = []
@@ -259,8 +259,8 @@ def get_sigCV( Penal, itera ):
         resultss = solveProblemsNl(Gr, '', co.RunMode[0])               #  tmp
         Gr.solutions.load_from(resultss[0])
         Var_to_Grd()
-        Task.SaveSols('.tmp')
 
+        Task.SaveSols('.tmp')
         print ('OBJ',Gr.OBJ())
         printMSD()
 
@@ -293,6 +293,7 @@ def get_sigCV( Penal, itera ):
 
             Estim = getEstimCV(Gr)
             print ('\tEstim% '+str(Estim)+"\tTime  "+ str(time.time() - star))
+    #        print('OBJ', Gr.OBJ())
         else : Estim = -1
 
     elif SvF.OptMode == 'SurMin':
@@ -301,26 +302,32 @@ def get_sigCV( Penal, itera ):
     if Estim < co.optEstim :
             co.optEstim = Estim
             Task.RenameSols( '.tmp', '.sol' )
+
+            setMuToTeach_k('')     #  mu = 1   ##############  26/04/24
+            Task.ReadSols()                    ##############  26/04/24
+            Grd_to_Var()                        ##############  28/04/24
+
             with open(co.resF,'w') as f:      #  RES filewrite
 #                print >> f, [p for  p in Penal]
                 f.write (str(Penal))
                 for fu in Task.Funs :           # v21
-#                      if fu.mu is None: continue                     #  2023.11
                       if fu.type == 'tensor': continue
                       if fu.V.dat is None or fu.param: continue  # 23.11
-                      str_wr = '\n'+fu.nameFun()+' '
+                      str_wr = fu.nameFun()+' '
                       if co.CVNumOfIter > 0 :
                           if fu.MSDmode == 'MSDrel':   str_wr += " CV% " + str(fu.sCrVa*100)
                           else:                     str_wr += " CV% " + str(fu.sCrVa/fu.V.sigma*100)
                       str_wr += ' SD% ' + str(np.sqrt(fu.MSDv)*100) + " CV " + str(fu.sCrVa) \
                                 +' SD ' + str(np.sqrt(fu.MSDv)*fu.V.sigma) + ' sig '+str(fu.V.sigma)
 
-                      f.write ( str_wr )
+                      f.write ( '\n' + str_wr )
                       print (str_wr)
                       to_logOut ( str_wr )
                 f.write( '\n'+'Estim ' + str(Estim))
+                to_logOut ( 'Estim ' + str(Estim) )
+                to_logOut ( 'OBJ ' + str(Gr.OBJ()) )
+
 #                print >> f, 'Estim',Estim
- #               print ('(((((((((((', Gr.OBJ ())
                 if Task.print_res != None :
                     Task.print_res(Task, Penal, f)
     return Estim

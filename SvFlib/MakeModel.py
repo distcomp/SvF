@@ -1634,7 +1634,8 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
 #       Penalty
         if len (SvF.Penalty) == 0 :
 #            print '********C', obj.count('Penal[')
-            for p in range(obj.count('Penal[')) : SvF.Penalty.append (.1)
+#            for p in range(obj.count('Penal[')) : SvF.Penalty.append (.1)
+            for p in range(obj.count('Penal[')) : SvF.Penalty.append (.03)      #   26.04
 
         if SvF.numCV == -1 and SvF.OptMode == 'SvF':   # CV по умолчанию  2023.11
             wr('\n    make_CV_Sets(0, SvF.CVstep)')  # CV_Sets (fu )    -   25.05

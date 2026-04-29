@@ -80,7 +80,8 @@ class TaskClass :
             else               :  f_n = f.nameFun() + ext
             if f.ReadSol(f_n ) == False :
               if f.type != 'tensor' :
-                f.InitByData ()
+                  f.InitByData ()
+ #                 print('INIT#########################################',f.grd)
         return
 
     def SaveSols (self, ext = '' ) : #, printL = 0 ) :
@@ -91,6 +92,7 @@ class TaskClass :
             elif f.type == 'p' :  f_n = f.nameFun() + '.p' + ext
             else               :  f_n = f.nameFun() + ext
             f.SaveSol(f_n )#, printL)
+            if f.dim == 0: print ('SaveSol', f.nameFun(), f.grd[0])
         return
 
     def RenameSols (self, old, new ) :
