@@ -410,10 +410,6 @@ def make_Polynome (smbF, fun) :             #  Polynome (6, c, X, V) ###########
                 elif arg == 1: pol += '*' + args[iarg]
  #       print (pol)
     pol = ' ( ' + pol + ' ) '
-#        print (find_combinations(len(args), d))
- #   1/0
-
-
 
  #   pol = ''
   #  for p in range (degr+1) :
@@ -423,7 +419,7 @@ def make_Polynome (smbF, fun) :             #  Polynome (6, c, X, V) ###########
   #  print (pol)
 
  #   print (smbF[0:beg]+pol+smbF[end+1:])
-    if getFun (coef) is None :         #  coef  is not defined
+    if getFun (coef) is None :         #  coef  is not defined          пишем  tensor
         wr_text = coef + '[' + str(coef_num) + ']'
         if fun.ReadFrom !='':
             if fun.ReadFrom == '*': wr_text += ";"+' << ' + coef + '.sol'
@@ -693,7 +689,9 @@ def WriteVarParam26 ( buf, param ) :
                             Finitialize = val
                 elif '<<'== key :    #  and eq == '':    ReadFrom = 'abc.sol'   25.10.19
                         if smbFun == '':
-                            if val is None :  val = fun.NameArds() + '.sol'
+                            if val is None :
+                                if f_type == 'tensor' : val = fun.name + '.sol'
+                                else :                    val = fun.NameArds() + '.sol'
                             if val[0] != '"' and val[0] != "'" :     ReadFrom = '\"' + val + '\"'  #  добавляем кавычки
                             else                               :     ReadFrom = val
                         else :

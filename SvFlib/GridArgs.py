@@ -60,7 +60,7 @@ class Set (Object):
         self.oname = self.name
         self.axe_name = ''
 
-        print(self.name, gmin, gmax, step, ind, self.fld_name, type(self.fld_name) )
+    #    print(self.name, gmin, gmax, step, ind, self.fld_name, type(self.fld_name) )
 
         self.dat = None
         if type(self.fld_name) is str:

@@ -305,7 +305,7 @@ def get_sigCV( Penal, itera ):
 
             setMuToTeach_k('')     #  mu = 1   ##############  26/04/24
             Task.ReadSols()                    ##############  26/04/24
-            Grd_to_Var()                        ##############  28/04/24
+            Grd_to_Var()                       ##############  28/04/24
 
             with open(co.resF,'w') as f:      #  RES filewrite
 #                print >> f, [p for  p in Penal]

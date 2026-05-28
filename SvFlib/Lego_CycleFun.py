@@ -3,7 +3,8 @@ from Lego import *
 
 class CycleFun (Fun) :
     def __init__(self, Vname='', As=[], param=False, Finitialize=0, DataReadFrom='', Data=[], Domain=None, ReadFrom='', Period=0):
-        Fun.__init__( self, Vname, As, param, -1, Finitialize, DataReadFrom, Data, 'gCycle', Domain, ReadFrom)
+        Fun.__init__( self, Vname, As, param, -1, Finitialize, DataReadFrom, Data, 'gCycle', Domain, ReadFrom=ReadFrom)
+   #     no ArgNorm   &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
         if SvF.Compile: return  # ???
         self.Period = Period / self.A[0].step
         if Period == 0: self.Period = self.A[0].Ub

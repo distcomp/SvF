@@ -74,10 +74,17 @@ class TaskClass :
 
     def ReadSols (self, ext = '' ) : #, printL = 0 ) :
         for f in self.Funs :
-            if f.param : continue
+            if (not f.param) and f.type == 'tensor':   # считываем перед символьной функцией
+                if ext == '':      f.ReadSol()
+                else:              f.ReadSol( f.nameFun() + ext )
+                print (f.nameFun(), f.type)
+        for f in self.Funs :
+        #    print(f.nameFun(), f.type, f.param)
+            if f.param or f.type == 'tensor': continue
             if ext == ''       :  f_n = ''
             elif f.type == 'p' :  f_n = f.nameFun() + '.p' + ext
             else               :  f_n = f.nameFun() + ext
+         #   print(f.nameFun(), f.type, f.param, f_n)
             if f.ReadSol(f_n ) == False :
               if f.type != 'tensor' :
                   f.InitByData ()

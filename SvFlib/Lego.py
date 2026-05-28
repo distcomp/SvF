@@ -96,7 +96,7 @@ class BaseFun (Tensor) :
             print ('Неизвестный тип функции   ', self.type)
             exit (-1)
 #        print ( "Fun:"+self.V.name, "Type:"+self.type)
-        self.Oprint()
+#        self.Oprint()
 
 
         self.sR    = []           # множ записей табл
@@ -246,7 +246,7 @@ class BaseFun (Tensor) :
         if isnotNone(self.V.dat): dSize = len(self.V.dat)
         for a in self.A :
             if isnotNone(a.dat): dSize = len(a.dat)
-        print (dSize)
+#        print (dSize)
         if dSize == 0:
 #            print ('Nothing to Clean')
             return
@@ -593,8 +593,8 @@ class BaseFun (Tensor) :
         if self.dim == 2      : return self.gap[x,y]
 
     def AddGap ( self ) :
-        if self.dim == 1 :   self.gap = ones (  self.A[0].Ub+1,                 np.float64 )
-        if self.dim == 2 :   self.gap = ones ( (self.A[0].Ub+1, self.A[1].Ub+1),np.float64 )
+        if self.dim == 1 :   self.gap = np.ones (  self.A[0].Ub+1,                 np.float64 )
+        if self.dim == 2 :   self.gap = np.ones ( (self.A[0].Ub+1, self.A[1].Ub+1),np.float64 )
 
 
     def neNDTbyVal (self, xVal, yVal=None) :
@@ -1162,6 +1162,7 @@ class BaseFun (Tensor) :
 #      if self.type[0] == 'g'  or self.type == 'smbFun':   # 2505
 #      ArgNorm = self.ArgNorm
  #     self.ArgNorm = False
+#      print ("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%", fName, self.type)
       fi, fName = self.File_SaveSol('.sol', fName)
       if not fi is None:
 #      if True :
@@ -1225,7 +1226,7 @@ class BaseFun (Tensor) :
     
       """
       fi.close()
-      if SvF.printL > 0 : print ("END of SaveSol to ", fName, self.type)
+  #    if SvF.printL > 0 : print ("END of SaveSol to ", fName, self.type)
 
  #     self.ArgNorm = ArgNorm
 
@@ -1233,9 +1234,10 @@ class BaseFun (Tensor) :
 
 
     def ReadSol ( self, fName='', printL=0 ) :
-      if self.type == 'smbFun':  ##########################
+#     print ('ReadSol from  ',fName)
+      if self.type == 'smbFun':
+          self.var_to_grd()  ##########################
           return
- #     print ('self.Task.Mng.Prefix',fName)
       Prefix = SvF.Prefix
       if fName == '' :
           if self.type[0] == 'g':      # 2407
@@ -1248,6 +1250,7 @@ class BaseFun (Tensor) :
             return False
       head = fi.readline().split()
 #      print ("ReadSol from", fName,  head )
+
 ######################################################
       if head[0][0:4] == '#SvF' :    #New   бросил, не отладил...
          ver = head[0].split('_')
@@ -1304,6 +1307,7 @@ class BaseFun (Tensor) :
 #            print ("End of Fun.ReadSol from", fName)
             return
 ##############################################################################
+
       if self.type[0] == 'g' :         # 2407
   #      print ('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%', self.V.name, fName)
    #     print (self.grd)
@@ -2087,12 +2091,12 @@ class BaseFun (Tensor) :
 class Fun (BaseFun) :
     def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 1, DataReadFrom = '',Data=[],
                   Type='g', Domain = None, ArgNorm = True, ReadFrom = '' ) :
-        BaseFun.__init__ (self, Vname,  As, param, Degree,  Finitialize, DataReadFrom, Data,
-                  Type, Domain, ArgNorm, ReadFrom)
+        BaseFun.__init__ (self, Vname,  As, param, Degree,  Finitialize, DataReadFrom, Data, Type, Domain, ArgNorm, ReadFrom)
+
 
     def F ( self, ArS_real ) :
           if self.dim == 0:                           #  31
-                print (self.grd[0],'&&&&&&&&&&&&&&&&&&&&&&&')
+#                print (self.grd[0],'&&&&&&&&&&&&&&&&&&&&&&&')
                 if SvF.Use_var: return self.var
                 else          : return self.grd                   #    ?????????????????????????? [0]
  #         print (self.ArgNorm)
