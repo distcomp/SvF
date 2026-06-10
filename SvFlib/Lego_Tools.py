@@ -59,14 +59,13 @@ def cnstrFun2 (args, V_name, NDT) :   #
 
 
 def FunFromSolFile(ReadFrom, AddObj = False):
-    if SvF.printL: print ('FunFromSolFile', ReadFrom)
+    #print ('FunFromSolFile', ReadFrom)
     root, ext = splitext(ReadFrom.upper())
     if '.ASC' == ext:
         cols, xp, yp, grd = ReadSetInf(ReadFrom)
     else:
         cols, xp, yp, grd = ReadSolInf(ReadFrom)
 
-#    print 'BBB', grd.shape
     from Lego import Fun
     if AddObj :
         ret_fun = Fun(cols[-1],ArgNorm=False)

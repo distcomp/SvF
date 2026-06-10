@@ -24,8 +24,8 @@ maxJobs = 0
 
 ShowAll = True
 DrawFileName = ''
-Resources = [ "pool-scip-ipopt" ]
-#Resources = [ "vvvolDellDocker" ]
+#Resources = [ "pool-scip-ipopt" ]
+Resources = [ "pool-scip-ipopt", "shark1vvv" ]
 
 Substitude = True
 Default_step = -50

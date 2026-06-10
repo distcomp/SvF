@@ -77,6 +77,7 @@ class Tensor (Object) :
     def ReadSol(self, fName='', printL=0):
         from ModelFiles import to_logOut
         if fName == '':  fName = SvF.Prefix + self.name + ".sol"
+ #       print (fName)
         fi, Etc, Ver, Type = Get_File_Etc_Ver_Type (fName)
 #        print ('FFFFFFFFFFFFFFFFFFfi', Etc, Ver, Type)
         if fi is None : return False
