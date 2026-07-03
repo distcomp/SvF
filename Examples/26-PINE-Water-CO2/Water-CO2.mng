@@ -1,0 +1,159 @@
+COMPILE: TaskName = 'PINE_Water_dynamics'
+
+Wmin 	 = 68.0         # минимальное содержание воды в растении (kg)
+Wmax     = 75.0         # максимальное содержание воды в растении (kg)
+Wdel     = Wmax-Wmin	  	# 7kg
+Sneedles = 32.0 / 2.0  # эффективная площадь хвои (m²)
+Emult    = Sneedles * 6.48e-2  # коэффициент пересчета: ммоль м-2 с-1 -> kg ч-1
+                            # = 0.001 (ммоль->моль) * 18 (г/моль) / 1000 (г->kg) * 3600 (с->ч)
+Dt 	 = 0.5            # шаг интегрирования (часы)							!!!!! Молчанов
+
+SELECT: ROWNUM , Q, VPD,  E, Dat, H,  T,  hours, A  FROM "Pine_Petr.xlsx" as DB
+
+SET: 	t =   [ , , 1];   Data = ROWNUM           # индекс строки (время дискретизации)
+	sQ =  [ , , -50]; Data = Q            # сетка для функции Eq (по данным Q)
+	sT =  [ , , -50]; Data = T            # сетка для функции Eq (по данным Q)
+	sWD = [ 0, Wdel, -40 ]		#   grid for WD
+
+PARAM: 	Q(t)         # солнечная радиация (ФАР, мкмоль м-2 с-1)
+ 	VPD(t)       # дефицит давления водяного пара (Pa)
+	
+VAR: 	Gq (sQ);	Gq(sQ.middle) = 1; Gq'>0
+ 	Gwd(sWD) = Polynome(5); <1; Gwd(0.) = 1; #d/dsWD(Gwd(sWD))<0
+ 	G0   > 0
+	Kwf  > 0
+
+	
+VAR: 	W  ( t ) 		
+ 	E  ( t )   		
+	WD ( t );  >=0;  <=Wdel
+	WF ( t )
+	Gh2o  ( t ) 				# stomata conductance
+
+EQ: 	d/dt(W) = (WF  - E(t) * Emult) * Dt
+	W(0) = Wmax - 1.0
+	WF = Kwf* WD
+	WD = Wmax-W
+	E = Gh2o * VPD * 0.010017
+	Gh2o = G0 * Gq(Q) * Gwd(WD) 
+############################################### ФОТОСИНТЕЗ №№№№№№№№№№№№№№№№№№№№№№№
+SET:	sCm = [ 215, 370, -40 ]
+	sHours = [ 0, 24, 0.5]; Data = hours
+PARAM:	hours (t)
+
+VAR:	A ( t )
+	Ci ( t ); # Ci > sCi.min; Ci < sCi.max
+	Gci  ( t ) 				# stomata conductance -  CO2
+	P0 > 0
+	Pq ( sQ ) >0;  Pq(0)=0;  Pq(sQ.middle)=1;     Pq'>=0 # Фотосин от Q. Не убывает
+	Pt ( sT ) >0;  Pt(sT.middle)=1;    Pt'>=0 # Фотосин от Т. Не убывает
+#	Pci (sCi) = Polynome (8);  >0; Pci (sCi.middle)=1; Pci'>=0 #Фотоси от Ci. Не убывает - обязательно для решения уравнения
+	Pcm (sCm) = Polynome (9);  >0; Pcm (360)=1;  Pcm'>=0 #Фотоси от Cm. Не убывает - обязательно для решения уравнения
+#	Pcm (sCm) = Polynome (9);  >0; Pcm (sCm.middle)=1;  Pcm'>=0 #Фотоси от Cm. Не убывает - обязательно для решения уравнения
+#	Br(sHours) >0; Type = Cycle  #=  0.1300535112330308      #<< #> 0		#  Дыхание			    # 11
+	Br >0  #=  0.1300535112330308      #<< #> 0		#  Дыхание			    # 11
+PARAM:	T(t)
+VAR:	Cm (t);  Cm > sCm.min; Ci < sCm.max
+	P(t)
+	Gcm(sHours) >0.2; <0.4;  Type = Cycle
+#Gcm = 0.3
+
+EQ:	Gci = Gh2o /1.6				# Dh2o/Dco2 = 1.6
+	A = Gci * ( 360 - Ci ) #*2.2596 #* 0.010017
+  	P = P0 * Pq(Q) * Pt(T) * Pcm (Cm)
+  	A = P — Br   #(hours)
+  	P = Gcm(hours) * ( Ci - Cm )
+
+CV: 	NumOfSets = 7; 	GroupByParam = 'Dat'
+RUN: 	MaxIter = 1;  #	RunMode = 'L&S'
+
+SvF.OptStep = [0., 0., 0. ,0, 0.00001, 0.00001] 
+
+OBJ: 	E.MSD() + Gq.Complexity(Penal[0]) + Gwd.Complexity(Penal[1])  \
+      + A.MSD() + Pq.Complexity(Penal[2]) + Pt.Complexity(Penal[3]) + Pcm.Complexity(Penal[4]) \
+      + Gcm.Complexity(Penal[5])
+
+DB.AddField ('Err')
+DB.Err[:] = DB.A[:] - A.grd[:]
+
+DB.AddField ('Err_E')
+DB.Err_E[:] = DB.E[:] - E.grd[:]
+DB.WriteSvFtbl ('Err.dat')
+
+#PLOT: 	DB.ROWNUM, DB.H
+PLOT: 	*
+
+EoF
+
+EoTask
+########################################
+
+SELECT:  Err_E, hours, T, Q, VPD, E, Dat   FROM 'Err.dat'   #  Error дает непонятную ошибку !!!
+
+VAR: 	Err_E(hours) 
+CV: 	NumOfSets = 7; 	GroupByParam = 'Dat'
+RUN:	MaxIter=1 ; RunMode = 'L&L'
+OBJ: 	Err_E.MSD() + Err_E.Complexity(Penal[0])
+POLY: 	P0 ([Err_E.A[0].min,Err_E.A[0].max], [0,0])
+PLOT: 	Err_E,dms=1 + P0,c=green,lab="Err=0"
+EoTask
+
+SELECT:  Err, hours, T, Q, VPD, E, Dat   FROM 'Err.dat'   #  Error дает непонятную ошибку !!!
+
+VAR: 	Err(hours) 
+CV: 	NumOfSets = 7; 	GroupByParam = 'Dat'
+RUN:	MaxIter=1 ; RunMode = 'L&L'
+OBJ: 	Err.MSD() + Err.Complexity(Penal[0])
+POLY: 	P0 ([Err.A[0].min,Err.A[0].max], [0,0])
+PLOT: 	Err,dms=1 + P0,c=green,lab="Err=0"
+EoF
+EoTask
+
+SELECT:  Err, hours, T, Q, VPD, E, Dat   FROM 'Err.dat'   #  Error дает непонятную ошибку !!!
+
+VAR: 	Err(T) 
+
+CV: 	NumOfSets = 7; 	GroupByParam = 'Dat'
+RUN:	MaxIter=1 
+OBJ: 	Err.MSD() + Err.Complexity(Penal[0])
+POLY: 	P0 ([Err.A[0].min,Err.A[0].max], [0,0])
+PLOT: 	Err,dms=1 + P0,c=green,lab="Err=0"
+
+EoTask
+
+SELECT:  Err, hours, T, Q, VPD, E, Dat   FROM 'Err.dat'   #  Error дает непонятную ошибку !!!
+
+VAR: 	Err(Q) 
+
+CV: 	NumOfSets = 7; 	GroupByParam = 'Dat'
+RUN:	MaxIter=1 
+OBJ: 	Err.MSD() + Err.Complexity(Penal[0])
+POLY: 	P0 ([Err.A[0].min,Err.A[0].max], [0,0])
+PLOT: 	Err,dms=1 + P0,c=green,lab="Err=0"
+EoTask
+
+SELECT:  Err, hours, T, Q, VPD, E, Dat   FROM 'Err.dat'   #  Error дает непонятную ошибку !!!
+
+VAR: 	Err(VPD) 
+
+CV: 	NumOfSets = 7; 	GroupByParam = 'Dat'
+RUN:	MaxIter=1 
+OBJ: 	Err.MSD() + Err.Complexity(Penal[0])
+POLY: 	P0 ([Err.A[0].min,Err.A[0].max], [0,0])
+PLOT: 	Err,dms=1 + P0,c=green,lab="Err=0"
+EoTask
+
+COMPILE: UseNaN = False
+SELECT:  Err, hours, T, Q, VPD, E, Dat   FROM 'Err.dat'   #  Error дает непонятную ошибку !!!
+
+VAR: 	Err(E) 
+
+CV: 	NumOfSets = 7; 	GroupByParam = 'Dat'
+RUN:	MaxIter=1 
+OBJ: 	Err.MSD() + Err.Complexity(Penal[0])
+
+POLY: 	P0 ([Err.A[0].min,Err.A[0].max], [0,0])
+PLOT: 	Err,dms=1 + P0,c=green,lab="Err=0"
+
+
+
