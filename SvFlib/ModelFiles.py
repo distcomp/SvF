@@ -228,37 +228,47 @@ def MNGreadline():
 
     lines_pos += 1
     if lines_pos >= len(lines_buf)  : return 'EOF'
-    if lines_buf[lines_pos].upper().find('FOR:') == 0 :       #  INDEX:   FOR:  CC in [ITA, RUS] :
-        index_list = lines_buf[lines_pos].strip().split()     #            0    1  2    3
-#        print (index_list)
-        begin_pos = lines_pos + 1
-        end_pos   = begin_pos
-        otstup = 0
-        while lines_buf[end_pos][otstup] == ' ': otstup += 1
-#        print ('otstup', otstup, '|'+lines_buf[end_pos]+'|' )
-        if otstup > 0:
-            while lines_buf[end_pos][0] == ' ': end_pos += 1
-            insert_pos = end_pos
-        else :
-            while lines_buf[end_pos].find('EOFOR') != 0: end_pos += 1
-            insert_pos = end_pos + 1
-        for i in range (3,len(index_list)) :
-#            print('B',i, index_list[i])
+    if lines_buf[lines_pos].upper().find('FOR:') == 0 :                         #           FOR:  CC in [ITA, RUS] :
+        for_list = lines_buf[lines_pos].replace(',',' ').strip().split()        #            0    1  2    3
+        index_name = for_list[1]
+        index_list = for_list[3:]
+#        print (for_list, index_name, index_list)
+        for i in range (len(index_list)) :
+ #           print('B',i, index_list[i])
             if index_list[i][ 0] == '[':    index_list[i] = index_list[i][1:]
             if len(index_list[i]) == 0: continue
             if index_list[i][-1] == ':':    index_list[i] = index_list[i][:-1]
             if len(index_list[i]) == 0: continue
             if index_list[i][-1] == ']':    index_list[i] = index_list[i][:-1]
             if len(index_list[i]) == 0: continue
-   #         print(i, index_list[i])
+            if index_list[i][-1] == ',':    index_list[i] = index_list[i][:-1]
+            if len(index_list[i]) == 0: continue
+        index_list = [s for s in index_list if s]                   #  убираем пустые
+#        print('IND', index_list)
+
+        begin_pos = lines_pos + 1                               #   от  (выбираем фрагмент
+        end_pos   = begin_pos                                   #   до
+        otstup = 0
+        while lines_buf[end_pos][otstup] == ' ': otstup += 1
+        print ('otstup', otstup, '|'+lines_buf[end_pos]+'|' )
+        if otstup > 0:
+            while lines_buf[end_pos][0] == ' ': end_pos += 1            # либо до конца отступа
+            insert_pos = end_pos
+        else :
+            while lines_buf[end_pos].find('EOFOR') != 0: end_pos += 1   # либо до EOFOR
+            insert_pos = end_pos + 1
+
+        for ind in index_list :                                        # подстановка
             for j in range (begin_pos,end_pos) :
- #               print ('LB'+lines_buf[j]+'|')
-                lines_buf.insert(insert_pos,lines_buf[j][otstup:].replace(index_list[1],index_list[i]))
+ #               print ('LB'+lines_buf[j]+'|',j,index_name,ind)
+                lines_buf.insert(insert_pos,lines_buf[j][otstup:].replace(index_name,ind))
                 insert_pos += 1
+ #       print('LB267' , lines_buf , '|')
         if otstup :
             for j in range(begin_pos-1, end_pos):  lines_buf[j] = '#   ' + lines_buf[j]
         else :
             for j in range(begin_pos-1, end_pos+1):  lines_buf[j] = '#   ' + lines_buf[j]
+ #       print('LB26' + lines_buf[j] + '|')
     else :                                                          #  while - если вложенные INCLUDE:
       while lines_buf[lines_pos].upper().find('INCLUDE:') == 0 :   #  INCLUDE:   file_incl_name
         incl_name = lines_buf[lines_pos].strip().split()[1]
