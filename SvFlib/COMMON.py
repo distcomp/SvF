@@ -80,6 +80,7 @@ X_lim           = []
 Y_lim           = []
 locator         = None
 FONT_SIZE       = 16
+LEVEL_FONT_SIZE       = 16
 axisNUM_FONT_SIZE = 12
 title_x        = 0.7
 Ylabel_x       = 0.03

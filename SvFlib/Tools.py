@@ -14,7 +14,7 @@ GRADpRAD = 180/np.pi
 CLASS_TXT = type('a')
 CLASS_INT = type(1)
 
-def smart_split(s):   # Универсальная функция split, игнорирующая кавычки и []
+def smart_split(s,by):   # Универсальная функция split, игнорирующая кавычки и []
     result = []
     buf = []
     in_single = False
@@ -30,7 +30,7 @@ def smart_split(s):   # Универсальная функция split, игнорирующая кавычки и []
             bracket_level += 1
         elif ch == ']' and bracket_level > 0 and not in_single and not in_double:
             bracket_level -= 1
-        elif ch == ',' and not in_single and not in_double and bracket_level == 0:
+        elif ch == by and not in_single and not in_double and bracket_level == 0:
             result.append(''.join(buf).strip())
             buf = []
             continue

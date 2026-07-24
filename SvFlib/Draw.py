@@ -76,8 +76,8 @@ def Plot (plots) :
                     D = '2Dxy'
                 elif part_plot.Otype == 'Polyline':
                     D = '2Dpoly'
-                    xx = part_plot.x
-                    yy = part_plot.y
+                    xx = part_plot.X
+                    yy = part_plot.Y
                     LAB = part_plot.name
                 elif part_plot.Otype == 'Fun':
                     if part_plot.dim == 1:
@@ -173,17 +173,17 @@ def Plot (plots) :
             xx, yy = swapTRANS(xx, yy)
 
 
-            # ax.loglog(xx, yy, color=C, lw=LW, linestyle=LS,    # 26.04
+       #     ax.loglog(xx, yy, color=C, lw=LW, linestyle=LS,    # 26.04  Арктика
             ax.plot(xx, yy, color=C, lw=LW, linestyle=LS,
                 marker=MARK, markersize=MS, markerfacecolor=MFC, markeredgecolor=MEC, markeredgewidth=MEW,
                 label=LAB )
 
-        #    formatter = ScalarFormatter()      # 26.04
-        #    formatter.set_scientific(False)
-        #    formatter.set_useOffset(False)
+        #    formatter = ScalarFormatter()      # 26.04  Арктика
+         #   formatter.set_scientific(False)    # 26.04  Арктика
+          #  formatter.set_useOffset(False)     # 26.04  Арктика
 
-         #   ax.xaxis.set_major_formatter(formatter)
-          #  ax.yaxis.set_major_formatter(formatter)
+           # ax.xaxis.set_major_formatter(formatter)    # 26.04  Арктика
+            #ax.yaxis.set_major_formatter(formatter)    # 26.04  Арктика
 
         elif D == '2Dfun2' :
             xx, yy = swapTRANS(xx, yy)
@@ -200,7 +200,8 @@ def Plot (plots) :
          #           ax.clabel(cs1, inline=1, fontsize=NUM_FONT_SIZE, fmt=comma_formatter)
           #      else:
            #         ax.clabel(cs1, inline=1, fontsize=NUM_FONT_SIZE, fmt=levelFmt)  # сторо !
-            ax.clabel(cs1, inline=1, fontsize=NUM_FONT_SIZE)   #, fmt=levelFmt)  # сторо !
+            if SvF.LEVEL_FONT_SIZE>0 :                                                                  # 26.07.18
+                ax.clabel(cs1, inline=1, fontsize=SvF.LEVEL_FONT_SIZE)   #, fmt=levelFmt)  # сторо !
 
         file_name += LAB
 # ОСИ

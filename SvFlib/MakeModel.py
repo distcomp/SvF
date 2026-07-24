@@ -143,14 +143,15 @@ def WritePLOT ( plots_str ) :
     if plots_str == '*' :
         Swr('Task.PlotAll ( )')
         return
-    plots = plots_str.split("+")
+ #   plots = plots_str.split("+")
+    plots = smart_split(plots_str,'+')
     print (plots)
     str = 'Plot( [ '
     for ipl, pl in enumerate (plots):
         if ipl==0: str += '[ '
         else :     str += ', ['
   #      print (pl)
-        parts_pl = smart_split(pl)   #pl.split(',')
+        parts_pl = smart_split(pl,',')   #pl.split(',')
         print (parts_pl)
         ob_Otype = None
         for np, p in enumerate (parts_pl):
@@ -820,7 +821,8 @@ def WriteVarParam26 ( buf, param ) :
         if f_type != 'tensor' :
             for a in fun_args:          #  проверяем Аргументы
                 if findSetByName ( Task.Sets,a ) is None:
-                    WriteSet_24_12(a + '=[,,]')   #WriteGrid27 ( a + '=[,,]')              #    Дописываем  Set
+ #                   if fun.ReadFrom == '' :                             # если  нет  <<  - на потом
+                        WriteSet_24_12(a + '=[,,]')   #WriteGrid27 ( a + '=[,,]')              #    Дописываем  Set
 
         if f_type != 'tensor' :
           if dim == 1 and type(fun.A[0]) is str :        # Domain  <class 'str'>
