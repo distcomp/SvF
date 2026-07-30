@@ -327,7 +327,7 @@ def to_logOut (aaa) :
  #       print ('LogOutFile' + st)
         SvF.LogOutFile.write( '\n'+st )
 
-
+import SvFconf as CONF
 
 def startStartModel () :
 #    print (getcwd(), ')))))))))))))))))))))))))))))))))))))))))))))))))))')
@@ -339,8 +339,8 @@ def startStartModel () :
 #    Swr('else:')
     Swr('path_SvF = \"' + SvF.path_SvF + '\"')
     Swr('sys.path.append("' + SvF.path_SvF_Lib + '")')
-    Swr('sys.path.append(path_SvF + \"pyomo-everest/python-api\")')
-    Swr('sys.path.append(path_SvF + \"pyomo-everest/ssop\")')
+    Swr('sys.path.append( \"' + CONF.path_to_everest_api + '\")' )
+    Swr('sys.path.append( \"' + CONF.path_to_ssop + '\")' )
     Swr('import COMMON as SvF')
     Swr('SvF.path_SvF = path_SvF')
     Swr('SvF.tmpFileDir = SvF.path_SvF + \'TMP/\'')

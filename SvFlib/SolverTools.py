@@ -3,6 +3,7 @@ from __future__ import division
 import subprocess
 
 import COMMON as SvF
+import SvFconf as CONF
 
 from Task    import Grd_to_Var
 
@@ -21,7 +22,7 @@ from ssop_session import *
 def Factory (optFile):
     opt = None
     if optFile is None or SvF.RunMode[0] == 'L' or SvF.RunMode[2] == 'L' :
-        opt = SolverFactory(SvF.LocalSolverName)  #'server' :  SvF.LocalSolverName
+        opt = SolverFactory(CONF.LocalSolverName)  #'server' :  SvF.LocalSolverName
         opt.options.update( SvF.solverOptVal )
     if (not optFile is None) and \
         (SvF.RunMode[0] != 'L' or SvF.RunMode[2] != 'L'):
@@ -95,14 +96,14 @@ import concurrent.futures  ###################
 
 def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
         def run_subTask(pName):
-            if SvF.SolverName.find('ipopt') >= 0:    pName_nl = pName + ".nl"
-            elif SvF.SolverName.find('scip') >= 0:   pName_nl = pName
+            if CONF.SolverName.find('ipopt') >= 0:    pName_nl = pName + ".nl"
+            elif CONF.SolverName.find('scip') >= 0:   pName_nl = pName
             else:
                 print("Solver Name ?")
                 exit(-17)
 
             print('Start', pName )
-            subprocess.check_call(SvF.SolverName + ' ' + tmpFileDir + pName_nl + " -AMPL" +
+            subprocess.check_call(CONF.SolverName + ' ' + tmpFileDir + pName_nl + " -AMPL" +
                               " \"option_file_name=" + tmpFileDir + "peipopt.opt\"", shell=True)
             return pName
 
@@ -111,7 +112,7 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
             for r in SvF.Resources:
                 SvF_resources.append(ssop_config.SSOP_RESOURCES[r])
             theSession = SsopSession(name      = SvF.TaskName + str(SvF.CV_Iter),
-                                     token     = SvF.token,
+                                     token     = CONF.token,
                                      resources = SvF_resources,
 
 ##                                     resources=[

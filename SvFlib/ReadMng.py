@@ -24,6 +24,7 @@ from ModelFiles import *
 
 #from PyomoEverestEnv  import *
 #import COMMON as co
+from SvFconf import DrawMode
 
 import io
 from datetime import datetime
@@ -413,41 +414,30 @@ def ReadMng ( ) :
                     os.chdir(SvF.startDir);
     elif Is(Q, "COMPILE:"):     COMPILE_RUN_option (buf)
     elif Is(Q, 'RUN:'):         COMPILE_RUN_option (buf)  #WriteRUNoption (buf)
-
     elif Is(Q, "SELECT:") :    WriteSelect30(Treat_FieldNames('Select '+buf))
-
     elif(Is(Q, "GRID:") or
          Is(Q, "SET:")  ) :
- #                   buf = Treat_FieldNames(buf)
-#                    WriteGrid27 ( buf )
                     WriteSet_24_12(Treat_FieldNames(buf))
-
     elif Is(Q, "DOMAIN:"): WriteDomain_24_12(Treat_FieldNames(buf))
 
-    elif Is(Q, "VAR:"   ) :  WriteVarParam26 ( buf, False )
-    elif Is(Q, "PARAM:" ) :  WriteVarParam26 ( buf, True )
+    elif Is(Q, "VAR:"   ) :     WriteVarParam26 ( buf, False )
+    elif Is(Q, "PARAM:" ) :     WriteVarParam26 ( buf, True )
     elif (Is(Q, "POLYLINE:" )
-       or Is(Q, "POLY:" ) ) :  WritePolyline ( buf )
-    elif Is(Q, "EQ:")     :  WriteModelEQ31 ( buf )
-
+       or Is(Q, "POLY:" ) ) :   WritePolyline ( buf )
+    elif Is(Q, "EQ:")     :     WriteModelEQ31 ( buf )
     elif (Is(Q, "PENALTY:")
-       or Is(Q, "OPTPAR:") ):
-                                  WritePenalty ( buf )
-
-    elif Is(Q, "OBJL:" )  :  WriteModelOBJ19 ( Q,buf )
-    elif Is(Q, "OBJU:" )  :
-                            WriteModelOBJ_U (buf)
- ##                           if not SvF.Preproc :  SvFstart19p(Task)
-    elif Is(Q, "OBJ:" ):
-                            WriteModelOBJ19 ( Q,buf )
-##                            if not SvF.Preproc : SvFstart19p ( Task )
+       or Is(Q, "OPTPAR:") ):   WritePenalty ( buf )
+    elif Is(Q, "OBJL:" )  :     WriteModelOBJ19 ( Q,buf )
+    elif Is(Q, "OBJU:" )  :     WriteModelOBJ_U (buf)
+    elif Is(Q, "OBJ:" ):        WriteModelOBJ19 ( Q,buf )
+    elif Is(Q, "RESIDUAL:"):    WriteRESIDUAL(buf)  #  26.07    RESIDUAL: DB, E, E(ROWNUM), hours  # -> RESID_E_hours.mng + .dat
     elif(Is(Q, "EoF") or
          Is(Q, "EoTask") ):
 #                        if objective == 'N':  buf = 'OBJ: N';
                         print ('OptMode', SvF.OptMode)
                         print ('EoF ************', Q, ' in READ MNG ********************* EoF or EoTask')
                         if  Is(Q, "EoF"):
-                            if SvF.ShowAll:
+                            if SvF.ShowAll and DrawMode.find('Screen') >= 0 :
                                 Swr('\nif SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")')
                         if not SvF.SModelFile is None:  SvF.SModelFile.close()
                         if Q == 'EOTASK' :  SvF.EofTask = True

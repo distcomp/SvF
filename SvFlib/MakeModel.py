@@ -5,6 +5,7 @@ from   ModelFiles import *
 from Table import *
 
 
+
 def getKeyFromBuf (keys, part):                     # 'usehomeforPower' -> 'UseHomeforPower', '=', 'True'
     for key in keys :                               #  UsePrime True -> UsePrime,'','True'
         if part.lower().find(key[0].lower()) == 0:
@@ -1737,3 +1738,37 @@ def WritePolyline ( buf ) :
         Swr (str)
         from GIS import Polyline
         Polyline (None,None,None,buf[:first])           # для регистрации на этапе компиляции
+
+def WriteRESIDUAL(buf) :                #  26.07    RESIDUAL: DB, E, E(ROWNUM), hours  # -> RESID_E_hours.mng + .dat
+    pars = buf.split(',')
+    dbName = pars[0]
+    dataField = pars[1]
+    func = pars[2]
+    fun_rr = func[:-1] + '[rr])'
+    fun_rr = fun_rr.replace('(', '('+dbName+'.')
+    args = pars[3:]
+    fName = 'RESID_' + dataField
+    for p in args : fName += '_'+ p
+    Residual_fld = 'Residual_' + dataField
+
+    Swr(dbName + '.AddField ("'+Residual_fld+'")')              #   подготовка и запись таблицы
+    Swr('for rr in ' + dbName + '.sR:')
+    WriteString31('    '+dbName+'.'+Residual_fld+'[rr] = ' +dbName+'.'+ dataField + '[rr] - ' + fun_rr )
+    Swr(dbName+'.WriteSvFtbl("' + fName + '.dat")')
+    Swr(dbName + '.KillField ("' + Residual_fld + '")')
+
+    with (open( fName + '.mng', 'w') as f):                     #   mng file
+        f.write('SELECT * from ' + fName + '.dat\n')
+        for a in args :
+            f.write('SET: '+ a +' = [,,]\n')
+        f.write('VAR: '+ Residual_fld +'(' + ",".join(args) + ')\n')
+        f.write('CV:  NumOfSets = 7; 	#GroupByParam = "Dat"\n')
+        f.write('RUN: MaxIter = 11;    #  RunMode="S&S" \n')
+        f.write('OBJ: ' + Residual_fld + '.MSD() + ' + Residual_fld + '.Complexity('
+        +",".join(f"Penal[{i}]" for i in range(len(args))) + ')\n' )
+        if len(args) == 1 :
+            f.write('POLY: P1([0, ' +Residual_fld+ '.A[0].max], [0, 0])\n')
+            f.write('PLOT: '+Residual_fld+', dms=1 + P1, c = green\n')
+        else :
+            f.write('PLOT: ' + Residual_fld + ', dms=1\n')
+        f.write('EoF')

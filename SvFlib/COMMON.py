@@ -5,9 +5,7 @@ from sys  import float_info
 F_Arg_Type = ''            #  заплатка для ArgNorm для fNi_fon(X,Y) символ функции   Ni(X,Y)  = Ni_fon(X,Y) + fon
 
 
-DrawMode = 'Screen&File'
-LocalSolverName  = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'
-SolverName       = '/opt/scipopt911/bin/ipopt' # '/opt/solvers/bin/ipopt'  # 3.14.09
+#DrawMode = 'Screen&File'
 
 
 feasibleSol = None          #  function feasibleSol(Peal) - перед оптимизацией
@@ -158,7 +156,7 @@ useNaN      = True   #False
 VarNormalization = False
 
 optFact          = None
-token      =  ''
+# token      =  ''
 optFile    =  'peipopt.opt'
 
 

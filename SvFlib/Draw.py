@@ -13,9 +13,12 @@ from   Object import *
 from Table   import *
 from GIS     import *
 
+
 import matplotlib.ticker
 from matplotlib.ticker import FuncFormatter
 from matplotlib.ticker import ScalarFormatter
+
+from SvFconf import DrawMode
 
 # Функция форматирования для замены точки на запятую
 def comma_formatter_pos(x, pos):
@@ -213,10 +216,10 @@ def Plot (plots) :
     plt.title(tLAB, fontsize=FONT_SIZE + 1, style=FONTstyle, y=tLAB_y, x=tLAB_x)  # , pad = 3)
     ax.legend(fancybox=True, prop={'size': FONT_SIZE}, framealpha=0)  # framealpha -
     plt.tight_layout()
-    if SvF.DrawMode.find('File') >= 0 :
+    if DrawMode.find('File') >= 0 :
         if FileName is None:  FileName = file_name
         plt.savefig(FileName + '.' + SvF.graphic_file_type, dpi=SvF.DPI)
-    if SvF.DrawMode.find('Screen') >= 0 :
+    if DrawMode.find('Screen') >= 0 :
             if SvF.ShowAll :  plt.show(block=False)
             else           :  plt.show()
             """""
@@ -254,7 +257,7 @@ def Plot (plots) :
 
 
 def DrawComb( param ):
-    if SvF.DrawMode == '' :  return
+    if DrawMode == '' :  return
     print ('           Draw', param)
     Transp = SvF.DrawTransp
     FONT_SIZE = SvF.FONT_SIZE  #16 #24  # 16 # 7
@@ -604,10 +607,10 @@ def DrawComb( param ):
     ax.yaxis.set_label_coords( SvF.Ylabel_x, SvF.Ylabel_y ) #1.02)  # в длиннах оси
 
     plt.tight_layout()
-    if SvF.DrawMode.find('File') >= 0 :
+    if DrawMode.find('File') >= 0 :
         if SvF.DrawFileName != '':  file_name = SvF.DrawFileName
         if DrawErr:  plt.savefig(file_name+'Err.' + SvF.graphic_file_type, dpi=SvF.DPI)  # (os.path.join('%s'%dir,'inner_int_gamma_%g%s.%s'%(fun.gamma, suffix, fmt)), dpi = dpi)
         else:        plt.savefig(file_name + '.'+ SvF.graphic_file_type, dpi=SvF.DPI)
-    if SvF.DrawMode.find('Screen') >= 0 :
+    if DrawMode.find('Screen') >= 0 :
             if SvF.ShowAll :  plt.show(block=False)
             else           :  plt.show()
