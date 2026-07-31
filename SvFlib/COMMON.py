@@ -50,7 +50,7 @@ Compile = True      # 30 при подготовке модели включен
 
 addStrToRes = ''
 
-EofTask         = False
+# EofTask         = False
 
 SvFprefix       = ''    # 29
 TabString       = '    '
@@ -188,10 +188,10 @@ stab_val_by_cv   = []
 #py_warm_start_mult_bound_push = 1e-6
 #py_constr_viol_tol = 1e-4  ##1e-11
 
-path_SvF   = ''     #   "/home/sokol/C/_SvF/"
-path_SvF_Lib = ''   #   /home/sokol/D/SvF/SvFlib/
+#path_SvF   = ''     #   "/home/sokol/C/_SvF/"
+#path_SvF_Lib = ''   #   /home/sokol/D/SvF/SvFlib/
 tmpFileDir = ''     #   'C:\\C\\_SvF\\TMP\\'
-startDir   = ''
+#startDir   = ''
 
 ###########################  AZIMUT  #########################
 lon_center_rad = None

@@ -40,7 +40,8 @@ def ReadMng ( ) :
  to_logOut ( 'Start at   '+str(datetime.now()) )
 
 
- if SvF.EofTask == False :
+ # if SvF.EofTask == False :
+ if SvF.mngF == '' :
     SvF.mngF = MngFile()
 
  coMembers   = [ k for k in SvF.__dict__.keys() if not k.startswith("__")]        #  COMMON MEMBERS
@@ -410,8 +411,7 @@ def ReadMng ( ) :
                     new_cwd = readEqStr()  #; print ('AAA', new_cwd)
                     os.chdir(new_cwd);   sys.path.append(os.getcwd())
 #                    printS ( '*******************  change CWD:', getcwd() )
-    elif Is(Q, "SetStartDir") :
-                    os.chdir(SvF.startDir);
+    # elif Is(Q, "SetStartDir") :  os.chdir(SvF.startDir);                      # 2026.07 ???
     elif Is(Q, "COMPILE:"):     COMPILE_RUN_option (buf)
     elif Is(Q, 'RUN:'):         COMPILE_RUN_option (buf)  #WriteRUNoption (buf)
     elif Is(Q, "SELECT:") :    WriteSelect30(Treat_FieldNames('Select '+buf))
@@ -435,14 +435,19 @@ def ReadMng ( ) :
          Is(Q, "EoTask") ):
 #                        if objective == 'N':  buf = 'OBJ: N';
                         print ('OptMode', SvF.OptMode)
-                        print ('EoF ************', Q, ' in READ MNG ********************* EoF or EoTask')
-                        if  Is(Q, "EoF"):
+                        print('\n############################ End Of Compilation ############################### ', Q)
+                        if 1:        #Is(Q, "EoF"):
                             if SvF.ShowAll and DrawMode.find('Screen') >= 0 :
                                 Swr('\nif SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")')
-                        if not SvF.SModelFile is None:  SvF.SModelFile.close()
-                        if Q == 'EOTASK' :  SvF.EofTask = True
-                        else:               SvF.EofTask = False
-                        return Task
+                            Swr("if SvF.addStrToRes != '':")
+                            Swr("    with open(SvF.resF, 'a') as f:  # RES filewrite")
+                            Swr("        f.write('addStrToRes: ' + SvF.addStrToRes)")
+                        if not SvF.SModelFile is None:
+                                SvF.SModelFile.close()
+                                SvF.SModelFile = None
+               #         if Q == 'EOTASK' :  SvF.EofTask = True
+                #        else:               SvF.EofTask = False
+                        return Q
 
     elif Is(Q, 'CV:'):    WriteCV (Treat_FieldNames(buf))
     elif Is(Q, 'DRAW:'):  Swr('Task.Draw ( \'' + buf + '\' )')
@@ -504,8 +509,8 @@ def ReadMng ( ) :
 
 
 
-
- while 0 :  ######################################################################################
+"""
+  ######################################################################################
 
     if Is(Q,"Polygon") :
                             defName = readStr()
@@ -629,4 +634,4 @@ def ReadMng ( ) :
 ##def  SvFstart19p ( Task ):
 ## 30        from SvFstart62 import SvFstart19  #*
   ##      SvFstart19 ( Task )
-
+"""

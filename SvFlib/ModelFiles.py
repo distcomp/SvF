@@ -330,20 +330,24 @@ def to_logOut (aaa) :
 import SvFconf as CONF
 
 def startStartModel () :
-#    print (getcwd(), ')))))))))))))))))))))))))))))))))))))))))))))))))))')
+
+    prog_name = sys.argv[0]
+    path_SvF_Lib            = prog_name[: prog_name.rfind('/')]                     #   /home/sokol/D/SvF/SvFlib
+    path_SvF                = path_SvF_Lib[: path_SvF_Lib.rfind('/')+1]     #   /home/sokol/D/SvF/  - в верхнем каталоге
+
     SvF.SModelFile = open('StartModel.py', 'w')
     Swrs('# -*- coding: UTF-8 -*-')
     Swr('import sys')
 #    Swr('if platform.system() == \'Windows\':')
 #    Swr('    path_SvF = \"C:/_SvF/\"')
 #    Swr('else:')
-    Swr('path_SvF = \"' + SvF.path_SvF + '\"')
-    Swr('sys.path.append("' + SvF.path_SvF_Lib + '")')
+#    Swr('path_SvF = \"' + SvF.path_SvF + '\"')                     # 26.07
+    Swr('sys.path.append("' + path_SvF_Lib + '")')
     Swr('sys.path.append( \"' + CONF.path_to_everest_api + '\")' )
     Swr('sys.path.append( \"' + CONF.path_to_ssop + '\")' )
     Swr('import COMMON as SvF')
-    Swr('SvF.path_SvF = path_SvF')
-    Swr('SvF.tmpFileDir = SvF.path_SvF + \'TMP/\'')
+#    Swr('SvF.path_SvF =  \"' + path_SvF + '\"' )     # 'path_SvF')   # 26.07
+    Swr('SvF.tmpFileDir = \"'+ path_SvF  + 'TMP/\"')
 #    Swr('print(SvF.resF, len (SvF.Penalty), SvF.Penalty)')
     Swr('from CVSets import *')
     Swr('from Table  import *')
@@ -353,7 +357,7 @@ def startStartModel () :
     Swr('\nSvF.Task = TaskClass()')
     Swr('Task = SvF.Task')
     Swr('SvF.mngF = \'' + SvF.mngF + '\'')
-## 30    Swr('SvF.Preproc = False')
+    Swr('SvF.Compile = False\n')   # 2026.07           #SvF.Preproc = False') ## 30
 
 def endObjStartModel () :
     for l in SvF.ModelBuf :
