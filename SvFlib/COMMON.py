@@ -97,7 +97,9 @@ graphic_file_type = 'png'
 #SaveDeriv   = False
 #SaveSet    = 'N'
 
+SurMinMethodName = 'SvF'
 optEstim = float_info.max
+optOBJ = None                   # 26/08/09
 
 SchemeD1  = ['Forward'] # 'Backward'  #'Central'  #
 #SchemeD1  = ['Backward']  #'Central'
@@ -129,8 +131,8 @@ OptNames = []
 #  mngPenalty   = []        ???
 
 #CVproc       = ''
-CVNumOfIter  =   20
-CV_Iter  =   0
+CVNumOfIter = 20
+NoFuncCalls =  0    # для имени nl файла и первой печать MSD
 
 currentTab  = None
 

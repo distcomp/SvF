@@ -34,7 +34,7 @@ while (1) :
         [sys.executable, os.getcwd()+"/StartModel.py"],
         check=True
     )
-    
+
     if EoF == 'EOF' :  break
     else:
 #    if SvF.EofTask:

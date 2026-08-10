@@ -210,11 +210,13 @@ def Plot (plots) :
 # ОСИ
     ax.set_ylabel(yLAB, size=FONT_SIZE, rotation=0)  # , yRotation)
     ax.set_xlabel(xLAB, size=FONT_SIZE)
-    ax.xaxis.set_label_coords( xLAB_x, xLAB_y ) #SvF.Xlabel_x, SvF.Xlabel_y ) #-0.01 ) # SvF.Xlabel_x ) #-0.01)
-    ax.yaxis.set_label_coords( yLAB_x, yLAB_y )#SvF.Ylabel_x, SvF.Ylabel_y ) #1.02)  # в длиннах оси
+    ax.xaxis.set_label_coords( xLAB_x, xLAB_y )  # -0.01 )
+    ax.yaxis.set_label_coords( yLAB_x, yLAB_y )  #  1.02)  # в длиннах оси
 
     plt.title(tLAB, fontsize=FONT_SIZE + 1, style=FONTstyle, y=tLAB_y, x=tLAB_x)  # , pad = 3)
-    ax.legend(fancybox=True, prop={'size': FONT_SIZE}, framealpha=0)  # framealpha -
+    handles, labels = ax.get_legend_handles_labels()
+    if handles:                                                     # 2026.08
+        ax.legend(fancybox=True, prop={'size': FONT_SIZE}, framealpha=0)  # framealpha -
     plt.tight_layout()
     if DrawMode.find('File') >= 0 :
         if FileName is None:  FileName = file_name

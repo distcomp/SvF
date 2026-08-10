@@ -375,17 +375,17 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
     #  exp ( - farWieght * dist...
     print ('\nstart  farWieght', farWieght)
     step = 1e37
-    if CVNumOfIter == 0:
-            AllArgs = SetAllArgs(Arg, InArg, stepsIN)
-            Val = getVal ( AllArgs, -1 )
-            points = [Point (Arg, Val, 0)]
-            for p in points:  p.prin()
-            return points, nan
+#    if CVNumOfIter == 0:
+ #           AllArgs = SetAllArgs(Arg, InArg, stepsIN)
+  #          Val = getVal ( AllArgs, -1 )
+   #         points = [Point (Arg, Val, 0)]
+    #        for p in points:  p.prin()
+     #       return points, nan
 
     for itera in range (CVNumOfIter) :
         if itera == 0 :
             AllArgs = SetAllArgs(Arg, InArg, stepsIN)
-            Val = getVal ( AllArgs, itera )
+            Val = getVal ( AllArgs )
 #            Val = getVal ( Arg, itera )
             print ('\nITER', itera, 'start', Val, 'st', np.nan,  Arg, '\n')
             points = [Point (Arg, Val, 0)]
@@ -399,7 +399,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
             for attempt in range (Nattempt) :
                 nArg[itera-1] += step_i
                 AllArgs = SetAllArgs(nArg, InArg, stepsIN)
-                Val = getVal(AllArgs, itera)
+                Val = getVal(AllArgs)
 #                Val = getVal ( nArg, itera )
                 Arg, mi, grad = AddPoint ( points, nArg, Val )
                 print ('\nITER', itera, mi, Val, grad, 'st', step_i, nArg, '\n')
@@ -421,7 +421,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
             old_coef = deepcopy (pol.coef)                                                  # для вычисления угла поворота
             prognVal, nArg, Constr, nIncr = Prognose ( opt, pol, points[-1], abs (step) )        # Prognose
             AllArgs = SetAllArgs(nArg, InArg, stepsIN)
-            Val = getVal ( AllArgs, itera )
+            Val = getVal ( AllArgs )
 #            Val = getVal ( nArg, itera )                                                        # getVal
             prognErr = abs (Val-prognVal)/(points[-1].Val-prognVal)         # погрешность прогноза:  0 - отлично
             Arg, mi, grad = AddPoint ( points, nArg, Val )                                     #  AddPoint
@@ -517,7 +517,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
                 prognVal = prognValN
             
             AllArgs = SetAllArgs(nArg, InArg, stepsIN)
-            Val = getVal ( AllArgs, itera )
+            Val = getVal ( AllArgs )
 #            Val = getVal ( nArg, itera )                                                        # getVal
             print ('\t\t\topEr', prognErr, 'ang', ang_pov, 'ost', ostep, 'st',step, stepMult)
             prognErr = abs (Val-prognVal)/(points[-1].Val-prognVal)         # погрешность прогноза:  0 - отлично

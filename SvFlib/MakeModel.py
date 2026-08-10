@@ -1678,10 +1678,8 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
         for nf, fu in enumerate( Task.Funs ) :
             if obj.find(fu.V.name+'.') >= 0 :
                 wr( '\n    '+fu.V.name+ ' = ' + 'Task.Funs[' + str(nf) + ']' )    #  f__p = Gr.F[1]
-#        f.write ( '\n\n    OBJ_ = Gr.OBJ ()' )
-        wr ( '\n    OBJ_ = Gr.OBJ ()' )
- #       f.write ( '\n    print  \'    OBJ =\', OBJ_' )
-  #      f.write ( '\n    print >> f__f,  \'\\n    OBJ =\', OBJ_\n' )
+ #       wr ( '\n    OBJ_ = Gr.OBJ ()' )
+        wr ( '\n    OBJ_ = SvF.optOBJ' )
         wr('    print (  \'    OBJ =\', OBJ_ )')
         wr('    f__f.write ( \'\\n    OBJ =\'+ str(OBJ_)+\'\\n\')\n')
 #        obj_parts = obj.replace(' ', '').split('+')   ##############    ' '->'' !!!!!!!
@@ -1710,12 +1708,8 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
 #            if p == ' ': continue     # если нет штрафа
             wrs( '    tmp = (' + part + ')\n' )   # 29
             wrs( '    stmp = str(tmp)\n')
-#            f.write( '    print       \'    \',int(tmp/OBJ_*1000)/10,\'\\t' + part + ' =\', tmp\n' )
- #           f.write( '    print >> f__f, \'    \',int(tmp/OBJ_*1000)/10,\'\\t' + part + ' =\', tmp\n' )
             wrs( '    print (      \'    \',int(tmp/OBJ_*1000)/10,\'\\t' + part + ' =\', stmp )\n' )
             wrs( '    f__f.write ( \'    \'+str(int(tmp/OBJ_*1000)/10)+\'\\t' + part + ' =\'+ stmp+\'\\n\')\n' )
-#            f.write( '    print       \'    \',int(tmp/Gr.OBJ()*1000)/10,\'\\t' + p + ' =\', tmp\n' )
- #           f.write( '    print >> f, \'    \',int(tmp/Gr.OBJ()*1000)/10,\'\\t' + p + ' =\', tmp\n' )
             from_ = to_ + 2
         wr( '    return\n' )
         print ('Model was built')

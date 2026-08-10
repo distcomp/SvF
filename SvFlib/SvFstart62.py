@@ -6,7 +6,7 @@ import time
 #from  time import *
 import os
 
-import COMMON as co
+#import COMMON as co
 from ssop_session import *
 import ssop_config
 #from Ssop import *
@@ -49,64 +49,79 @@ def SvFstart19 ( Task ) :
     print ('\n\n\nStart SvFstart')
     setUse_var(False)  # 25.10
 
-    if co.resF is None :   #  не считываем, но сохраняем
-        co.resF = co.mngF[:co.mngF.rfind('.')] + '.res'  # RES file read
-##        co.lenPenalty = len (co.OptNames)
+    if SvF.resF is None :   #  не считываем, но сохраняем
+        SvF.resF = SvF.mngF[:SvF.mngF.rfind('.')] + '.res'  # RES file read
+##        SvF.lenPenalty = len (SvF.OptNames)
     else :
-        if co.resF == '' :  co.resF = co.mngF[:co.mngF.rfind('.')]+'.res'   #  RES file read
+        if SvF.resF == '' :  SvF.resF = SvF.mngF[:SvF.mngF.rfind('.')]+'.res'   #  RES file read
 
-        Penal = co.Penalty
-##        if co.printL : print ('co.lenPenalty', co.lenPenalty)
-        print(Penal, co.Penalty)
+        Penal = SvF.Penalty
+##        if SvF.printL : print ('SvF.lenPenalty', SvF.lenPenalty)
+        print(Penal, SvF.Penalty)
 
-      #  print('From File: ', co.resF) #, len (co.Penalty), co.Penalty)
+      #  print('From File: ', SvF.resF) #, len (SvF.Penalty), SvF.Penalty)
 
         try:
-                with (open(co.resF,'r') as f):
+                with (open(SvF.resF,'r') as f):
                     s = f.readline().strip().replace(',', ' ').replace('   ', ' ').replace('  ', ' ').replace(' ', ',')  #.split(', ')
                     Penal = readListFloat19 (s)
                     print ('read PENALTY:', Penal)
         except IOError as e:
-                print ("******* Can''t open RES file: ", co.resF)
+                print ("******* Can''t open RES file: ", SvF.resF)
         #        if len (Penal) == 0 :  exit(-1)
-        co.Penalty = Penal
-    # print (co.Penalty); exit(22)
- #   co.Penalty = [0.1 if x is None else x for x in co.Penalty]    26.04
-    co.Penalty = [0.03 if x is None else x for x in co.Penalty]
- #   print (Penal, co.Penalty)
+        SvF.Penalty = Penal
+    # print (SvF.Penalty); exit(22)
+ #   SvF.Penalty = [0.1 if x is None else x for x in SvF.Penalty]    26.04
+    SvF.Penalty = [0.03 if x is None else x for x in SvF.Penalty]
+ #   print (Penal, SvF.Penalty)
   #  1/0
 
 #    maxSigEst = 0           # оценка сигмы скольз. среднем
 
-    co.optFact = Factory(co.optFile)
-#    print('co.optFactST', co.optFact)
+    SvF.optFact = Factory(SvF.optFile)
+#    print('SvF.optFactST', SvF.optFact)
 
 #    print ('')
  #   for f in Task.Funs :  f.Oprint()
   #  print ('')
 
-    if type(co.OptStep) is str :
-        co.OptStep = [float(co.OptStep) * p for p in co.Penalty[:]]
+    if type(SvF.OptStep) is str :
+        SvF.OptStep = [float(SvF.OptStep) * p for p in SvF.Penalty[:]]
 
-    if co.CVNumOfIter < 0: pass
-    elif co.CVNumOfIter == 0:
-            get_sigCV(co.Penalty, -1)
+    if   SvF.CVNumOfIter  < 0:  pass
+    elif SvF.CVNumOfIter <= 1:  get_sigCV(SvF.Penalty)
     else :
-      #  print ('co.OptStep',co.OptStep, 'co.Penalty', co.Penalty)
-        points, step = SurMin ( co.CVNumOfIter, co.OptStep, co.ExitStep, co.Penalty, get_sigCV )   ######## START ###########
-        with open(co.resF,'a') as f:      #  RES filewrite
+      # Start surrogate optimization to find better regularization parameters if iterations are > 0.
+      # Two ways of optimization are available: 1) new based on spotoptim module 2) old self-written
+        if SvF.SurMinMethodName == 'SvF':
+            points, step = SurMin ( SvF.CVNumOfIter, SvF.OptStep, SvF.ExitStep, SvF.Penalty, get_sigCV )   ######## START ###########
+   #     else:
+    #        points = SurMinMethod ( co.CVNumOfIter, arg, steps, get_sigCV, Task )
+        # Write all points to a .res file
+        with open(SvF.resF,'a') as f:      #  RES filewrite
             f.write( 'Step: '+ str(step) + '\nPoints:' )
             for p in points :  f.write( 'Num '+str(p.Num) + ' Val ' + str(p.Val) + ' Arg ' + str(p.Arg) + '\n')
 #            print >> f, 'Step:', step, '\nPoints:'
  #           for p in points :  print >> f, 'Num', p.Num, 'Val', p.Val, 'Arg', p.Arg
 
+####
+        # Write all points to a .res file
+        #with open(co.resF,'a') as f:
+         #   f.write( 'Points:\n' )
+          #  for p in points :
+           #     f.write( 'Num '+str(p.Num) + ' Val ' + str(p.Val) + ' Arg ' + str(p.Arg))
+            #    if p.initial == True: f.write(" INITIAL")
+             #   f.write("\n")
+
+####
+
     Task.ReadSols('')
     Gr = Task.Gr
 
-    if co.CVNumOfIter > 0 :
-      if  co.CVNoBorder  :   #  на границах не учитываем
-        for s in co.notTrainingSets[ 0] : Gr.mu0[s]=0
-        for s in co.notTrainingSets[-1] : Gr.mu0[s]=0
+    if SvF.CVNumOfIter > 0 :
+      if  SvF.CVNoBorder  :   #  на границах не учитываем
+        for s in SvF.notTrainingSets[ 0] : Gr.mu0[s]=0
+        for s in SvF.notTrainingSets[-1] : Gr.mu0[s]=0
         NoRnoB = sum ( Gr.mu0[s]() for s in Gr.F[0].sR )
         print ('***** MSD_NoBorder', np.sqrt(Gr.F[0].NoR* Task.defMSDVal ( Gr, 0 ) /NoRnoB)*Gr.F[0].V.sigma)
 #        print '***** MSD_NoBorder', np.sqrt(Gr.F[0].NoR*Gr.F[0].MSD()()/NoRnoB)*Gr.F[0].V.sigma
@@ -115,9 +130,9 @@ def SvFstart19 ( Task ) :
     for f in Task.Funs :
       if not f.param :
 #        f.SaveTbl('')
-        if co.SavePoints : f.SavePoints()
-#        if co.SaveDeriv and f.type != 'p' :  f.SaveDeriv ( "" )
-#        if co.SaveGrid=='Y' and f.dim == 2 and f.type != 'p':     f.SaveGrid ( co.TranspGrid, '' )
+        if SvF.SavePoints : f.SavePoints()
+#        if SvF.SaveDeriv and f.type != 'p' :  f.SaveDeriv ( "" )
+#        if SvF.SaveGrid=='Y' and f.dim == 2 and f.type != 'p':     f.SaveGrid ( SvF.TranspGrid, '' )
     print ("EofCulc")
     print ('TIME: ', time.time() - full_start)
     return
@@ -125,19 +140,15 @@ def SvFstart19 ( Task ) :
 
 ##################################################################
 
-
-#optEstim = sys.float_info.max
-
-
 def testEstim (Gr, k) :  # k - ValidationSets
     Var_to_Grd()
-    for ifu, fu in enumerate(co.Task.Funs):
+    for ifu, fu in enumerate(SvF.Task.Funs):
 #        print ("BBBMMMMMMMMMMMMMMMMMMMMMMMMMMMMM", ifu, fu.name)
         if fu.type == 'tensor' : continue
         if fu.mu is None: continue                     #  2024.01
         if fu.V.dat is None or fu.param: continue       #  23.11
  #       print ("MMMMMMMMMMMMMMMMMMMMMMMMMMMMM", fu.name)
-#        if fu.NoR > co.CV_NoRs[0] : continue               # 25/04
+#        if fu.NoR > SvF.CV_NoRs[0] : continue               # 25/04
         spart = 0
         npart = 0
         if fu.CVerr is None: fu.CVerr = np.zeros(fu.NoR, np.float64)   # 04.2023
@@ -146,7 +157,7 @@ def testEstim (Gr, k) :  # k - ValidationSets
             if s >= fu.NoR        : continue                    #  25/04
             if np.isnan(fu.V.dat[s]) : continue
 
-            if not co.Task.DeltaVal is None: err = Task.DeltaVal(Gr, ifu, fu.V.dat, s) #** 2
+            if not SvF.Task.DeltaVal is None: err = Task.DeltaVal(Gr, ifu, fu.V.dat, s) #** 2
             elif  fu.MSDmode == 'MSDrel':    err = fu.delta_rel(s) #** 2          # 21.02.2023
             else:                            err = fu.delta(s) #** 2
    #         if s==0 :
@@ -170,7 +181,7 @@ def testEstim (Gr, k) :  # k - ValidationSets
     #              sumDelta = sum((Gr.F[d].tbl[s, Gr.F[d].V.num] != NDT) * Gr.F[d].delta ( s )() for s in ValidationSets[k])
     #             print sumTbl,sumFTbl, sumDelta/ npart,
 
-####    if co.CVNoBorder:  # на границах не учитываем
+####    if SvF.CVNoBorder:  # на границах не учитываем
 ####        if k == 0 or k == len(fu.ValidationSets) - 1:   continue
         fu.CVresult.append([spart, npart])
 
@@ -179,7 +190,7 @@ def getEstimCV(Gr) :
         printS ("\nParts |")      #    printS ("\n???????Parts |")
         Estim = 0
         NumOfFuns = 0
-        for ifu, fu in enumerate (co.Task.Funs ):
+        for ifu, fu in enumerate (SvF.Task.Funs ):
             if fu.type == 'tensor': continue
             if fu.mu is None : continue             #  20.01
             if (fu.V.dat is None) or fu.param:  continue
@@ -201,120 +212,107 @@ def getEstimCV(Gr) :
 
 def printMSD () :
     printS ("sol SD%: |")
-    for ifu, fu in enumerate(co.Task.Funs) :
+    for ifu, fu in enumerate(SvF.Task.Funs) :
             if  fu.type == 'tensor' : continue
             if fu.V.dat is None or fu.param: continue       #  23.11
 #            if fu.mu is None:  continue                    #  23.11
-            if not co.Task.DeltaVal is None: fu.MSDv = co.Task.defMSDVal ( Gr, ifu )
+            if not SvF.Task.DeltaVal is None: fu.MSDv = SvF.Task.defMSDVal ( Gr, ifu )
             else:
                 if fu.MSDmode == 'MSDrel':  fu.MSDv = fu.MSDrel(fu.measurement_accur)          # 21.02.2023
                 else :                      fu.MSDv = fu.MSDnan()
-#            if co.Task.defMSDVal is None : fu.MSDv = fu.MSDnan()  ### ()
- #           else                         : fu.MSDv = co.Task.defMSDVal ( Gr, ifu )
+#            if SvF.Task.defMSDVal is None : fu.MSDv = fu.MSDnan()  ### ()
+ #           else                         : fu.MSDv = SvF.Task.defMSDVal ( Gr, ifu )
             printS (fu.V.name, np.sqrt(fu.MSDv)*100.,' |')
     print ('')
 
 
 
-def get_sigCV( Penal, itera ):
-    co.CV_Iter = itera
-    Task = co.Task
+def get_sigCV( Penal ):
+    SvF.NoFuncCalls += 1                         #  для имени файла nl  и первой печать MSD
+    Task = SvF.Task
     Task.ReadSols('')
     if not (SvF.feasibleSol is None) : SvF.feasibleSol(Penal)
 
     print ('for Penal: ', Penal ) #, end=' ')
 
-    if SvF.OptMode == 'SurMinOpt' :
-  #      co.Use_var = True       # 29
-        setUse_var(True)       # 25.10
-
-        Gr = Task.createGr(Task, Penal)   # обновлем на каждой итерации
-        Grd_to_Var()
-        #co.Use_var = False       # 29
-        setUse_var(False)  # 25.10
-
-        resultss = solveProblemsNl(Gr, '', co.RunMode[0])               #  tmp
-        Gr.solutions.load_from(resultss[0])
-        Var_to_Grd()
-        Task.SaveSols('.tmp')
-
-        print ('OBJ',Gr.OBJ())
-        Estim = Gr.OBJ()
-
-    elif SvF.OptMode == 'SvF':
-
+    if SvF.OptMode == 'SvF':
         FillNaNAll ()
-     #   co.Use_var = True       # 29
         setUse_var(True)  # 25.10
-
         Gr = Task.createGr(Task, Penal)   # обновлем на каждой итерации
         Grd_to_Var()
-        #        co.Use_var = False       # 29
         setUse_var(False)  # 25.10
-
         for fu in Task.Funs :  fu.CVresult = []
+        if SvF.NoFuncCalls == 1 : printS (' Load on Start ');   printMSD()
 
-        if itera <= 0 : printS (' Load on Start ');   printMSD()
-
-        resultss = solveProblemsNl(Gr, '', co.RunMode[0])               #  tmp
+        resultss = solveProblemsNl(Gr, '', SvF.RunMode[0])          #  tmp  ПО ВСЕМ ТОЧКАМ
         Gr.solutions.load_from(resultss[0])
+
         Var_to_Grd()
-
         Task.SaveSols('.tmp')
-        print ('OBJ',Gr.OBJ())
+        tmpOBJ = Gr.OBJ()  # 26/08/09
+        print ('OBJ',tmpOBJ)
         printMSD()
-
 
         if not Task.OBJ_U is None :
             Estim = Task.OBJ_U(Task)()
             print ('**************KK=', Estim)
 
-        elif co.CVNumOfIter != 0 :
+        elif SvF.CVNumOfIter > 0 :                        #  КРОСС ВАДИД
             star = time.time()
 
-            if co.RunMode[2] != 'L':
-    #            resultss = solveProblemsNl ( Gr, co.notTrainingSets, co.RunMode[2] )
-                resultss = solveProblemsNl ( Gr, '*', co.RunMode[2] )              # All tests
+            if SvF.RunMode[2] != 'L':
+                resultss = solveProblemsNl ( Gr, '*', SvF.RunMode[2] )              # All tests
                 for nres, res in enumerate (resultss) :
                     Gr.solutions.load_from(res)
                     testEstim(Gr, nres)
-            else:       ## co.RunMode[2] == 'L' :
-                res_num = 0
- #               print(co.CV_NoSets, "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
-                for k in range(co.CV_NoSets):                                  # LOAD RES,  culculation
-                    #               if co.NotCulcBorder :  #  границ не считаем
+            else:                 ## SvF.RunMode[2] == 'L' :
+                for k in range(SvF.CV_NoSets):                                  # LOAD RES,  culculation
+                    #               if SvF.NotCulcBorder :  #  границ не считаем
                     #                  if k == 0 or k == len(ValidationSets) - 1:   1/0;  continue  #########  ???????????????????
                     #             printS (str(k)+' |')
-                    #                results = solveProblemsNl(Gr, [co.notTrainingSets[k]], co.RunMode[2])[0]  #!! РАБОТАЕТ ТОЛЬКО ДЛЯ ОДНОГО resultss
-                    results = solveProblemsNl(Gr, k, co.RunMode[2])[0]  #!! РАБОТАЕТ ТОЛЬКО ДЛЯ ОДНОГО resultss
-                    res_num += 1
+                    #                results = solveProblemsNl(Gr, [SvF.notTrainingSets[k]], SvF.RunMode[2])[0]  #!! РАБОТАЕТ ТОЛЬКО ДЛЯ ОДНОГО resultss
+                    results = solveProblemsNl(Gr, k, SvF.RunMode[2])[0]  #!! РАБОТАЕТ ТОЛЬКО ДЛЯ ОДНОГО resultss
                     Gr.solutions.load_from(results)
                     testEstim(Gr, k)
 
             Estim = getEstimCV(Gr)
             print ('\tEstim% '+str(Estim)+"\tTime  "+ str(time.time() - star))
-    #        print('OBJ', Gr.OBJ())
         else : Estim = -1
+
+    elif SvF.OptMode == 'SurMinOpt' :                    #  например, для минимизации невязки
+        setUse_var(True)       # 25.10
+        Gr = Task.createGr(Task, Penal)   # обновлем на каждой итерации
+        Grd_to_Var()
+        setUse_var(False)  # 25.10
+        resultss = solveProblemsNl(Gr, '', SvF.RunMode[0])               #  tmp
+        Gr.solutions.load_from(resultss[0])
+        Var_to_Grd()
+        Task.SaveSols('.tmp')
+        tmpOBJ = Gr.OBJ()  # 26/08/09
+        print ('OBJ',tmpOBJ)
+        Estim = tmpOBJ
 
     elif SvF.OptMode == 'SurMin':
        Estim = SvF.ObjectiveFun (Penal)
 
-    if Estim < co.optEstim :
-            co.optEstim = Estim
+    if Estim < SvF.optEstim :
+            SvF.optEstim = Estim
+            SvF.optOBJ = tmpOBJ
             Task.RenameSols( '.tmp', '.sol' )
+            setMuToTeach_k('')   #  mu = 1   ########  26/04/24
+            Task.ReadSols()                  ########  26/04/24  обновить для пдсчета Complexity в print_res
+            Grd_to_Var()                     ########  28/04/24
+            write_res(Penal)
+    return Estim
 
-            setMuToTeach_k('')     #  mu = 1   ##############  26/04/24
-            Task.ReadSols()                    ##############  26/04/24
-            Grd_to_Var()                       ##############  28/04/24
-
-            with open(co.resF,'w') as f:      #  RES filewrite
-#                print >> f, [p for  p in Penal]
+def write_res (Penal):
+            with open(SvF.resF,'w') as f:      #  RES filewrite
                 f.write (str(Penal))
-                for fu in Task.Funs :           # v21
+                for fu in SvF.Task.Funs :           # v21
                       if fu.type == 'tensor': continue
                       if fu.V.dat is None or fu.param: continue  # 23.11
                       str_wr = fu.nameFun()+' '
-                      if co.CVNumOfIter > 0 :
+                      if SvF.CVNumOfIter > 0 :
                           if fu.MSDmode == 'MSDrel':   str_wr += " CV% " + str(fu.sCrVa*100)
                           else:                     str_wr += " CV% " + str(fu.sCrVa/fu.V.sigma*100)
                       str_wr += ' SD% ' + str(np.sqrt(fu.MSDv)*100) + " CV " + str(fu.sCrVa) \
@@ -323,13 +321,8 @@ def get_sigCV( Penal, itera ):
                       f.write ( '\n' + str_wr )
                       print (str_wr)
                       to_logOut ( str_wr )
-                f.write( '\n'+'Estim ' + str(Estim))
-                to_logOut ( 'Estim ' + str(Estim) )
-                to_logOut ( 'OBJ ' + str(Gr.OBJ()) )
-
-#                print >> f, 'Estim',Estim
-                if Task.print_res != None :
-                    Task.print_res(Task, Penal, f)
-    return Estim
-
-
+                f.write( '\n'+'Estim ' + str(SvF.optEstim))
+                to_logOut ( 'Estim ' + str(SvF.optEstim) )
+                to_logOut ( 'OBJ ' + str(SvF.optOBJ) )
+                if SvF.Task.print_res != None :
+                    SvF.Task.print_res(SvF.Task, Penal, f)

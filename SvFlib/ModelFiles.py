@@ -54,6 +54,7 @@ def MngFile ( ) :
             if p + 4 == len(f):
                     mngF.append (f)
                     print('   ', len(mngF), ' - ', f)
+        """
 #    clipboard
         clipboardNum = -1
         clipboardBuf = ''
@@ -71,16 +72,17 @@ def MngFile ( ) :
                     clipboardNum = len(mngF)
                     print('   ', len(mngF), 'from clipbord:  '+ TaskName )
         except tk.TclError:  pass
-
+        """
         if len (mngF) > 1:  file_num = int(input('Choiсe file number: '))-1
         else :              file_num = 0
+        """        
         if clipboardNum == file_num +1:
             with open(mngF[file_num], "w", encoding="utf-8") as f:
                 f.write(f"\t\t\t\t\t\t\t#--- {datetime.now()} ---\n")
                 f.write(clipboardBuf)
                 f.write("\n")
                 print(f"Буфер обмена сохранён в {mngF[file_num]}")
-
+        """
         print('\n********************** menu file = ', mngF[file_num], '********************')
         return mngF[file_num]
 
