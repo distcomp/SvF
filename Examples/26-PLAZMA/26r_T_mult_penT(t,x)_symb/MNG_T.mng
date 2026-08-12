@@ -1,0 +1,82 @@
+SvF.maxJobs   = 1
+#SvF.solverOptVal ["linear_solver"] = 'ma86'
+
+SchemeD1 = 'Backward'  #'Forward'  # Central
+
+#OptStep = [5.9722560864744946e-05, -1.0981479472773896e-06]
+
+Dat = SELECT  s, t_tot AS t, rho AS r, T, ROWNUM from ../combined_Te_data_sn_26r.txt #where ROWNUM<32000
+#SELECT:  * from ../combined_T_data.txt as Dat
+
+t_old = 0
+r_old = 0
+for r in Dat.sR :
+	if Dat.t[r] != t_old:
+		print ( r, Dat.s[r-1], Dat.s[r], Dat.t[r] - t_old, r-r_old )
+		if ((Dat.t[r] - t_old > 0.0032) or (Dat.t[r] - t_old < 0.0029) ) :
+			print ('****************')
+		t_old = Dat.t[r] 
+		r_old = r
+
+
+Ntime = int(Dat.NoR/9.)
+print (Ntime)
+
+
+SET:	r ∈ [, , -25]
+	t ∈ [0, , 0.000999999]
+#	t ∈ [0, , 0.001]
+
+VAR:	#T (t,r) >=0; <2; AddGap  
+	Tt (t); AddGap
+	Tr (r);  Tr(0.5) = 1
+	T (t,r) = Tt(t) * Tr(r) ; AddGap 
+#EQ:	T(t,r) = Tt(t) * Tr(r)
+					########### разметка разрывов
+print ('разметка разрывов')
+s_old = Dat.s[0]
+for r in Dat.sR :
+	if ( s_old == Dat.s[r] ) : continue
+	ni=0			# вставлено точек между образцами
+	for ti in t.NodS :
+		if (t.Val[ti] >= Dat.t[r-1]) and (t.Val[ti] <= Dat.t[r]):
+			Tt.gap[ti]=0
+			T.gap[ti,:]=0
+			ni += 1
+	if ni!=3:  print (r, ni)		
+	if ni < 3 :
+		print ("step between s too small.   See after ", s_old)
+		exit(-1)			
+	s_old = Dat.s[r]
+
+CV: 	NumOfSets = 5; 	GroupByParam = 't'
+RUN: 	MaxIter=-1;   RunMode='S&S'
+
+OBJ:  	T.Compl( Penal[0],Penal[1] ) + T.MSD()
+#OBJ:  	Tt.Compl( Penal[0] ) +Tr.Compl( Penal[1] ) + T.MSD()
+
+for ti in t.mNodSm :						#  убираем мусор
+	if Tt.gap[ti-1]==0 and Tt.gap[ti]==0 and Tt.gap[ti+1]==0 :  
+		Tt.grd[ti] = nan  #NaN
+		T.grd[ti,:]= nan
+
+SvF.CommaFormatter=True
+
+PLOT: Tr,xlab='ρ',ylab='Mρ',lab='Mρ'
+
+#SvF.Xsize = 13.1
+SvF.Xsize = 30
+SvF.Ysize = 13
+
+SvF.LEVEL_FONT_SIZE = 0
+
+PLOT: T,dms=1.2, xlab_x=1.02,xlab_y=0.03, ylab_x=0,ylab_y=1.04,ylab='ρ', tlab_x=1.08,tlab='T, keV'
+PLOT: Tt,ylab='Mt',lab='Mt',xlab_y=0.07,xlab_x=0.96
+
+SvF.X_lim = [0, 1]
+PLOT: T,dms=1.2,lw=1, xlab_x=1.02,xlab_y=0.03, ylab_x=0,ylab_y=1.04,ylab='ρ', tlab_x=1.08,tlab='T, keV', file="T_0_1" 
+PLOT: Tt,ylab='Mt',lab='Mt',xlab_y=0.07,xlab_x=0.96, file="Tt_0_1"
+
+EoF
+
+
