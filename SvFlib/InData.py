@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 
 #from  numpy import *
 import numpy as np
@@ -28,7 +28,7 @@ import openpyxl
   #    try :
    #         fi = open ( InFile, "r")
     #  except IOError as e:
-     #       print ("не удалось открыть файл", InFile)
+     #       print ("РЅРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р»", InFile)
       #      return None
 #      else :
  #       ret = []
@@ -48,7 +48,7 @@ def ReadSetInf ( ReadFrom, printL=0, Rect = [] ) :
       try :
             fi = open ( ReadFrom, "r")
       except IOError as e:
-            print ("не удалось открыть файл", ReadFrom)
+            print ("РЅРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р»", ReadFrom)
             return None, None, None, None;
       else :
               cols = ['X','Y','Z']
@@ -120,11 +120,11 @@ def Get_Ver_Typ_cols ( head ):
             else :
                 return 0, None, None
 
-def Get_File_Etc_Ver_Type (ReadFrom ):   # Ver = 0, если чужой файл
+def Get_File_Etc_Ver_Type (ReadFrom ):   # Ver = 0, РµСЃР»Рё С‡СѓР¶РѕР№ С„Р°Р№Р»
     try:
         fi = open(ReadFrom, "r")
     except IOError as e:
-        print("не удалось открыть файл", ReadFrom)
+        print("РЅРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р»", ReadFrom)
         return None, None, None, None;
 
     line1 = fi.readline()
@@ -144,7 +144,7 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
       try :
             fi = open ( ReadFrom, "r")
       except IOError as e:
-            print ("не удалось открыть файл", ReadFrom)
+            print ("РЅРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р»", ReadFrom)
             return None, None, None, None;
       else :
               if printL : print ("ReadSol from", ReadFrom)
@@ -153,13 +153,13 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
 #              cols = fi.readline().split()
 #              if printL : print "ReadSol from", ReadFrom,  cols,
               if not Ver > 0 :
-                  print ("**************** Файл:", ReadFrom, 'не является решением')
+                  print ("**************** Р¤Р°Р№Р»:", ReadFrom, 'РЅРµ СЏРІР»СЏРµС‚СЃСЏ СЂРµС€РµРЅРёРµРј')
                   exit (-1)
-              if Typ != 'tbl' :                                   # 2-мерный
+              if Typ != 'tbl' :                                   # 2-РјРµСЂРЅС‹Р№
                   x_poi = fi.readline().split()
                   x1 = np.zeros( len(x_poi), np.float64 )
                   for j in range(len(x1)) : x1[j] = float(x_poi[j])
-              else :                                                  # 1-мерный
+              else :                                                  # 1-РјРµСЂРЅС‹Р№
                   x1  = []    #   ?????????????????
               tb = np.loadtxt (fi,'double')
               fi.close()
@@ -167,7 +167,7 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
 #              x2 = []
  #             for i in range(tb.shape[0]) : x2.append(tb[i,0])
   #            print (ReadFrom, tb, tb.shape)
-              if str(tb.shape) == '()':    # функция число без аргументов
+              if str(tb.shape) == '()':    # С„СѓРЅРєС†РёСЏ С‡РёСЃР»Рѕ Р±РµР· Р°СЂРіСѓРјРµРЅС‚РѕРІ
                   grd = tb
                   x2 = []
    #               print (grd)
@@ -182,4 +182,4 @@ def ReadSolInf ( ReadFrom, printL=0 ) :
 
 ##############################
 
-####   УБРАН БОЛЬШОЙ КУСОК -  СМ ВЕРСИЯ  29 !!!!!!
+####   РЈР‘Р РђРќ Р‘РћР›Р¬РЁРћР™ РљРЈРЎРћРљ -  РЎРњ Р’Р•Р РЎРРЇ  29 !!!!!!

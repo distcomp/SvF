@@ -1,7 +1,7 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 from __future__ import division
 
-import COMMON as SvF            #   общий импорт
+import COMMON as SvF            #   РѕР±С‰РёР№ РёРјРїРѕСЂС‚
 #from  numpy import *            #    -- / ---
 import numpy as np
 
@@ -40,7 +40,7 @@ def getObjectNotSet(name):
         if o.name == name: return o
     return None
 ##################################################################            Set
-def findSetByName(Sets, name):   #  ищем в    Sets  !!
+def findSetByName(Sets, name):   #  РёС‰РµРј РІ    Sets  !!
         for g in Sets:
             #            print 'Set', g.name, name, g.step
             if g.name == name:

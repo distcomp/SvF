@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 from   copy   import *
 from Object import *
 
@@ -16,7 +16,7 @@ class Vari ():                  #  var  ###################################
       self.data_name = name + '-data'
       if fld_name == '' :   self.fld_name = name
       else :                self.fld_name = fld_name
-      self.avr     = 0          #  для вычитания
+      self.avr     = 0          #  РґР»СЏ РІС‹С‡РёС‚Р°РЅРёСЏ
       self.sigma   = 1
       self.sigma2  = 1
       self.average = 0
@@ -29,7 +29,7 @@ class Vari ():                  #  var  ###################################
  # def Oprint(self) :
   #    print ('Oprint', self.Otype, self.name, "avr", self.avr, "sig", self.sigma)
 
-  def Normalization (self, VarNormalization) :    ####  из dat вычитаем  self.avr
+  def Normalization (self, VarNormalization) :    ####  РёР· dat РІС‹С‡РёС‚Р°РµРј  self.avr
         if self.dat is None :  return
         NoR = 0
         self.average = 0

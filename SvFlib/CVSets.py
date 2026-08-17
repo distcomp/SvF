@@ -20,7 +20,7 @@ def CVmakeSets ( NoR =0, CV_NumSets =7, GroupBy=1,  CV_Margin=0, NumOfIter=None 
         CVarray = [ int(i/GroupBy) for i in range(NoR)]
     #    print ("GGGGGGGGGG", CVarray)
     else:
-        print("GGGGGGGGGG", GroupBy )#CVarray)
+#        print("GGGGGGGGGG", GroupBy )#CVarray)
         if type(GroupBy) is str:
             GroupBy = SvF.currentTab.dat(GroupBy)
         CVarray = GroupBy.tolist()

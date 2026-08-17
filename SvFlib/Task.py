@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 from __future__ import division
 
 from Object import *
@@ -58,7 +58,7 @@ class TaskClass :
         self.Tbls    = []
         self.Objects = []
 #        self.Sets    = SvF.Sets
- #       self.Funs    = SvF.Funs     #  Проблеммы с Funs  м.б. в Pyoma
+ #       self.Funs    = SvF.Funs     #  РџСЂРѕР±Р»РµРјРјС‹ СЃ Funs  Рј.Р±. РІ Pyoma
   #      self.Tbls    = SvF.Tbls
    #     self.Objects = SvF.Objects
         self.createGr  = None
@@ -74,7 +74,7 @@ class TaskClass :
 
     def ReadSols (self, ext = '' ) : #, printL = 0 ) :
         for f in self.Funs :
-            if (not f.param) and f.type == 'tensor':   # считываем перед символьной функцией
+            if (not f.param) and f.type == 'tensor':   # СЃС‡РёС‚С‹РІР°РµРј РїРµСЂРµРґ СЃРёРјРІРѕР»СЊРЅРѕР№ С„СѓРЅРєС†РёРµР№
                 if ext == '':      f.ReadSol()
                 else:              f.ReadSol( f.nameFun() + ext )
                 print (f.nameFun(), f.type)

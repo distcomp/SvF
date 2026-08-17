@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 
 #from  numpy import *
 import numpy as np
@@ -14,7 +14,7 @@ GRADpRAD = 180/np.pi
 CLASS_TXT = type('a')
 CLASS_INT = type(1)
 
-def smart_split(s,by):   # Универсальная функция split, игнорирующая кавычки и []
+def smart_split(s,by):   # РЈРЅРёРІРµСЂСЃР°Р»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ split, РёРіРЅРѕСЂРёСЂСѓСЋС‰Р°СЏ РєР°РІС‹С‡РєРё Рё []
     result = []
     buf = []
     in_single = False
@@ -42,7 +42,7 @@ def smart_split(s,by):   # Универсальная функция split, игнорирующая кавычки и [
 
 
 def ireplace(s: str, old: str, new: str, count: int = 0) -> str:
-    # заменяет old ? new без учёта регистра; count=0 — все вхождения
+    # Р·Р°РјРµРЅСЏРµС‚ old ? new Р±РµР· СѓС‡С‘С‚Р° СЂРµРіРёСЃС‚СЂР°; count=0 вЂ” РІСЃРµ РІС…РѕР¶РґРµРЅРёСЏ
     pattern = re.compile(re.escape(old), flags=re.IGNORECASE)
     return pattern.sub(new, s, count=count)
 
@@ -83,14 +83,14 @@ def Interpolate ( ar ) :
                     ar[ii] = ar[ib] * (i-ii)/float(i-ib) + a * (ii-ib)/float(i-ib)    #a=ar[i]
             ib = i
 
-def Extrapolate ( ar ) :                    #  предполагается что не заполнен только хвост
+def Extrapolate ( ar ) :                    #  РїСЂРµРґРїРѕР»Р°РіР°РµС‚СЃСЏ С‡С‚Рѕ РЅРµ Р·Р°РїРѕР»РЅРµРЅ С‚РѕР»СЊРєРѕ С…РІРѕСЃС‚
     ib = 0
     for i, a in enumerate (ar) :
 #        print (i,a)
         if ib == 0 :
-            if np.isnan(a) : continue             #  ищем не пустую
+            if np.isnan(a) : continue             #  РёС‰РµРј РЅРµ РїСѓСЃС‚СѓСЋ
             else : ib = 1
-        elif np.isnan (a) :        #  едем в конец ищем  nan
+        elif np.isnan (a) :        #  РµРґРµРј РІ РєРѕРЅРµС† РёС‰РµРј  nan
             ar[i] = ar[i-1] + ( ar[i-1] - ar[i-2] )
 #            print (ar[i])
 
@@ -125,8 +125,8 @@ def floatGradNaN ( txt ) :
             return float(txt)
         except:
             try :
-#                gra = txt.index('°')
-                gra = txt.find('°')
+#                gra = txt.index('В°')
+                gra = txt.find('В°')
        #         print ('GRAD:',txt, gra)
                 if gra >= 0:
                     ret = float(txt[:gra])
@@ -134,7 +134,7 @@ def floatGradNaN ( txt ) :
                     minut = txt[gra + 1:]
                     minut = minut.replace ("''", '"')
                     if len (minut) == 0: return ret
-                    pmin = minut.find (chr(8242))      #   chr(8242)    '?'    минуты
+                    pmin = minut.find (chr(8242))      #   chr(8242)    '?'    РјРёРЅСѓС‚С‹
  #                   print (pmin, minut,minut[2],ord(minut[2]))
 #                    print (ord(minut[2]),ord(minut[5]))
                     if pmin == -1: pmin = minut.find ("'")
@@ -143,14 +143,14 @@ def floatGradNaN ( txt ) :
 
 #                    print (pmin, minut,minut[2],ord(minut[2]),ord("?"))
  #                   exit(-1)
-  #                  print ( ord('?'), '29°45?11?')
+  #                  print ( ord('?'), '29В°45?11?')
                     if pmin == -1:  return ret + float(minut) / 60. * np.sign (ret)
 
                     ret += float(minut[:pmin]) / 60. * np.sign(ret)
                     sec = str(minut[pmin + 1:])
 #                    print ('SS',sec)
                     if len (sec) == 0: return ret
-                    psec = sec.find (chr(8243))      #   chr(8243)    '?'    секунды
+                    psec = sec.find (chr(8243))      #   chr(8243)    '?'    СЃРµРєСѓРЅРґС‹
 #                    print ('S', psec, sec, sec[4], ord(sec[4]))
                     if psec ==-1: psec = sec.find ('"')
  #                   if psec != -1: psec = sec.find (chr(34))
@@ -218,7 +218,7 @@ def is_str(txt):
     return ( type(txt) == type('a') )
 
 
-def printS ( *ss ) :    # если в конце собранной строки стоит '|' - то нет '\n'
+def printS ( *ss ) :    # РµСЃР»Рё РІ РєРѕРЅС†Рµ СЃРѕР±СЂР°РЅРЅРѕР№ СЃС‚СЂРѕРєРё СЃС‚РѕРёС‚ '|' - С‚Рѕ РЅРµС‚ '\n'
     st = ''
     for i,s in enumerate(ss) :
         if i!=0 : st += ' ' + str(s)
@@ -228,7 +228,7 @@ def printS ( *ss ) :    # если в конце собранной строки стоит '|' - то нет '\n'
     sys.stdout.write(st)
     return
 
-                                            #  1-ЫЙ столбец НЕ отделяет !
+                                            #  1-Р«Р™ СЃС‚РѕР»Р±РµС† РќР• РѕС‚РґРµР»СЏРµС‚ !
 def ReadSvF ( ReadFrom, printL=0 ) :      # return ftype, vers, cols, x1, tbl
         ftype = 'tbl'
         vers  = 0
@@ -236,12 +236,12 @@ def ReadSvF ( ReadFrom, printL=0 ) :      # return ftype, vers, cols, x1, tbl
         try :
             fi = open ( ReadFrom, "r")
         except IOError as e:
-            print ("не удалось открыть файл", ReadFrom)
+            print ("РЅРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р»", ReadFrom)
             return None, None, None, None, None;
         else :
             if printL : print ("ReadSol from", ReadFrom, )
             cols = fi.readline().split()
-            if isfloat(cols[0]) :                       # это число а не имя - таблица без назв столбцов
+            if isfloat(cols[0]) :                       # СЌС‚Рѕ С‡РёСЃР»Рѕ Р° РЅРµ РёРјСЏ - С‚Р°Р±Р»РёС†Р° Р±РµР· РЅР°Р·РІ СЃС‚РѕР»Р±С†РѕРІ
                 fi.seek(0)
                 tbl = np.loadtxt (fi,'double')
                 cols = ['name'+str(c) for c in range(tbl.shape[1]) ]

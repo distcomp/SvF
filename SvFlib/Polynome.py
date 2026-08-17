@@ -1,11 +1,11 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 from __future__ import division
 #from  numpy import *
 
 from copy   import *
 #from shutil import move
 
-class Monom () :                                #  проба 24.11
+class Monom () :                                #  РїСЂРѕР±Р° 24.11
     def __init__(self, coef, par_num, vars=[], pows=[]):
         self.coef = coef
         self.par_num = par_num
@@ -13,7 +13,7 @@ class Monom () :                                #  проба 24.11
         self.vars = vars
 
 class Polyno () :
-    def __init__(self, txt, par_name, var_names):   # без  скобок
+    def __init__(self, txt, par_name, var_names):   # Р±РµР·  СЃРєРѕР±РѕРє
         self.Size = 0
         self.monoms = []
         self.txt = txt.replace (' ','')
@@ -22,10 +22,10 @@ class Polyno () :
         self.make_monoms()
 
     def make_monoms(self):
-        mon_txt = []       # мономы
+        mon_txt = []       # РјРѕРЅРѕРјС‹
         print (self.txt)
         t_last = -1
-        for nt, t in enumerate (self.txt) :    # делим на мономы
+        for nt, t in enumerate (self.txt) :    # РґРµР»РёРј РЅР° РјРѕРЅРѕРјС‹
    #         print (nt,t)
             if t == '+' or t=='-' :
                 mon_txt.append (self.txt[max(t_last,0):nt])
@@ -46,7 +46,7 @@ class Polyno () :
             parts1 = m.split('*')          # '**' ->  ''
             parts = []
             mode = ''
-            for np in range (len(parts1)):   #  собираем X**4
+            for np in range (len(parts1)):   #  СЃРѕР±РёСЂР°РµРј X**4
                 if parts1[np] == '' : mode = '**'
                 elif mode == '**':
                     parts[-1] += '**' + parts1[np]

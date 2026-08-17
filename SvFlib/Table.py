@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 
 #from   numpy import *
 #import   numpy as np
@@ -28,7 +28,7 @@ def getCurrentFieldData (f_name) :
     return SvF.currentTab.getFieldData (f_name)
 
 
-def ParseSelect30(buf):  ##  разбор  Select
+def ParseSelect30(buf):  ##  СЂР°Р·Р±РѕСЂ  Select
     buf = buf.strip().replace(', ',",")
 #    print (buf)
     part = SplitIgnor(buf, 'Select ')
@@ -60,7 +60,7 @@ def  Treat_FieldNames (raw_line) :
   #              print ('tb.name',tb.name, ' in ', raw_line)
                 if findNamePos(raw_line, tb.name ) < 0 : continue
                 tb_name = tb.name
-                if tb_name == 'SvF.currentTab' : tb_name = 'currentTab'    # ЗАПЛАТКА для обработки  SvF.currentTab
+                if tb_name == 'SvF.currentTab' : tb_name = 'currentTab'    # Р—РђРџР›РђРўРљРђ РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё  SvF.currentTab
     #            print('\nTABB ' + raw_line, tb_name)
                 pars = parser (raw_line)
                 itn = 0
@@ -243,7 +243,7 @@ class Table (Object):
         if self.name == '' : self.name = 'currentTab'
         if SvF.printL : print ('\nSelect', fields, '\n  from', fromFile, 'name:'+self.name+'|')
 #        print('*Table*', fields, ' from', fromFile, 'name:'+self.name+'|')
-##?        ff_nn = SplitIgnor ( fromFile, ' AS ' )     # Имя файла и таблицы
+##?        ff_nn = SplitIgnor ( fromFile, ' AS ' )     # РРјСЏ С„Р°Р№Р»Р° Рё С‚Р°Р±Р»РёС†С‹
 
         _fields = self.fields_str.split(',')                   # Fields
         if SvF.printL : print (_fields)
@@ -253,7 +253,7 @@ class Table (Object):
             if len(part) == 2 : name = part[1]              # As
             else              : name = part[0]              # the same name
             self.Flds.append ( Field ( name, src_name ) )
-#            setattr(Table, name, self.Flds[-1])  #  НЕ ПОЙДЕТ. В разных таблицах одинаковые имена  :)
+#            setattr(Table, name, self.Flds[-1])  #  РќР• РџРћР™Р”Р•Рў. Р’ СЂР°Р·РЅС‹С… С‚Р°Р±Р»РёС†Р°С… РѕРґРёРЅР°РєРѕРІС‹Рµ РёРјРµРЅР°  :)
             if src_name.upper() == 'ROWNUM' :  self.Flds[-1].src_num = -1
             if SvF.printL : self.Flds[-1].Mprint()
 #            self.Flds[-1].Mprint()
@@ -268,14 +268,14 @@ class Table (Object):
         root, ext = splitext(self.fromFile.upper())
 #        if   getTblNum(self.fromFile) !=-1 :  self.Read30_TBL ( )
         if   not getTbl(self.fromFile) is None :  self.Read30_TBL ( )
-#        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( where_condition )  # надо переписать
-        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( )  # надо переписать
+#        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( where_condition )  # РЅР°РґРѕ РїРµСЂРµРїРёСЃР°С‚СЊ
+        elif not getFun(self.fromFile) is None :  self.Read28_FUN ( )  # РЅР°РґРѕ РїРµСЂРµРїРёСЃР°С‚СЊ
         else :
             self.fromFile = com.DataPath + self.fromFile
             if     '.XLSX' == ext :                   self.Read30_XLSX( )
             elif   '.JSON' == ext :                   self.Read30_JSON( )
-            elif   '.KML'  == ext :                   self.Read21_KML ( where_condition )  # надо переписать
-            elif   '.ASC'  == ext :                   self.Read27_ASC ( where_condition )  # надо переписать
+            elif   '.KML'  == ext :                   self.Read21_KML ( where_condition )  # РЅР°РґРѕ РїРµСЂРµРїРёСЃР°С‚СЊ
+            elif   '.ASC'  == ext :                   self.Read27_ASC ( where_condition )  # РЅР°РґРѕ РїРµСЂРµРїРёСЃР°С‚СЊ
             else :                                    self.Read30_TXT ( )
 
         print (self.name, ' NoR =', self.NoR, '\n')
@@ -300,7 +300,7 @@ class Table (Object):
             self.Flds[pos].tb = np.zeros ( (self.NoR), np.float64 )
 
 
-    def Evaluate ( self, evalFld, byFld, byVal ) :   # оесортировано
+    def Evaluate ( self, evalFld, byFld, byVal ) :   # РѕРµСЃРѕСЂС‚РёСЂРѕРІР°РЅРѕ
         evalFldPoi = self.getField (evalFld)
         byFldPoi   = self.getField (byFld)
         search_beg = 0
@@ -366,12 +366,12 @@ class Table (Object):
         self.NoR = NoR
         self.sR = range(self.NoR)
 
-    def SortBy (self, f_name, reverse=False) :   #  от меньшего к большему
+    def SortBy (self, f_name, reverse=False) :   #  РѕС‚ РјРµРЅСЊС€РµРіРѕ Рє Р±РѕР»СЊС€РµРјСѓ
         arr = self.getField( f_name ).tb
         indexed_arr = [(i, arr[i]) for i in range(self.NoR)]
         sorted_indexed_arr = sorted(indexed_arr, key=lambda x: x[1], reverse=reverse)
         sorted_indices = [x[0] for x in sorted_indexed_arr]
-#        print("Индексы исходных элементов:", sorted_indices)
+#        print("РРЅРґРµРєСЃС‹ РёСЃС…РѕРґРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ:", sorted_indices)
   #      for x in sorted_indexed_arr:  print (x[1],arr[x[0]])
         for i in sorted_indices:  print (arr[i])
         for f in self.Flds :
@@ -380,7 +380,7 @@ class Table (Object):
             f.tb = tb
 #            print (f.name, f.tb)
 
-    def AppendRec(self, *Parts):   # parts of Rec   ? что-то странное
+    def AppendRec(self, *Parts):   # parts of Rec   ? С‡С‚Рѕ-С‚Рѕ СЃС‚СЂР°РЅРЅРѕРµ
             for i_part, part in enumerate(Parts):
 #                print (i_part, part, self.Flds[i_part].tb)
                 self.Flds[i_part].tb = append (self.Flds[i_part].tb, part)
@@ -388,10 +388,10 @@ class Table (Object):
             self.NoR += 1
             self.sR = range (self.NoR)
 
-    def AppendRec1(self, Vals):  # последовательно список значений для новой записи
+    def AppendRec1(self, Vals):  # РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕ СЃРїРёСЃРѕРє Р·РЅР°С‡РµРЅРёР№ РґР»СЏ РЅРѕРІРѕР№ Р·Р°РїРёСЃРё
         for iVal, f in enumerate (self.Flds):
 #        for i_part, part in enumerate(Vals):
-            if self.NoR == 0 :      # нет таблиц
+            if self.NoR == 0 :      # РЅРµС‚ С‚Р°Р±Р»РёС†
                 f.tb = np.zeros ( 1, np.float64 )
                 f.tb = Vals[iVal]
             else :
@@ -418,7 +418,7 @@ class Table (Object):
    ###             self.tbl[i][0], self.tbl[i][1] = WGS84toGausKru(self.tbl[i][1], self.tbl[i][0], 0)
 #            print 'GaussKruger :', self.tbl[0][0], self.tbl[0][1]
 
-    def where_con_list (self) :          #    создает список номеров аргументов
+    def where_con_list (self) :          #    СЃРѕР·РґР°РµС‚ СЃРїРёСЃРѕРє РЅРѕРјРµСЂРѕРІ Р°СЂРіСѓРјРµРЅС‚РѕРІ
         if self.where_condition is None:  return
         con_list = []
         for a in self.fields_str.split(','):
@@ -434,7 +434,7 @@ class Table (Object):
         self.con_list = con_list
 
 
-    def CheckWhere (self, NoR) :       #   проверка  where
+    def CheckWhere (self, NoR) :       #   РїСЂРѕРІРµСЂРєР°  where
         if self.where_condition is None: return True
         args = []
         for ff in self.con_list : args.append (self.Flds[ff].tb[NoR])
@@ -446,12 +446,12 @@ class Table (Object):
         import json
         import pandas as pd
 
-        # Считываем JSON
+        # РЎС‡РёС‚С‹РІР°РµРј JSON
         with open(self.fromFile, "r", encoding="utf-8") as f:
             obj = json.load(f)
 
-            columns = obj["columns"]  # список имён столбцов
-            data = obj["data"]  # список строк (каждая строка — список значений)
+            columns = obj["columns"]  # СЃРїРёСЃРѕРє РёРјС‘РЅ СЃС‚РѕР»Р±С†РѕРІ
+            data = obj["data"]  # СЃРїРёСЃРѕРє СЃС‚СЂРѕРє (РєР°Р¶РґР°СЏ СЃС‚СЂРѕРєР° вЂ” СЃРїРёСЃРѕРє Р·РЅР°С‡РµРЅРёР№)
             print ("TablesNames", columns, type(columns))
        #     print(data)
             self.setField_src_num(columns)
@@ -584,7 +584,7 @@ class Table (Object):
             self.NoR = NoR
             print (NoR)
 
-    def setField_src_num( self, names ):        # ИСПОЛЬЗОВАТЬ В ДР ФУНКЦИЯХ !
+    def setField_src_num( self, names ):        # РРЎРџРћР›Р¬Р—РћР’РђРўР¬ Р’ Р”Р  Р¤РЈРќРљР¦РРЇРҐ !
             for fld in self.Flds:
                 if fld.src_name == '*':
                     for na in names: self.Flds.append(Field(na, na))
@@ -602,7 +602,7 @@ class Table (Object):
 
     def Read28_FUN(self) :
             srcFun = getFun ( self.fromFile )
-            names = []                                      # имена аргументов и функции
+            names = []                                      # РёРјРµРЅР° Р°СЂРіСѓРјРµРЅС‚РѕРІ Рё С„СѓРЅРєС†РёРё
             for a in srcFun.A:   names.append ( a.name )
             names.append(srcFun.V.name)
 
@@ -662,7 +662,7 @@ class Table (Object):
 
     def Read30_TBL( self ) :    #  tbl -> fld.tb
             source_tb = getTbl ( self.fromFile )
-            names = []                                      # имена аргументов и функции
+            names = []                                      # РёРјРµРЅР° Р°СЂРіСѓРјРµРЅС‚РѕРІ Рё С„СѓРЅРєС†РёРё
             for f in source_tb.Flds:   names.append ( f.name )
 #            print ('source_tb.Flds:', names)
             self.setField_src_num ( names )
@@ -689,7 +689,7 @@ class Table (Object):
 
 
     def Read21_KML(self, where ) :   
-        srcFlds = []                                            # обманем - смастерим таблицу
+        srcFlds = []                                            # РѕР±РјР°РЅРµРј - СЃРјР°СЃС‚РµСЂРёРј С‚Р°Р±Р»РёС†Сѓ
         srcFlds.append ( Field ( 'X', 'X' ) );  srcFlds[0].tb = [] 
         srcFlds.append ( Field ( 'Y', 'Y' ) );  srcFlds[1].tb = []
 
@@ -746,21 +746,21 @@ class Table (Object):
             self.NoR = NoR
 
 
-    def Read30_TXT( self ) :   #    tbl -> fld.tb  №№№ !!! С кодировкой Видоуз не работает - съедает первую строку
+    def Read30_TXT( self ) :   #    tbl -> fld.tb  в„–в„–в„– !!! РЎ РєРѕРґРёСЂРѕРІРєРѕР№ Р’РёРґРѕСѓР· РЅРµ СЂР°Р±РѕС‚Р°РµС‚ - СЃСЉРµРґР°РµС‚ РїРµСЂРІСѓСЋ СЃС‚СЂРѕРєСѓ
         if SvF.printL: print ('Read25_TXT')
         with open( self.fromFile, "r") as fi:
-            line1 = fi.readline().strip('\ufeff\n')    # какая-то кодировка после Видоуз
+            line1 = fi.readline().strip('\ufeff\n')    # РєР°РєР°СЏ-С‚Рѕ РєРѕРґРёСЂРѕРІРєР° РїРѕСЃР»Рµ Р’РёРґРѕСѓР·
 #            print ('!'+line1+'!')
             names_ver_type = line1.split('#SvFver_')      # Version & Type of File
   #          print (names_ver_type)
             if len (names_ver_type) ==2 :
                 parts = names_ver_type[1].split('_')
                 self.FileVer  = int(parts[0])
-                self.FileType = parts[1].split()[0]       # убрать окон. строки
+                self.FileType = parts[1].split()[0]       # СѓР±СЂР°С‚СЊ РѕРєРѕРЅ. СЃС‚СЂРѕРєРё
             if SvF.printL : print ("FileVerType", self.FileVer, self.FileType)
 
             names = names_ver_type[0].split()
-            if self.FileVer==0 and isfloat(names[0]) :       # if это число а не имя - таблица без назв столбцов
+            if self.FileVer==0 and isfloat(names[0]) :       # if СЌС‚Рѕ С‡РёСЃР»Рѕ Р° РЅРµ РёРјСЏ - С‚Р°Р±Р»РёС†Р° Р±РµР· РЅР°Р·РІ СЃС‚РѕР»Р±С†РѕРІ
                 names = ['Col'+str(c) for c in range(len(names)) ]
                 fi.seek(0)
 
@@ -918,7 +918,7 @@ class Table (Object):
                                             if not self.useNaN and np.isnan(tbl[NoR,c]) : OK = False; break
                   if not OK: continue
 #                  if len (where) >= 3 :                       #check  where
- #                   wher = where.replace('ROWNUM',str(NoR))   #  заменить на copy
+ #                   wher = where.replace('ROWNUM',str(NoR))   #  Р·Р°РјРµРЅРёС‚СЊ РЅР° copy
   #                  for c in range(self.NoC) :
    #                     wher = SubstitudeName ( wher, self.cols[c], str(tbl[NoR,c]) )
     #                if eval (wher,{}) == False : continue    
@@ -1016,7 +1016,7 @@ class Table (Object):
                             if not self.useNaN and np.isnan(tbl[NoR, c]): OK = False; break
                     if not OK: continue
                     #                  if len (where) >= 3 :                       #check  where
-                    #                   wher = where.replace('ROWNUM',str(NoR))   #  заменить на copy
+                    #                   wher = where.replace('ROWNUM',str(NoR))   #  Р·Р°РјРµРЅРёС‚СЊ РЅР° copy
                     #                  for c in range(self.NoC) :
                     #                     wher = SubstitudeName ( wher, self.cols[c], str(tbl[NoR,c]) )
                     #                if eval (wher,{}) == False : continue

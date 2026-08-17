@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 from __future__ import division
 #from  numpy import *
 #from pyomo.environ import *
@@ -11,7 +11,7 @@ from Task import *
 class Polyline (Object):
     def __init__( self, X, Y, Z=None, name='' ):     #  Polyline([1,2,3],..)    Polyline("X","Y",..)    Polyline(fun1,fun2,..)
             Object.__init__(self, name, 'Polyline')
-            if X is None : return               # для регистрации на этапе компиляции
+            if X is None : return               # РґР»СЏ СЂРµРіРёСЃС‚СЂР°С†РёРё РЅР° СЌС‚Р°РїРµ РєРѕРјРїРёР»СЏС†РёРё
             if ( type(X) == type ([])
                 or str(type(X)) == '<class \'range\'>'
                 or str(type(X)) == '<class \'numpy.ndarray\'>'
@@ -127,7 +127,7 @@ def reverse01(mask):
             mask.grd[x,y] = 1 - mask.grd[x,y]
 
 
-def putMask (Cs,mask) :                 # маска чаще
+def putMask (Cs,mask) :                 # РјР°СЃРєР° С‡Р°С‰Рµ
     for x in mask.A[0].NodS:
         x_cor = mask.A[0].min + mask.A[0].step * x
         xCs = int(floor((x_cor - Cs.A[0].min)/Cs.A[0].step ) )
@@ -242,13 +242,13 @@ def CutMargins (H, mSize) :
             else :       grd[i,j] = H.grd[i+x_s,j+y_s]()
     H.grd = grd
 
-def reGrid (H, nStepX, nStepY) :   #  if nStepX > H.A[0].step - среднее по сетке с шагом  nStepX, nStepY
+def reGrid (H, nStepX, nStepY) :   #  if nStepX > H.A[0].step - СЃСЂРµРґРЅРµРµ РїРѕ СЃРµС‚РєРµ СЃ С€Р°РіРѕРј  nStepX, nStepY
     aX = cnstrArg (H.A[0].name, H.A[0].min-H.A[0].step*0.5+nStepX*0.5, H.A[0].max+H.A[0].step*0.5-nStepX*0.5, nStepX)
     aY = cnstrArg (H.A[1].name, H.A[1].min-H.A[1].step*0.5+nStepY*0.5, H.A[1].max+H.A[1].step*0.5-nStepY*0.5, nStepY)
     ret = cnstrFun2([aX, aY], H.V.name, H.NDT)
     ret.A[0].Aprint()
     ret.A[1].Aprint()
-    if nStepX > H.A[0].step :           # среднее по сетке с шагом  nStepX, nStepY
+    if nStepX > H.A[0].step :           # СЃСЂРµРґРЅРµРµ РїРѕ СЃРµС‚РєРµ СЃ С€Р°РіРѕРј  nStepX, nStepY
         nX = int ( nStepX / H.A[0].step + 1e-10 )
         nY = int ( nStepY / H.A[1].step + 1e-10 )
         for x in ret.A[0].NodS :
@@ -261,7 +261,7 @@ def reGrid (H, nStepX, nStepY) :   #  if nStepX > H.A[0].step - среднее по сетке
                         nn += 1
             if nn == 0 : ret.grd[x,y] = ret.NDT
             else       : ret.grd[x,y] /= nn
-    else :                              #  разделить ячейкм для мелкой сетки с шагом  nStepX, nStepY
+    else :                              #  СЂР°Р·РґРµР»РёС‚СЊ СЏС‡РµР№РєРј РґР»СЏ РјРµР»РєРѕР№ СЃРµС‚РєРё СЃ С€Р°РіРѕРј  nStepX, nStepY
         nX = int ( H.A[0].step / nStepX + 1e-10 )
         nY = int ( H.A[1].step / nStepY + 1e-10 )
         for x in H.A[0].NodS :
@@ -271,7 +271,7 @@ def reGrid (H, nStepX, nStepY) :   #  if nStepX > H.A[0].step - среднее по сетке
                     ret.grd[nX*x+i,nY*y+j] = H.grd[x,y]
     return ret
 
-def Split (H, nStepX, nStepY) :   #  разделить ячейкм для сетки с шагом  nStepX, nStepY
+def Split (H, nStepX, nStepY) :   #  СЂР°Р·РґРµР»РёС‚СЊ СЏС‡РµР№РєРј РґР»СЏ СЃРµС‚РєРё СЃ С€Р°РіРѕРј  nStepX, nStepY
     nX = int(nStepX / H.A[0].step+0.00000001)
     nY = int(nStepY / H.A[1].step+0.00000001)
     aX = cnstrArg (H.A[0].name, H.A[0].min-H.A[0].step*0.5+nStepX*0.5, H.A[0].max+H.A[0].step*0.5-nStepX*0.5, nStepX)
@@ -293,13 +293,13 @@ def Split (H, nStepX, nStepY) :   #  разделить ячейкм для сетки с шагом  nStepX,
     return ret
 
 
-def SaveProfil ( H, XY, step, fName ) :       #  рабртаем в ГК
+def SaveProfil ( H, XY, step, fName ) :       #  СЂР°Р±СЂС‚Р°РµРј РІ Р“Рљ
       Ax = H.A[0]
       Ay = H.A[1]
       V = H.V
       if fName == '' :  fName = V.name + "(" +Ax.name+ ',' +Ay.name+ ")SvF.Pro"
       fi = open(fName, "w")
-      fi.write(Ax.name + '\t' + Ay.name + '\tl\t' + V.name + "_SvF")  # загол
+      fi.write(Ax.name + '\t' + Ay.name + '\tl\t' + V.name + "_SvF")  # Р·Р°РіРѕР»
 
       profLen = 0.
       for xy in range(0, len(XY)-2, 2):
@@ -330,7 +330,7 @@ def SaveProfil ( H, XY, step, fName ) :       #  рабртаем в ГК
 
 
 
-def makeDXDY(H, on_min_0 = True):   #  наклон по x и y
+def makeDXDY(H, on_min_0 = True):   #  РЅР°РєР»РѕРЅ РїРѕ x Рё y
     Hg = H.grd
 
     h = H.A[0].step
@@ -361,7 +361,7 @@ def makeDXDY(H, on_min_0 = True):   #  наклон по x и y
     return DX, DY
 
 
-def Curv (H) :           # сумма 2-х произв  d2/dxx + d2/dyy
+def Curv (H) :           # СЃСѓРјРјР° 2-С… РїСЂРѕРёР·РІ  d2/dxx + d2/dyy
     hh = H.A[0].step * H.A[0].step
     Hg = H.grd
 
@@ -400,7 +400,7 @@ def XpartYpart(DX, DY):
                 Yp.grd[y, x] = 0
                 print ('Grad=0', x, y)
             else:
-                Xp.grd[y, x] = - DX.grd[y, x] / xy       #if Xp.grd[y,x] > 0 доля потока в ячейку х+1,  else в ячейку х-1
+                Xp.grd[y, x] = - DX.grd[y, x] / xy       #if Xp.grd[y,x] > 0 РґРѕР»СЏ РїРѕС‚РѕРєР° РІ СЏС‡РµР№РєСѓ С…+1,  else РІ СЏС‡РµР№РєСѓ С…-1
                 Yp.grd[y, x] = - DY.grd[y, x] / xy
     print ("End of XpartYpart(DX, DY)")
     return Xp, Yp
@@ -460,7 +460,7 @@ def makeFlowPond(H, Xp, Yp, flow_int, Pond):
         if Xp.grd[x, y] == 0 and Yp.grd[x, y] == 0:  print ("****Grad=0****', x, y")
 
         if Xp.grd[x, y] < 0 :
-            if x != 0:   Fl[x - 1, y] += FLxy * abs(Xp.grd[x, y])        # вниз
+            if x != 0:   Fl[x - 1, y] += FLxy * abs(Xp.grd[x, y])        # РІРЅРёР·
             else : Out += FLxy * abs(Xp.grd[x, y])
         elif Xp.grd[x, y] > 0 :
             if x != H.A[0].Ub :  Fl[x + 1, y] += FLxy * abs(Xp.grd[x, y])
@@ -503,7 +503,7 @@ def makeFlow(H, Xp, Yp, flow_int):
         if Xp.grd[x, y] == 0 and Yp.grd[x, y] == 0:  print ("****Grad=0****', x, y")
 
         if Xp.grd[x, y] < 0 :
-            if x != 0:   Fl[x - 1, y] += FLxy * abs(Xp.grd[x, y])        # вниз
+            if x != 0:   Fl[x - 1, y] += FLxy * abs(Xp.grd[x, y])        # РІРЅРёР·
             else : Out += FLxy * abs(Xp.grd[x, y])
         elif Xp.grd[x, y] > 0 :
             if x != H.A[0].Ub :  Fl[x + 1, y] += FLxy * abs(Xp.grd[x, y])
@@ -520,7 +520,7 @@ def makeFlow(H, Xp, Yp, flow_int):
     return Flow
 
 def Flood(H):
-    print ('Flood*****************************************')  # Заполнение луж и лужищ'
+    print ('Flood*****************************************')  # Р—Р°РїРѕР»РЅРµРЅРёРµ Р»СѓР¶ Рё Р»СѓР¶РёС‰'
     Hg = H.grd
     Htbl = np.zeros(((H.A[0].Ub + 1) * (H.A[1].Ub + 1), 3), np.float64)
     m = 0
@@ -541,7 +541,7 @@ def Flood(H):
 
         minH = Hg[x, y]
         if H.Border(x,y) : continue
-        if Hg[x - 1, y] < minH: continue    # не яма
+        if Hg[x - 1, y] < minH: continue    # РЅРµ СЏРјР°
         if Hg[x + 1, y] < minH: continue
         if Hg[x, y - 1] < minH: continue
         if Hg[x, y + 1] < minH: continue
@@ -551,9 +551,9 @@ def Flood(H):
    #     print '++++++++++++++++++++++++++++++++++', x,y, H.Border(x,y)
 
         print ('+++++++++++++++++++++++++++++++++  start x,y', x,y, minH)
-        Flo = [[x,y]]               #  прудик
-        Borxy = [[-10,-10]]         #  граничные точки - бережок
-        Bor = []                    #  бережок и его высота
+        Flo = [[x,y]]               #  РїСЂСѓРґРёРє
+        Borxy = [[-10,-10]]         #  РіСЂР°РЅРёС‡РЅС‹Рµ С‚РѕС‡РєРё - Р±РµСЂРµР¶РѕРє
+        Bor = []                    #  Р±РµСЂРµР¶РѕРє Рё РµРіРѕ РІС‹СЃРѕС‚Р°
 
         for i in range(300000) :
  #           print 'x,y', x, y
@@ -578,16 +578,16 @@ def Flood(H):
                 Borxy = []
                 for b in Bor: Borxy.append([b[1], b[2]])
                 if H.Border(x, y):
-                    print ("Merge across the border") #   Сливаем за кардон (границу)
+                    print ("Merge across the border") #   РЎР»РёРІР°РµРј Р·Р° РєР°СЂРґРѕРЅ (РіСЂР°РЅРёС†Сѓ)
                     break
                 continue
             break
         print ('BorS', Bor)
         print ('Flo', Flo)
-        #                     коррекция высоты
-        FloN = [[Flo[-1][0],Flo[-1][1],0]]           # соседи точки слива, последний элемент кол-во рукопожатий
+        #                     РєРѕСЂСЂРµРєС†РёСЏ РІС‹СЃРѕС‚С‹
+        FloN = [[Flo[-1][0],Flo[-1][1],0]]           # СЃРѕСЃРµРґРё С‚РѕС‡РєРё СЃР»РёРІР°, РїРѕСЃР»РµРґРЅРёР№ СЌР»РµРјРµРЅС‚ РєРѕР»-РІРѕ СЂСѓРєРѕРїРѕР¶Р°С‚РёР№
         Flo.remove([FloN[-1][0],FloN[-1][1]])
-        for hand in range(300000) :        # кол-во рукопожатий
+        for hand in range(300000) :        # РєРѕР»-РІРѕ СЂСѓРєРѕРїРѕР¶Р°С‚РёР№
             for f in FloN :
                 if f[2] == hand :
                     Nei = H.Neighbors(f[0],f[1])
@@ -602,7 +602,7 @@ def Flood(H):
         if Bor[-1][0] <= minH + step * FloN[-1][2] :
             print ("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& Better to repeat")
         for f in FloN :
-            Hg[f[0],f[1]] = minH + step * f[2]          #     коррекция высоты
+            Hg[f[0],f[1]] = minH + step * f[2]          #     РєРѕСЂСЂРµРєС†РёСЏ РІС‹СЃРѕС‚С‹
         print ('********************', minH, len(FloN))
     return H
 
@@ -610,7 +610,7 @@ def Flood(H):
 def FromBorder ( H, Xp, Yp, lev = 0.01 ) :
     FB = H.makeMtrParamVnameSetG ('FromBorder',0)
 
-    for x in FB.A[0].NodS:                         # углы могу попасть дважду, но это не страшно
+    for x in FB.A[0].NodS:                         # СѓРіР»С‹ РјРѕРіСѓ РїРѕРїР°СЃС‚СЊ РґРІР°Р¶РґСѓ, РЅРѕ СЌС‚Рѕ РЅРµ СЃС‚СЂР°С€РЅРѕ
         if Yp.grd[x, 0] < 0         : FB.grd[x,0] = 1
         if Yp.grd[x, FB.A[1].Ub] > 0: FB.grd[x, FB.A[1].Ub] = 1
     for y in FB.A[1].NodS:

@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: UTF-8 -*-
 from __future__ import division
 #from  numpy import *
 import numpy as np
@@ -12,21 +12,21 @@ from SolverTools import Factory #*
 
 
 #   for index, string in enumerate(strings):
-#   np.linspace(0, 2, 9)  # 9 чисел от 0 до 2 включительно
+#   np.linspace(0, 2, 9)  # 9 С‡РёСЃРµР» РѕС‚ 0 РґРѕ 2 РІРєР»СЋС‡РёС‚РµР»СЊРЅРѕ
 
-# Аппроксимация полиномом 2 степени pol ( C, B1, B2) 
-# 1) Стартовая процедура - набирается пул точек  B1i, B2i, SIGi
-# 2) Набранные значения аппроксимируются поверхностью 2-ого порядка:
-#    - точки учитываются с разными весами (чем дальше точка от текущего минимума, тем меньше вес)
-#    - добавляется штраф за кривизны поверхности (за величину коэффициентов при квадратичных членах),
-#      величина которого подбирается так, чтобы прогноз по значения в предыдущей точке был близок значению.
-# 3) Вычисляется новые значение B1 и B2, для них вычисляется SIG. Зацикливаем на шаг 2.
-# Выход по кол-ву итераций или по величине шага (приращение Бетта)
-# Поиск С   (sum ( (pol ( C, B1i, B2i) - SIGi))**2/ri**(2+q) i in range(I)) + ??? (C20+C02+C11)*reg => min
-#  где ri = sqrt ()
+# РђРїРїСЂРѕРєСЃРёРјР°С†РёСЏ РїРѕР»РёРЅРѕРјРѕРј 2 СЃС‚РµРїРµРЅРё pol ( C, B1, B2) 
+# 1) РЎС‚Р°СЂС‚РѕРІР°СЏ РїСЂРѕС†РµРґСѓСЂР° - РЅР°Р±РёСЂР°РµС‚СЃСЏ РїСѓР» С‚РѕС‡РµРє  B1i, B2i, SIGi
+# 2) РќР°Р±СЂР°РЅРЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ Р°РїРїСЂРѕРєСЃРёРјРёСЂСѓСЋС‚СЃСЏ РїРѕРІРµСЂС…РЅРѕСЃС‚СЊСЋ 2-РѕРіРѕ РїРѕСЂСЏРґРєР°:
+#    - С‚РѕС‡РєРё СѓС‡РёС‚С‹РІР°СЋС‚СЃСЏ СЃ СЂР°Р·РЅС‹РјРё РІРµСЃР°РјРё (С‡РµРј РґР°Р»СЊС€Рµ С‚РѕС‡РєР° РѕС‚ С‚РµРєСѓС‰РµРіРѕ РјРёРЅРёРјСѓРјР°, С‚РµРј РјРµРЅСЊС€Рµ РІРµСЃ)
+#    - РґРѕР±Р°РІР»СЏРµС‚СЃСЏ С€С‚СЂР°С„ Р·Р° РєСЂРёРІРёР·РЅС‹ РїРѕРІРµСЂС…РЅРѕСЃС‚Рё (Р·Р° РІРµР»РёС‡РёРЅСѓ РєРѕСЌС„С„РёС†РёРµРЅС‚РѕРІ РїСЂРё РєРІР°РґСЂР°С‚РёС‡РЅС‹С… С‡Р»РµРЅР°С…),
+#      РІРµР»РёС‡РёРЅР° РєРѕС‚РѕСЂРѕРіРѕ РїРѕРґР±РёСЂР°РµС‚СЃСЏ С‚Р°Рє, С‡С‚РѕР±С‹ РїСЂРѕРіРЅРѕР· РїРѕ Р·РЅР°С‡РµРЅРёСЏ РІ РїСЂРµРґС‹РґСѓС‰РµР№ С‚РѕС‡РєРµ Р±С‹Р» Р±Р»РёР·РѕРє Р·РЅР°С‡РµРЅРёСЋ.
+# 3) Р’С‹С‡РёСЃР»СЏРµС‚СЃСЏ РЅРѕРІС‹Рµ Р·РЅР°С‡РµРЅРёРµ B1 Рё B2, РґР»СЏ РЅРёС… РІС‹С‡РёСЃР»СЏРµС‚СЃСЏ SIG. Р—Р°С†РёРєР»РёРІР°РµРј РЅР° С€Р°Рі 2.
+# Р’С‹С…РѕРґ РїРѕ РєРѕР»-РІСѓ РёС‚РµСЂР°С†РёР№ РёР»Рё РїРѕ РІРµР»РёС‡РёРЅРµ С€Р°РіР° (РїСЂРёСЂР°С‰РµРЅРёРµ Р‘РµС‚С‚Р°)
+# РџРѕРёСЃРє РЎ   (sum ( (pol ( C, B1i, B2i) - SIGi))**2/ri**(2+q) i in range(I)) + ??? (C20+C02+C11)*reg => min
+#  РіРґРµ ri = sqrt ()
 #
 
-coprintL = 0    # чтобы отделиться от роекта
+coprintL = 0    # С‡С‚РѕР±С‹ РѕС‚РґРµР»РёС‚СЊСЃСЏ РѕС‚ СЂРѕРµРєС‚Р°
 #from pyomo.opt import SolverFactory
 
 #def LittleFactory (optFile , py_max_iter, py_tol ): # , warm_start_bound_push      =1e-6,
@@ -80,7 +80,7 @@ class Poly :                 #
         val += term * self.coef[p]
     return val
 
-  def CulcNNN ( self, arg ) :    # sum i   coef[i] * arg[0]**pows[i][0] * .....   Не годится для pyoma  :(
+  def CulcNNN ( self, arg ) :    # sum i   coef[i] * arg[0]**pows[i][0] * .....   РќРµ РіРѕРґРёС‚СЃСЏ РґР»СЏ pyoma  :(
       return sum ( self.coef[p] * prod ( arg**self.pows[p] ) for p in range (self.NoPo) )
 
   def CulcShift ( self, arg, point ) :
@@ -93,19 +93,19 @@ def cosFi ( v1, v2 ) :
  #           scalProd = sum ( v1[c]*v2[c] for c in range (dim) ) 
   #          v1_l2    = sum ( v1[c]**2    for c in range (dim) ) 
    #         v2_l2    = sum ( v2[c]**2    for c in range (dim) )
-    #        return  scalProd / sqrt (v1_l2*v2_l2)                                         # cos поворота
+    #        return  scalProd / sqrt (v1_l2*v2_l2)                                         # cos РїРѕРІРѕСЂРѕС‚Р°
             return   sum(v1*v2) / ( norma(v1) * norma(v2) )
         
 def angleV1V2 ( v1, v2 ) :
             try:
 
-                return  np.arccos ( cosFi ( v1, v2 ) )    * 180 / np.pi                      # угол поворота
+                return  np.arccos ( cosFi ( v1, v2 ) )    * 180 / np.pi                      # СѓРіРѕР» РїРѕРІРѕСЂРѕС‚Р°
             except :
                 print ('cosFi', cosFi ( v1, v2 ))
                 exit(-1)
 
 def int_angleV1V2 ( v1, v2 ) :
-            return  int ( round ( angleV1V2 ( v1, v2 ) ) )                             # угол поворота int
+            return  int ( round ( angleV1V2 ( v1, v2 ) ) )                             # СѓРіРѕР» РїРѕРІРѕСЂРѕС‚Р° int
 
 
 def norma ( v ) :
@@ -205,7 +205,7 @@ def Prognose ( opt, pol, point, step ) :
                 CMP.nInc  = py.Var ( range(dim), domain=py.Reals, initialize = ini_circ )
 
                 def nInc_ge(CMP,a) :
-                    if  step < 0.7*point.Arg[a] : return py.Constraint.Skip                            #  что бы избежать потери точности
+                    if  step < 0.7*point.Arg[a] : return py.Constraint.Skip                            #  С‡С‚Рѕ Р±С‹ РёР·Р±РµР¶Р°С‚СЊ РїРѕС‚РµСЂРё С‚РѕС‡РЅРѕСЃС‚Рё
                     else                        : return ( CMP.nInc[a] >= - 0.7*point.Arg[a] )      #  for Arg >= 0
                 CMP.cnInc_ge = py.Constraint( range (dim), rule=nInc_ge )
 
@@ -221,11 +221,11 @@ def Prognose ( opt, pol, point, step ) :
                     CMP.solutions.load_from(results)
                     if str(results.solver.termination_condition) != 'optimal':
                         print ("Stst:", results.solver.termination_condition, '\n')
-                        print ("************Попробуем линейный вариант (вручную)")
+                        print ("************РџРѕРїСЂРѕР±СѓРµРј Р»РёРЅРµР№РЅС‹Р№ РІР°СЂРёР°РЅС‚ (РІСЂСѓС‡РЅСѓСЋ)")
                         for a in range(dim) :
                             CMP.nInc[a].value = - pol.coef[a+1] / norm * step * 1 
                 except:
-                    print ("EXCEPT ************Попробуем линейный вариант (вручную)")
+                    print ("EXCEPT ************РџРѕРїСЂРѕР±СѓРµРј Р»РёРЅРµР№РЅС‹Р№ РІР°СЂРёР°РЅС‚ (РІСЂСѓС‡РЅСѓСЋ)")
                     for a in range(dim) :
                         CMP.nInc[a].value = - pol.coef[a+1] / norm * step * 1 
                     
@@ -250,7 +250,7 @@ minpartPen = 1e-5
 def arrange_farWieght_curvPenal (opt, points, curvPenal, farWieght, Val, nArg) :
  #       print "sAR", '  ', farWieght, curvPenal
         dim = len (nArg)
-        for n in range(100) :                    # загоняем partPen в границы
+        for n in range(100) :                    # Р·Р°РіРѕРЅСЏРµРј partPen РІ РіСЂР°РЅРёС†С‹
             pol, partWeight, partPen = CulcCoef (opt, points, curvPenal, farWieght)
             if   partWeight > maxpartPen :  farWieght *= 1.07
             elif partWeight < minpartPen :  farWieght /= 1.07
@@ -271,7 +271,7 @@ def arrange_farWieght_curvPenal (opt, points, curvPenal, farWieght, Val, nArg) :
 
         if dW==0 :  return farWieght, curvPenal
 
-        delteVal = Val-prognVal    #  > 0 если прогноз ниже
+        delteVal = Val-prognVal    #  > 0 РµСЃР»Рё РїСЂРѕРіРЅРѕР· РЅРёР¶Рµ
 #        ad = 0.03
         ad = 0.05
         if abs (dP) <= abs(dW) :  addW = ad; addP = ad* abs(dP/dW)
@@ -290,19 +290,19 @@ def arrange_farWieght_curvPenal (opt, points, curvPenal, farWieght, Val, nArg) :
             farWieghtN = farWieght * multW
             curvPenalN = curvPenal * multP
             pol, partWeight, partPen = CulcCoef (opt, points, curvPenalN, farWieghtN)
-            if multW > 1 and partWeight < minpartPen : break                    #  выход по малости влияния
-            if multW < 1 and partWeight > maxpartPen : break                    #  выход по избыточному влиянию
+            if multW > 1 and partWeight < minpartPen : break                    #  РІС‹С…РѕРґ РїРѕ РјР°Р»РѕСЃС‚Рё РІР»РёСЏРЅРёСЏ
+            if multW < 1 and partWeight > maxpartPen : break                    #  РІС‹С…РѕРґ РїРѕ РёР·Р±С‹С‚РѕС‡РЅРѕРјСѓ РІР»РёСЏРЅРёСЋ
             prognValN = pol.CulcShift (nArg, points[-1])
             if delteVal > 0 :
-                if prognValN >= Val : break         #  перестарались
-                elif prognValN <= prognVal : break  #  прогноз ухудшился
+                if prognValN >= Val : break         #  РїРµСЂРµСЃС‚Р°СЂР°Р»РёСЃСЊ
+                elif prognValN <= prognVal : break  #  РїСЂРѕРіРЅРѕР· СѓС…СѓРґС€РёР»СЃСЏ
                 else :
                     prognVal  = prognValN
                     curvPenal = curvPenalN
                     farWieght = farWieghtN
             else :
-                if prognValN <= Val : break         #  перестарались
-                elif prognValN >= prognVal : break  #  прогноз ухудшился
+                if prognValN <= Val : break         #  РїРµСЂРµСЃС‚Р°СЂР°Р»РёСЃСЊ
+                elif prognValN >= prognVal : break  #  РїСЂРѕРіРЅРѕР· СѓС…СѓРґС€РёР»СЃСЏ
                 else :
                     prognVal  = prognValN
                     curvPenal = curvPenalN
@@ -314,10 +314,10 @@ def arrange_farWieght_curvPenal (opt, points, curvPenal, farWieght, Val, nArg) :
 def condition ( points, farWieght, opt ) :
     dim = len(points[0].Arg)
     M = py.ConcreteModel()
-    M.plane  = py.Var ( range(dim+1), domain=py.Reals, initialize = 1 )              # Нормальное уравнение плоскости :
-    def Eq1 (M) : return ( sum ( M.plane[i]**2 for i in range(dim) ) == 1 )    #     сумма квадратов равна единице
+    M.plane  = py.Var ( range(dim+1), domain=py.Reals, initialize = 1 )              # РќРѕСЂРјР°Р»СЊРЅРѕРµ СѓСЂР°РІРЅРµРЅРёРµ РїР»РѕСЃРєРѕСЃС‚Рё :
+    def Eq1 (M) : return ( sum ( M.plane[i]**2 for i in range(dim) ) == 1 )    #     СЃСѓРјРјР° РєРІР°РґСЂР°С‚РѕРІ СЂР°РІРЅР° РµРґРёРЅРёС†Рµ
     M.cEq1 = py.Constraint( rule=Eq1 )
-    def Eq2 (M) : return ( M.plane[dim] <= 0 )                                 #     свободный .. <=0
+    def Eq2 (M) : return ( M.plane[dim] <= 0 )                                 #     СЃРІРѕР±РѕРґРЅС‹Р№ .. <=0
     M.cEq2 = py.Constraint( rule=Eq2 )
 
     normDist = sum ( p.wieght for p in points )
@@ -356,8 +356,8 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
     old_stepMult = 1
     par_der = []   # deriv
     firstDerec = True
-#    opt = LittleFactory ( None, 10000, 1e-9 )  # чтобы отделиться
-    opt = Factory ( None )  # чтобы отделиться
+#    opt = LittleFactory ( None, 10000, 1e-9 )  # С‡С‚РѕР±С‹ РѕС‚РґРµР»РёС‚СЊСЃСЏ
+    opt = Factory ( None )  # С‡С‚РѕР±С‹ РѕС‚РґРµР»РёС‚СЊСЃСЏ
 
     Arg = []
     steps = []
@@ -370,7 +370,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
 
     curvPenal = 0.001
     print ("len", len (steps) )
-    if len (steps)==0 : farWieght = 1   #  нет переменных
+    if len (steps)==0 : farWieght = 1   #  РЅРµС‚ РїРµСЂРµРјРµРЅРЅС‹С…
     else:               farWieght = 2/dim/abs(steps[0])
     #  exp ( - farWieght * dist...
     print ('\nstart  farWieght', farWieght)
@@ -418,12 +418,12 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
         elif firstDerec :   #itera == dim + 1 :
             pol, tmp, tmp1 = CulcCoef (opt, points, curvPenal, farWieght)                              # CulcCoef
             if coprintL: print ('coef', pol.coef[:dim+1], '\n    ', pol.coef[dim+1:])
-            old_coef = deepcopy (pol.coef)                                                  # для вычисления угла поворота
+            old_coef = deepcopy (pol.coef)                                                  # РґР»СЏ РІС‹С‡РёСЃР»РµРЅРёСЏ СѓРіР»Р° РїРѕРІРѕСЂРѕС‚Р°
             prognVal, nArg, Constr, nIncr = Prognose ( opt, pol, points[-1], abs (step) )        # Prognose
             AllArgs = SetAllArgs(nArg, InArg, stepsIN)
             Val = getVal ( AllArgs )
 #            Val = getVal ( nArg, itera )                                                        # getVal
-            prognErr = abs (Val-prognVal)/(points[-1].Val-prognVal)         # погрешность прогноза:  0 - отлично
+            prognErr = abs (Val-prognVal)/(points[-1].Val-prognVal)         # РїРѕРіСЂРµС€РЅРѕСЃС‚СЊ РїСЂРѕРіРЅРѕР·Р°:  0 - РѕС‚Р»РёС‡РЅРѕ
             Arg, mi, grad = AddPoint ( points, nArg, Val )                                     #  AddPoint
             print ('\nITER', itera, Constr, mi, 'grd', grad, 'Er', prognErr, 'st', step, 'Pr',
                    prognVal, Val, '\n\t', nArg , 'firstDerec', '\n')
@@ -447,11 +447,11 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
             if dim == 1 :                                                                   # 25.01
                 ang_pov = 0
             else :
-                ang_pov = int_angleV1V2 ( old_coef[1:dim+1], pol.coef[1:dim+1] )   # angle поворота линейных членов полинома
+                ang_pov = int_angleV1V2 ( old_coef[1:dim+1], pol.coef[1:dim+1] )   # angle РїРѕРІРѕСЂРѕС‚Р° Р»РёРЅРµР№РЅС‹С… С‡Р»РµРЅРѕРІ РїРѕР»РёРЅРѕРјР°
                 print ('ang_pov' , ang_pov)
             old_coef = deepcopy (pol.coef)
 
-            ostep = step                                                # step    выбор шага
+            ostep = step                                                # step    РІС‹Р±РѕСЂ С€Р°РіР°
             if old_stepMult >= 1 :
                 if   prognErr < 0.01 and ang_pov <  5 : stepMult = 5
                 elif prognErr < 0.05 and ang_pov < 15 : stepMult = 3
@@ -473,11 +473,11 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
                 else                  : stepMult = 0.1
             old_stepMult = stepMult
             step*= stepMult
-            if Constr=='Inside' and step > ostep : step = ostep  #  если ограничение по шагу нет, шаг не увеличиваем
+            if Constr=='Inside' and step > ostep : step = ostep  #  РµСЃР»Рё РѕРіСЂР°РЅРёС‡РµРЅРёРµ РїРѕ С€Р°РіСѓ РЅРµС‚, С€Р°Рі РЅРµ СѓРІРµР»РёС‡РёРІР°РµРј
             prognVal, nArg, Constr, nIncr = Prognose ( opt, pol, points[-1], step )                        # Prognose
  
             if dim > 1 :
-              cond, cCos = condition ( points, farWieght, opt )               # обусловленность
+              cond, cCos = condition ( points, farWieght, opt )               # РѕР±СѓСЃР»РѕРІР»РµРЅРЅРѕСЃС‚СЊ
               if coprintL: print ('Cond', cond, 'cCos', cCos)
               if coprintL: print ('cCos_Incr', int_angleV1V2 ( nIncr,cCos ))
               
@@ -485,7 +485,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
 #                  print 'old_cCos',  old_cCos
                   cCos_old_cCos = int_angleV1V2 ( cCos, old_cCos )  # cos old and new cond
                   if coprintL: print ('cCos_old_cCos' , cCos_old_cCos)
-                  if dim>2 and abs (cCos_old_cCos-90.) > 30 :                 #  недостаточно _|_
+                  if dim>2 and abs (cCos_old_cCos-90.) > 30 :                 #  РЅРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ _|_
                       pro =  old_cCos * np.cos (cCos_old_cCos*np.pi/180.)
                       cCos = cCos - pro
                       norm = norma ( cCos )
@@ -498,12 +498,12 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
               if 1 :  
                 malt = 0.03
                 for i in range (10) :
-#                    nnArg = np.array([ nArg[a]+cCos[a]*step*malt for a in range(dim) ])       #  шаг в сторону +
-                    nnArg = nArg + cCos*step*malt                                  #  шаг в сторону +
+#                    nnArg = np.array([ nArg[a]+cCos[a]*step*malt for a in range(dim) ])       #  С€Р°Рі РІ СЃС‚РѕСЂРѕРЅСѓ +
+                    nnArg = nArg + cCos*step*malt                                  #  С€Р°Рі РІ СЃС‚РѕСЂРѕРЅСѓ +
                     prognValN = pol.CulcShift (nnArg, points[-1])
-#                    mnArg = np.array([ nArg[a]-cCos[a]*step*malt for a in range(dim) ])       #  шаг в сторону -
-                    mnArg = nArg - cCos*step*malt                                  #  шаг в сторону -
-                    mprognValN = pol.CulcShift (mnArg, points[-1])                  #    берем кто меньше
+#                    mnArg = np.array([ nArg[a]-cCos[a]*step*malt for a in range(dim) ])       #  С€Р°Рі РІ СЃС‚РѕСЂРѕРЅСѓ -
+                    mnArg = nArg - cCos*step*malt                                  #  С€Р°Рі РІ СЃС‚РѕСЂРѕРЅСѓ -
+                    mprognValN = pol.CulcShift (mnArg, points[-1])                  #    Р±РµСЂРµРј РєС‚Рѕ РјРµРЅСЊС€Рµ
                     if mprognValN < prognValN :
                         prognValN = mprognValN
                         nnArg     = mnArg
@@ -520,7 +520,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
             Val = getVal ( AllArgs )
 #            Val = getVal ( nArg, itera )                                                        # getVal
             print ('\t\t\topEr', prognErr, 'ang', ang_pov, 'ost', ostep, 'st',step, stepMult)
-            prognErr = abs (Val-prognVal)/(points[-1].Val-prognVal)         # погрешность прогноза:  0 - отлично
+            prognErr = abs (Val-prognVal)/(points[-1].Val-prognVal)         # РїРѕРіСЂРµС€РЅРѕСЃС‚СЊ РїСЂРѕРіРЅРѕР·Р°:  0 - РѕС‚Р»РёС‡РЅРѕ
             old_points = deepcopy (points)
             delta = Val - points[-1].Val
             Arg, mi, grad = AddPoint ( points, nArg, Val )                                     #  AddPoint
