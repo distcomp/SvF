@@ -1,0 +1,27 @@
+SELECT: ROWNUM as t, Q, T, VPD, E, Dat, hours from ../Pine_Petr-08.xlsx as DB
+
+SET: 	sQ = [ , ]; Data = 'Q'
+#	sT = [ , ]; Data = 'T'
+	sVPD = [ , ]; Data = 'VPD'
+	t = [,,1]
+	
+PARAM:	Q  (t)
+#	T (t)
+	VPD (t)
+
+VAR: 	E (t)
+	Gq (sQ);	    Gq(sQ.middle) = 1
+	Gvpd (sVPD);	    Gvpd(sVPD.middle) = 1
+	G0 > 0
+	
+EQ:	E(t) = G0 * Gq(Q) * Gvpd(VPD)  * 0.010017 * VPD
+
+CV: 	NumOfSets=7; 	GroupByParam ='Dat'
+RUN:	MaxIter = 1; #	RunMode = "L&S"
+
+OBJ: 	E.MSD() + Gq.Complexity(Penal[0]) + Gvpd.Complexity(Penal[1])
+
+RESIDUAL: DB, E, E(t), hours   # -> # -> RESID_E_hours.mng  + .dat
+
+PLOT: *
+

@@ -1,0 +1,17 @@
+SELECT: Q, T, E, VPD, Dat from ../Pine_Petr-08.xlsx 
+ 
+SET:	Q    = [ , ]
+	VPD  = [ , ]
+
+Var:    E ( Q,VPD )  
+
+CV:   	NumOfSets=7;    GroupByParam = 'Dat' # Разбиение на 7 множеств. Данные группируются по значению столбца 'Dat'.
+RUN:	MaxIter = 21;   #RunMode = "L&S"
+
+Obj:    E.Complexity ( Penal[0],Penal[1] ) + E.MSD()
+
+PLOT:	*
+
+EOF
+
+

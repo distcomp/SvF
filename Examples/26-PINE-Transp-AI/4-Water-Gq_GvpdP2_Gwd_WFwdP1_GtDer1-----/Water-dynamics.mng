@@ -1,0 +1,54 @@
+COMPILE: TaskName = 'PINE_Water_dynamics'
+
+Wmin 	 = 68.0         # минимальное содержание воды в растении (kg)
+Wmax     = 75.0         # максимальное содержание воды в растении (kg)
+Wdel     = Wmax-Wmin	  	# 7kg
+Sneedles = 32.0 / 2.0  # эффективная площадь хвои (m²)
+Emult    = Sneedles * 6.48e-2  # коэффициент пересчета: ммоль м-2 с-1 -> kg ч-1
+                            # = 0.001 (ммоль->моль) * 18 (г/моль) / 1000 (г->kg) * 3600 (с->ч)
+Dt 	 = 0.5            # шаг интегрирования (часы)							!!!!! Молчанов
+
+SELECT: ROWNUM, Q, T, VPD, E, Dat, hours from ../Pine_Petr-08.xlsx as DB
+
+SET: 	t =   [ , , 1];   Data = ROWNUM           # индекс строки (время дискретизации)
+	sQ =  [ , , -50]; Data = Q            # сетка для функции Eq (по данным Q)
+	sT =  [ , , -50]; Data = T            # сетка для функции Eq (по данным Q)
+	sVPD= [ , , -50]; Data = VPD          # сетка для функции		
+	sWD = [ 0, Wdel, -40 ]		#   grid for WD
+
+PARAM: 	Q(t)         # солнечная радиация (ФАР, мкмоль м-2 с-1)
+ 	VPD(t)       # дефицит давления водяного пара (Pa)
+	T (t)
+	
+VAR: 	Gq (sQ);	    Gq(sQ.middle) = 1
+	Gvpd (sVPD) = Polynome(2);	    Gvpd(sVPD.middle) = 1
+	Gt (sT);	    Gt(sT.middle) = 1
+ 	Gwd(sWD) = Polynome(5); <1; Gwd(0.) = 1; #d/dsWD(Gwd(sWD))<0
+ 	G0   > 0
+	WFwd (sWD) = Polynome(1); >0
+	
+VAR: 	W  ( t ) 		
+ 	E  ( t )   		
+	WD ( t );  >=0;  <=Wdel
+	WF ( t )
+	G  ( t ) 				# stomata conductance
+
+EQ: 	d/dt(W) = (WF  - E(t) * Emult) * Dt
+	W(0) = Wmax - 1.0
+	WF = WFwd(WD)
+	WD = Wmax-W
+	E = G * VPD * 0.010017
+#	G = G0 * Gq(Q) * Gt(T) * Gwd(WD) 
+	G = G0 * Gq(Q) * Gvpd(VPD) * Gwd(WD) * Gt(T)
+
+CV: 	NumOfSets = 7;  GroupByParam = 'Dat'
+
+RUN: 	MaxIter = 1; RunMode = 'L&S'
+
+OBJ: 	E.MSD() + Gq.Complexity(Penal[0]) + Gwd.Complexity(Penal[1]) + Gvpd.Complexity(Penal[2]) + Gt.ComplDer1([Penal[3]])
+#OBJ: 	E.MSD() + Gq.Complexity(Penal[0]) + Gwd.Complexity(Penal[1]) + Gvpd.Complexity(Penal[2]) + Gt.Complexity(Penal[3]) +Gt.ComplDer1([Penal[3]])
+
+#PLOT: 	DB.ROWNUM, DB.H
+PLOT: 	*
+
+EoF

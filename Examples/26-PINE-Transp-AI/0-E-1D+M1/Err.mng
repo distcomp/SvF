@@ -1,0 +1,58 @@
+COMPILE: ResFile = "E(VPD).res"
+SELECT: ROWNUM , Q, VPD,  E, Dat, H,  T,  hours, A  FROM "../Pine_Petr-08.xlsx" as DB
+VAR:  	E(VPD) 
+CV:   	NumOfSets=7; GroupByParam = 'Dat'  # Разбиение на 7 множеств. Данные группируются по значению столбца 'Dat'.
+RUN:	MaxIter=1 
+OBJ: 	E.MSD() + E.Complexity(Penal[0])
+RESIDUAL: DB, E, E(VPD), Q    # -> # -> RESID_E_hours.mng  + .dat
+PLOT: 	E 
+
+EoF
+EoTask
+
+
+COMPILE: ResFile = "E(Q).res"
+SELECT: ROWNUM , Q, VPD,  E, Dat, H,  T,  hours, A  FROM "../Pine_Petr-08.xlsx" as DB
+VAR:  	E(Q) 
+CV:   	NumOfSets=7; GroupByParam = 'Dat'  # Разбиение на 7 множеств. Данные группируются по значению столбца 'Dat'.
+RUN:	MaxIter=1 
+OBJ: 	E.MSD() + E.Complexity(Penal[0])
+PLOT: 	E 
+EoTask
+
+
+SELECT: ROWNUM , Q, VPD,  E, Dat, H,  T,  hours, A  FROM "../Pine_Petr-08.xlsx" as DB
+VAR:  	E(T) 
+CV:   	NumOfSets=7; GroupByParam = 'Dat'  # Разбиение на 7 множеств. Данные группируются по значению столбца 'Dat'.
+RUN:	MaxIter=1 
+OBJ: 	E.MSD() + E.Complexity(Penal[0])
+PLOT: 	E 
+EoTask
+
+SELECT: ROWNUM , Q, VPD,  E, Dat, H,  T,  hours, A  FROM "../Pine_Petr-08.xlsx" as DB
+VAR:  	E(H) 
+CV:   	NumOfSets=7; GroupByParam = 'Dat'  # Разбиение на 7 множеств. Данные группируются по значению столбца 'Dat'.
+RUN:	MaxIter=1 
+OBJ: 	E.MSD() + E.Complexity(Penal[0])
+PLOT: 	E 
+EoTask
+
+SELECT: ROWNUM , Q, VPD,  E, Dat, H,  T,  hours, A  FROM "../Pine_Petr-08.xlsx" as DB
+VAR:  	E(hours) 
+CV:   	NumOfSets=7; GroupByParam = 'Dat'  # Разбиение на 7 множеств. Данные группируются по значению столбца 'Dat'.
+RUN:	MaxIter=1 
+OBJ: 	E.MSD() + E.Complexity(Penal[0])
+PLOT: 	E 
+EoTask
+
+COMPILE: UseNaN = False
+SELECT: ROWNUM , Q, VPD,  E, Dat, H,  T,  hours, A  FROM "../Pine_Petr-08.xlsx" as DB
+VAR:  	E(A) 
+CV:   	NumOfSets=7; GroupByParam = 'Dat'  # Разбиение на 7 множеств. Данные группируются по значению столбца 'Dat'.
+RUN:	MaxIter=1 
+OBJ: 	E.MSD() + E.Complexity(Penal[0])
+PLOT: 	E 
+
+EoF
+
+

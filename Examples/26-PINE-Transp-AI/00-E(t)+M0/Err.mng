@@ -1,0 +1,9 @@
+COMPILE: ResFile = "E(t).res"
+SELECT: Time as t , Q, VPD,  E, Dat, H,  T,  hours, A  FROM ../Pine_Petr-08.xlsx as DB
+SET:	t = [,,0.5]
+VAR:  	E(t) 
+RUN:	MaxIter=21 
+OBJ: 	E.MSD() + E.Complexity(Penal[0])
+PLOT: 	E 
+EoF
+
