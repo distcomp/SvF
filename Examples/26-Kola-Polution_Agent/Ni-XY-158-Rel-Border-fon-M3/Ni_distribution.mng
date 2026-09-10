@@ -1,0 +1,36 @@
+# SvF v3.04b — Kola HM ecology: Ni(X,Y) + fon 					chatgpt 
+# Цель: идентифицировать неотрицательную функцию Ni(X,Y)+fon по EXP_LAKE.xlsx
+# Домен: X,Y ∈ [-100, 100]
+
+COMPILE: TaskName = 'Ni_field_XY_Kola_with_fon'
+
+# 1) Данные
+SELECT: X, Y, nP, Avg-TNi AS Ni, Year as t FROM "EXP_LAKE.xlsx" AS Data
+
+# 2) Сетки X и Y только с границами
+SET:    X = [ -100, 100 ]
+        Y = [ -100, 100 ]
+
+# 3) Искомые функции и фон
+VAR:    Ni_xy ( X, Y ) >=0; 
+	fon > 0;                
+	Ni ( X, Y ) = Ni_xy ( X, Y ) + fon;  Ni >= 0
+
+# 4) Кросс-валидация по номерам озёр
+CV:     NumOfSets = 7;  GroupByParam = 'nP'
+
+# 5) Быстрый проход оптимизации
+RUN:    MaxIter = -1
+
+# 6) Критерий: относительная ошибка + сглаживание поля + прижатие на границе
+OBJ:    Ni.MSDrel(2.0) \
+      + Ni_xy.Complexity( Penal[0], Penal[1] ) \
+      + Ni_xy.Norma_L2mL2Border() * Penal[2] * 0.01  #* 0.0001
+
+RESIDUAL: Data, Ni, Ni(X,Y), t
+
+# 7) Визуализация
+PLOT:   *
+
+
+

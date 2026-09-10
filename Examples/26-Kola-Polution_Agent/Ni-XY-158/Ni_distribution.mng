@@ -1,0 +1,19 @@
+							#--- 2025-11-17 07:59:40.647680 ---
+# SvF v3.03 - Пространственное распределение Ni на Кольском полуострове
+# Данные: EXP_LAKE.xlsx
+
+COMPILE: TaskName = 'Ni_distribution'
+
+SELECT: X, Y, "Avg-TNi" AS Ni, nP FROM "EXP_LAKE.xlsx"
+
+SET: X = [-100, 100]; Data='X'     # Ограничение координат X
+SET: Y = [-100, 100]; Data='Y'     # Ограничение координат Y
+
+VAR: Ni(X, Y); Ni >= 0  # Неотрицательная функция концентрации Ni
+
+CV: NumOfSets=7; GroupByParam='nP'  # Кросс-валидация по номерам озер
+RUN: MaxIter=1
+
+OBJ: Ni.MSD() + Ni.Complexity(Penal[0], Penal[1])
+
+PLOT: *

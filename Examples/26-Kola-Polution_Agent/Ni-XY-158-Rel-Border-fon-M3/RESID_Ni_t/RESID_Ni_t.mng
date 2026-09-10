@@ -1,0 +1,9 @@
+SELECT * from RESID_Ni_t.dat
+SET: t = [,,]
+VAR: Residual_Ni(t)
+CV:  NumOfSets = 7; 	#GroupByParam = "Dat"
+RUN: MaxIter = 11;    #  RunMode="S&S" 
+OBJ: Residual_Ni.MSD() + Residual_Ni.Complexity(Penal[0])
+POLY: P1([Residual_Ni.A[0].min, Residual_Ni.A[0].max], [0, 0])
+PLOT: Residual_Ni, dms=1 + P1, c = green
+EoF

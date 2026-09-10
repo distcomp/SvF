@@ -1,0 +1,31 @@
+# SvF v3.04b — Kola HM ecology: spatial field Ni(X,Y)                           chatgpt            
+# Цель: идентифицировать неотрицательную функцию Ni(X,Y) по EXP_LAKE.xlsx
+# Домен: X,Y ∈ [-100, 100]
+
+COMPILE: TaskName = 'Ni_field_XY_Kola'
+
+# 1) Данные
+SELECT: X, Y, nP, Avg-TNi AS Ni FROM "EXP_LAKE.xlsx" AS Data
+
+# 2) Сетки X и Y только с границами (плотность не указана)
+SET:    X = [ -100, 100 ]
+        Y = [ -100, 100 ]
+
+# 3) Искомая функция
+VAR:    Ni ( X, Y );  Ni >= 0
+
+# 4) Кросс-валидация по номерам озёр
+CV:     NumOfSets = 7;  GroupByParam = 'nP'
+
+# 5) Быстрый проход оптимизации
+RUN:    MaxIter = 21
+
+# 6) Критерий: относительная ошибка + сглаживание + прижатие по границе
+OBJ:    Ni.MSDrel(2.0) \
+      + Ni.Complexity( Penal[0], Penal[1] ) \
+      + Ni.Norma_L2mL2Border() * Penal[2] * 0.01
+
+# 7) Графика
+PLOT:   *
+
+
