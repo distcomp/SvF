@@ -69,6 +69,46 @@ def COMPILE_RUN_option(buf):
     Swr(writeBuf)
 
 
+def WriteSpotoptimParams(buf):
+    keys = [['AcquisitionMode',     'Acquisition_mode',          ''],
+            ['LowBound',     'Low_bound',          None],
+            ['HighBound',     'High_bound',          None],
+            ['ShowSpotoptimGraphs',     'Show_spotoptim_graphs',          'True'],
+            ['UseSpotoptim',     'Use_spotoptim',          'True'],
+            ['InitialPoints',     'Initial_points',          'NoName']]
+
+    if len(buf) == 0: return
+    if buf[-1:] == ';': buf = buf[:-1]
+    buf = buf.replace(';;',';')
+    writeBuf = ''
+    for opt in buf.split(';'):
+        key, eq, val = getKeyFromBuf (keys, opt)
+        if key is None or eq == '':
+            print ("Unknown key or no \'=\' in ", opt, '.....', key, eq, val)
+            exit (-1)
+
+        writeBuf += 'SvF.' + key + '=' + str(val) + '; '
+    Swr(writeBuf)
+
+def WriteCompare(buf):
+    keys = [['ResFilesToCompare',    'ResFilesToCompare',         None],
+            ['ResGraphColors',      'ResGraphColors',           None],
+            ['ResLegendNames',      'ResLegendNames',           None],
+            ['TailStart',      'Tail_start',           None]
+            ]
+
+    if len(buf) == 0: return
+    if buf[-1:] == ';': buf = buf[:-1]
+    buf = buf.replace(';;',';')
+    for opt in buf.split(';'):
+        key, eq, val = getKeyFromBuf (keys, opt)
+        if key is None or eq == '':
+            print ("Unknown key or no \'=\' in ", opt, '.....', key, eq, val)
+            exit (-1)
+
+        setattr(co, key, val)
+
+
 def WriteCV(buf):
                     # заменяем          на            значение
             keys = [['NumOfSets',   'CV_NumSets', None],

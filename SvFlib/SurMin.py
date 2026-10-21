@@ -117,18 +117,21 @@ def distance ( p1, p2 ) :
 
 
 class Point :                 # 
-    def __init__ ( self, Arg, Val=0, Num=0 ) :     # 
+    def __init__ ( self, Arg, Val=0, Num=0, initial=False) :     # 
         self.Arg  = Arg.copy()
         self.Val  = Val
         self.Num  = Num
         self.wieght = 0
+        # whether a point was in initial set
+        self.initial = initial 
       
     def prin(self) :
-        print ('Num', self.Num, 'Val', self.Val, 'Arg', self.Arg)
+        print ('Num', self.Num, 'Val', self.Val, 'Arg', self.Arg, "Is initial ", self.initial)
 
 
-def AddPoint ( points, Arg, Val ) :
-    poi = Point ( Arg, Val, len(points) )
+
+def AddPoint ( points, Arg, Val, initial=False) :
+    poi = Point ( Arg, Val, len(points), initial)
     grad = (Val - points[-1].Val) / distance (poi, points[-1])
     points.append ( poi )
     if points[-2].Val < points[-1].Val :    # swap
@@ -388,7 +391,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
             Val = getVal ( AllArgs )
 #            Val = getVal ( Arg, itera )
             print ('\nITER', itera, 'start', Val, 'st', np.nan,  Arg, '\n')
-            points = [Point (Arg, Val, 0)]
+            points = [Point (Arg, Val, 0, True)]
 
         elif itera <= dim :
             nArg = Arg.copy()
@@ -401,7 +404,7 @@ def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
                 AllArgs = SetAllArgs(nArg, InArg, stepsIN)
                 Val = getVal(AllArgs)
 #                Val = getVal ( nArg, itera )
-                Arg, mi, grad = AddPoint ( points, nArg, Val )
+                Arg, mi, grad = AddPoint ( points, nArg, Val, True)
                 print ('\nITER', itera, mi, Val, grad, 'st', step_i, nArg, '\n')
                 if mi != '***' : break
                 if attempt != Nattempt-1 :

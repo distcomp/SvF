@@ -1,0 +1,45 @@
+RUN:  
+     MaxIter=60
+     RunMode = 'L&L'
+
+SPOTOPTIM:
+	UseSpotoptim = True
+	LowBound = 0.01
+	HighBound = 1
+	AcquisitionMode = "y"
+	InitialPoints = "qms-lhs:12"
+
+PENALTY:
+     SvF.resF = None
+     a0=0.5
+     a1=0.5
+     a2=0.5
+
+Select 	t, x  from  Spring5.dat      # считывание данных
+
+SET:	t = [     ,    , 0.025] 	# область определения функции x(t)
+	X = [ -0.1, 2.2, 0.1  ] 	# область значений (с запасом) функции x(t)
+ 	V = [ -1,   1.5, 0.1  ]		# область значений (с запасом) функции v(t)
+
+VAR:    x ( t )   			# искомая функция
+	v ( t )			 	# искомая функция
+	f ( X, V ) = Polynome (6, c, X, V); Int_smbFxx_2 =False;
+
+f.ArgNormalition = True
+
+EQ:	d2/dt2(x) ==  f(x,v)		# дифференциальное ур-ие 2-ого порядка
+        v == d/dt(x)			# дифференциальное ур-ие 1-ого порядка 
+
+
+CV:     CV_NumSets=21			# кол-во подмножеств для процедуры кросс-валидации
+
+OBJ:   x.Complexity(Penal[0]) +f.Complexity(Penal[1], Penal[2])/x.V.sigma2 + x.MSD()
+ 
+
+#COMPARE:
+#	TailStart = 40
+#	ResFilesToCompare = ["MNG-dif-2-OptPar-y.res", "MNG-dif-2-OptPar-ei.res", "MNG-dif-2-OptPar-old.res"]
+#    ResLegendNames = ["spotoptim-y", "spotoptim-ei", "oldoptim"]
+#     ResGraphColors = ["pink", "red", "black"]
+
+EoF

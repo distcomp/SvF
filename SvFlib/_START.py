@@ -16,7 +16,7 @@ if platform.system() == 'Windows':   SvF.platform = 'Win'       # 2022.05
 
 #startDir        = os.getcwd()
 #sys.path.append( SvF.startDir )
-#sys.path.append(os.getcwd())
+#sys.path.append(os.getcwd()
 
 from ReadMng import ReadMng
 

@@ -1,0 +1,102 @@
+RUN:  
+	MaxIter=60
+	RunMode = 'L&L'
+
+SPOTOPTIM:
+	UseSpotoptim = True
+	LowBound = 0
+	HighBound = 0.1
+	AcquisitionMode = "ei"
+	InitialPoints = "qms-lhs:20"
+
+PENALTY:
+	SvF.resF = None
+  	a0=0.05
+  	a1=0.05
+   	a2=0.05
+   	a3=0.05
+   	a4=0.05
+   	a5=0.05
+    	a6=0.05
+    	a7=0.05
+   	a8=0.05
+    	a9=0.05
+SELECT: t, xNoisy1 as x1, yNoisy1 as y1, zNoisy1 as z1, xNoisy2 as x2, yNoisy2 as y2, zNoisy2 as z2, xNoisy3 as x3, yNoisy3 as y3, zNoisy3 as z3 \
+	FROM "3Body3D.dat"
+
+SET: t = [ , , 0.01]  # временная ось
+SET: r = [0.5, 5.0, 0.1]  # множество для расстояний
+
+# Положения планет как функции времени (3D)
+VAR: x1(t)  # планета 1, координата x
+     y1(t)  # планета 1, координата y
+     z1(t)  # планета 1, координата z
+     x2(t)  # планета 2, координата x
+     y2(t)  # планета 2, координата y
+     z2(t)  # планета 2, координата z
+     x3(t)  # планета 3, координата x
+     y3(t)  # планета 3, координата y
+     z3(t)  # планета 3, координата z
+
+# Искомые параметры и функции
+#VAR: G_const; G_const > 0  # гравитационная постоянная
+G_const = 1
+VAR: m1 > 0  # масса планеты 1
+     m2 > 0  # масса планеты 2
+     m3 > 0  # масса планеты 3
+     fr(r) = Polynome(8); >0; fr(1.) = 1.; fr'<0  # неизвестная функция зависимости силы от расстояния
+
+# Вспомогательные функции для расстояний
+VAR: r12(t) = sqrt((x2(t) - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2); ArgNorm=False
+     r13(t) = sqrt((x3 - x1)^2 + (y3 - y1)^2 + (z3 - z1)^2); ArgNorm=False
+     r23(t) = sqrt((x3 - x2)^2 + (y3 - y2)^2 + (z3 - z2)^2); ArgNorm=False
+
+# Уравнения движения с неизвестной функцией fr(r)
+# Для планеты 1
+EQ: x1'' * r12(t) * r13(t) = G_const * m2 * fr(r12(t)) * (x2 - x1) * r13(t) + \
+           G_const * m3 * fr(r13(t)) * (x3 - x1) * r12(t)
+
+EQ: y1'' * r12(t) * r13(t) = G_const * m2 * fr(r12(t)) * (y2 - y1) * r13(t) + \
+           G_const * m3 * fr(r13(t)) * (y3 - y1) * r12(t)
+
+EQ: z1'' * r12(t) * r13(t) = G_const * m2 * fr(r12(t)) * (z2 - z1) * r13(t) + \
+           G_const * m3 * fr(r13(t)) * (z3 - z1) * r12(t)
+
+# Для планеты 2
+EQ: x2''*r12(t)*r23(t) = G_const * m1 * fr(r12(t)) * (x1 - x2)*r23(t) + \
+           G_const * m3 * fr(r23(t)) * (x3 - x2)*r12(t)
+
+EQ: y2''*r12(t)*r23(t) = G_const * m1 * fr(r12(t)) * (y1 - y2)*r23(t) + \
+           G_const * m3 * fr(r23(t)) * (y3 - y2)*r12(t)
+
+EQ: z2''*r12(t)*r23(t) = G_const * m1 * fr(r12(t)) * (z1 - z2)*r23(t) + \
+           G_const * m3 * fr(r23(t)) * (z3 - z2)*r12(t)
+
+# Для планеты 3  
+EQ: x3''*r13(t)*r23(t) = G_const * m1 * fr(r13(t)) * (x1 - x3)*r23(t) + \
+           G_const * m2 * fr(r23(t)) * (x2 - x3)*r13(t)
+
+EQ: y3''*r13(t)*r23(t) = G_const * m1 * fr(r13(t)) * (y1 - y3)*r23(t) + \
+           G_const * m2 * fr(r23(t)) * (y2 - y3)*r13(t)
+
+EQ: z3''*r13(t)*r23(t) = G_const * m1 * fr(r13(t)) * (z1 - z3)*r23(t) + \
+           G_const * m2 * fr(r23(t)) * (z2 - z3)*r13(t)
+
+CV:   NumOfSets=5
+
+# Критерий: близость траекторий + сложность траекторий и функции fr
+OBJ: x1.MSD() + y1.MSD() + z1.MSD() + \
+     x2.MSD() + y2.MSD() + z2.MSD() + \
+     x3.MSD() + y3.MSD() + z3.MSD() + \
+     x1.Complexity(Penal[0]) + y1.Complexity(Penal[1]) + z1.Complexity(Penal[2]) + \
+     x2.Complexity(Penal[3]) + y2.Complexity(Penal[4]) + z2.Complexity(Penal[5]) + \
+     x3.Complexity(Penal[6]) + y3.Complexity(Penal[7]) + z3.Complexity(Penal[8]) + \
+     fr.Complexity(Penal[9])
+
+#COMPARE:
+#	TailStart = 50
+#	ResFilesToCompare = ["3Body3D-spotoptim-y.res", "3Body3D-spotoptim-ei.res", "3Body3D-oldoptim.res"]
+#	ResLegendNames = ["spotoptim-y", "spotoptim-ei", "oldoptim"]
+#	ResGraphColors = ["pink", "red", "black"]
+	
+EoF

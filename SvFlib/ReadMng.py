@@ -414,6 +414,8 @@ def ReadMng ( ) :
     # elif Is(Q, "SetStartDir") :  os.chdir(SvF.startDir);                      # 2026.07 ???
     elif Is(Q, "COMPILE:"):     COMPILE_RUN_option (buf)
     elif Is(Q, 'RUN:'):         COMPILE_RUN_option (buf)  #WriteRUNoption (buf)
+    elif Is(Q, "SPOTOPTIM:"):     WriteSpotoptimParams (buf)
+    elif Is(Q, 'COMPARE:'):  WriteCompare(buf)
     elif Is(Q, "SELECT:") :    WriteSelect30(Treat_FieldNames('Select '+buf))
     elif(Is(Q, "GRID:") or
          Is(Q, "SET:")  ) :
@@ -442,13 +444,19 @@ def ReadMng ( ) :
                             Swr("if SvF.addStrToRes != '':")
                             Swr("    with open(SvF.resF, 'a') as f:  # RES filewrite")
                             Swr("        f.write('addStrToRes: ' + SvF.addStrToRes)")
+
+                            # If COMPARE: section was used in .mng start launch results comparison of calculated tasks
+                            from Compare import compare_results
+                            print(f"SvF.ResFilesToCompare={SvF.ResFilesToCompare}")
+                            if SvF.ResFilesToCompare != []:
+                                compare_results()
+
                         if not SvF.SModelFile is None:
                                 SvF.SModelFile.close()
                                 SvF.SModelFile = None
                #         if Q == 'EOTASK' :  SvF.EofTask = True
                 #        else:               SvF.EofTask = False
                         return Q
-
     elif Is(Q, 'CV:'):    WriteCV (Treat_FieldNames(buf))
     elif Is(Q, 'DRAW:'):  Swr('Task.Draw ( \'' + buf + '\' )')
     elif Is(Q, 'PLOT:'):  WritePLOT (Treat_FieldNames(buf)) #( buf )

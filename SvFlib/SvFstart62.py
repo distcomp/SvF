@@ -9,15 +9,9 @@ import os
 #import COMMON as co
 from ssop_session import *
 import ssop_config
-#from Ssop import *
 
-# import Lego_symFun
-
-
-#from Lego    import *
-from CVSets  import *
-from GaKru   import *
 from SurMin  import SurMin
+from SurMinSpotoptim import SurMinSpotoptimMethod, get_sigCV_for_spotoptim
 from Pars    import *
 from Tools   import *
 #from Task    import Grd_to_Var
@@ -55,6 +49,7 @@ def SvFstart19 ( Task ) :
     else :
         if SvF.resF == '' :  SvF.resF = SvF.mngF[:SvF.mngF.rfind('.')]+'.res'   #  RES file read
 
+
         Penal = SvF.Penalty
 ##        if SvF.printL : print ('SvF.lenPenalty', SvF.lenPenalty)
         print(Penal, SvF.Penalty)
@@ -70,9 +65,11 @@ def SvFstart19 ( Task ) :
                 print ("******* Can''t open RES file: ", SvF.resF)
         #        if len (Penal) == 0 :  exit(-1)
         SvF.Penalty = Penal
+
     # print (SvF.Penalty); exit(22)
  #   SvF.Penalty = [0.1 if x is None else x for x in SvF.Penalty]    26.04
     SvF.Penalty = [0.03 if x is None else x for x in SvF.Penalty]
+
  #   print (Penal, SvF.Penalty)
   #  1/0
 
@@ -93,16 +90,27 @@ def SvFstart19 ( Task ) :
     else :
       # Start surrogate optimization to find better regularization parameters if iterations are > 0.
       # Two ways of optimization are available: 1) new based on spotoptim module 2) old self-written
-        if SvF.SurMinMethodName == 'SvF':
+        if SvF.Use_spotoptim == True or SvF.SurMinMethodName.lower() == 'spotoptim':
+            print("Selected SurMineMethod: spotoptim")
+            step = -1
+
+            points = SurMinSpotoptimMethod (SvF.CVNumOfIter, SvF.Penalty, SvF.OptStep, get_sigCV_for_spotoptim, Task )
+        elif SvF.SurMinMethodName == 'SvF':
+            print("Selected SurMineMethod: SvF")
             points, step = SurMin ( SvF.CVNumOfIter, SvF.OptStep, SvF.ExitStep, SvF.Penalty, get_sigCV )   ######## START ###########
-   #     else:
-    #        points = SurMinMethod ( co.CVNumOfIter, arg, steps, get_sigCV, Task )
+        else:
+            raise Exception(f"Unknown optimization mode selected: {SvF.SurMinMethodName}")
         # Write all points to a .res file
-        with open(SvF.resF,'a') as f:      #  RES filewrite
-            f.write( 'Step: '+ str(step) + '\nPoints:' )
-            for p in points :  f.write( 'Num '+str(p.Num) + ' Val ' + str(p.Val) + ' Arg ' + str(p.Arg) + '\n')
-#            print >> f, 'Step:', step, '\nPoints:'
- #           for p in points :  print >> f, 'Num', p.Num, 'Val', p.Val, 'Arg', p.Arg
+
+        with open(SvF.resF,'a') as f:     
+            if step != -1:
+                f.write('Step: '+ str(step) + "\n")
+            f.write( 'Points:\n' )
+            for p in points :  
+                f.write( 'Num '+str(p.Num) + ' Val ' + str(p.Val) + ' Arg ' + str(p.Arg))
+                if p.initial == True: f.write(" INIT")
+                f.write("\n")
+            f.write(f"Time: {(time.time() - full_start):.4f} sec.\n")
 
 ####
         # Write all points to a .res file

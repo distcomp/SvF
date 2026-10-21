@@ -1,0 +1,28 @@
+SELECT: I AS Q, WPD AS VPD, E, Dat FROM "Phot-7shoX5.xlsx"
+
+RUN:	
+	MaxIter = 60
+	RunMode = 'L&L'
+
+PENALTY:
+	SvF.resF = None
+	a0=0.09433228
+	a1=0.3181083
+
+SET: 	Q = [ , ]
+		VPD = [ , ]
+
+VAR: 	E(Q,VPD) 
+
+CV:	NumOfSets=7;  GroupByParam='Dat'
+
+OBJ: 	E.MSD() + E.Complexity(Penal[0],Penal[1])
+
+# COMPARE:
+# 	ResFilesToCompare = ["E(Q-VPD)-y.res", "E(Q-VPD)-ei.res", "E(Q-VPD)-old2.res"]
+# 	TailStart = 35
+# 	ResLegendNames = ["spotoptim-y", "spotoptim-ei", "oldoptim2"]
+# 	ResGraphColors = ["pink", "red", "black"]
+
+EoF
+

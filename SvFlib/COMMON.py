@@ -20,6 +20,20 @@ jobId_s = []
 maxJobs = 0
 
 
+# spotoptim optimization parameters
+Use_spotoptim = False
+Acquisition_mode = "y"
+Low_bound = 1.e-4
+High_bound = 10
+Show_spotoptim_graphs=False
+Initial_points = "qms-lhs:20"
+# CompareBlock variables
+ResFilesToCompare = []
+ResGraphColors = []
+ResLegendNames = []
+Tail_start = 1
+
+
 ShowAll = True
 DrawFileName = ''
 #Resources = [ "pool-scip-ipopt" ]
@@ -162,7 +176,7 @@ optFact          = None
 optFile    =  'peipopt.opt'
 
 
-solverOptVal =  {  "linear_solver"              : 'ma57'\
+solverOptVal = {  "linear_solver"              : 'ma97'\
                  , 'max_iter'                   : 50000 \
                  , "print_level"                : 0     \
                  , 'warm_start_init_point'      : 'yes' \
@@ -170,8 +184,8 @@ solverOptVal =  {  "linear_solver"              : 'ma57'\
                  , 'warm_start_mult_bound_push' : 1e-6 \
                  , 'constr_viol_tol'            : 1e-4 \
                  , 'mu_init'                    : 1e-6 \
-                 , "tol"                        : 1e-9 \
-                 , 'print_user_options'         : 'yes'
+                ,  "tol"                        : 1e-6 \
+                 , 'print_user_options'         : 'yes' #, 'halt_on_ampl_error': 'yes'
                 }
 #    opt.options['acceptable_tol']       = 1e-10
 
