@@ -1,14 +1,11 @@
 # -*- coding: UTF-8 -*-
 
-from   sys import *
-
-#from   Pars import *
-from   Lego  import *
-from   Tools import *
-#from   Pars  import *
+from GridArgs import Domain, Set
+from Object import findSetByName, getFun
+from Tools import printS
 import COMMON as com
 
-from Pars import SubstitudeName
+from Pars import SubstitudeName, getfloatNaN
 
 NUM_SymbolStart = '1234567890.'
 NUM_Symbol      = '1234567890.e'
@@ -552,8 +549,8 @@ def  getSet26 ( txt, grids = []) :   #  if not list    # находим по и�
                 if pDS >= 0:
                     arg = pars.Args(pDS+1)
                     if com.printL: print('len (arg)=', len (arg))
-                    arg[0] = findGridByName ( grids, arg[0] )
-                    if len (arg) >= 3 : arg[2] = findGridByName ( grids, arg[2] )
+                    arg[0] = findSetByName ( grids, arg[0] )
+                    if len (arg) >= 3 : arg[2] = findSetByName ( grids, arg[2] )
                     if len (arg) == 2 : return Domain ( name, arg[0],arg[1])
                     if len (arg) == 3 : return Domain ( name, arg[0], arg[1], arg[2])
                     if len (arg) == 4 : return Domain ( name, arg[0], arg[1], arg[2], arg[3])
@@ -571,22 +568,22 @@ def  getSet26 ( txt, grids = []) :   #  if not list    # находим по и�
     #                    if not com.Preproc:
 #                            if np.isnan(lis[2]) :  lis[2]=-50
 #                        return Grid ( name, lis[0], lis[1], lis[2], lis[3], lis[4] )
-                        return Grid ( name, lis[0], lis[1], lis[2], lis[3] )
+                        return Set ( name, lis[0], lis[1], lis[2], lis[3] if lis[3] is not None else '' )
 
                 elif delim == '\\inn':                          #  looking for in other grids
                         p = pars.find_type ( 'name', p+1 )
    #                     print 'p', p
                         if p >= 0 : 
 #                            print 'pp33', p, pars.items [ p ].part
-                            g = findGridByName ( grids, pars.items [ p ].part)       # находим по имени и заменяем
+                            g = findSetByName ( grids, pars.items [ p ].part)       # находим по имени и заменяем
                             if g is None :
-                                co.LastGrid = None
+                                com.LastSet = None
                             else:
-                                co.LastGrid = g
+                                com.LastSet = g
                                 if com.printL: print ('g.name', g.name)
-                                if g.className == 'Grid' :
+                                if g.className == 'Set' :
 #                                    return Grid ( name, g.min, g.max, g.step, g.ind, g.oname )
-                                    return Grid ( name, g.min, g.max, g.step, g.ind, name )    # !!!???  16.11.2020
+                                    return Set ( name, g.min, g.max, g.step, g.ind, name )    # !!!???  16.11.2020
                                 else :
                                     return g
                 return None;

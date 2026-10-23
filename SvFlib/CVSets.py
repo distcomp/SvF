@@ -32,30 +32,35 @@ def CVmakeSets ( NoR =0, CV_NumSets =7, GroupBy=1,  CV_Margin=0, NumOfIter=None 
 
     CV_NumSets = min (len(unique_par), int(CV_NumSets))
 
-    SvF.ValidationSets = [[] for _ in range(CV_NumSets)]
+    ValidationSets = [[] for _ in range(CV_NumSets)]
     for num in range(NoR):
-        SvF.ValidationSets[unique_par.index(CVarray[num]) % CV_NumSets].append(num)
+        ValidationSets[unique_par.index(CVarray[num]) % CV_NumSets].append(num)
 #    print ('**************ValidationSets',SvF.ValidationSets)
 
-    SvF.notTrainingSets = deepcopy (SvF.ValidationSets)
+#    SvF.notTrainingSets = deepcopy (SvF.ValidationSets)
+    notTrainingSets = deepcopy(ValidationSets)
 
     if CV_Margin > 0 :
         for s in range (CV_NumSets) :
             set_nTrain = set ()
-            for i in SvF.notTrainingSets[s] :
+            for i in notTrainingSets[s] :
                 for ad in range (i-CV_Margin,i+CV_Margin+1):
                     if ad >= 0 and ad < NoR :  set_nTrain.add (ad)
-            SvF.notTrainingSets[s] = list(set_nTrain)
+            notTrainingSets[s] = list(set_nTrain)
 #    print ('*********************** notTrainingSets *******',SvF.notTrainingSets)
 
-    SvF.TrainingSets = [[] for _ in range(CV_NumSets)]
+    TrainingSets = [[] for _ in range(CV_NumSets)]
     for s in range(CV_NumSets):
-        SvF.TrainingSets[s] = Substract (range(NoR), SvF.notTrainingSets[s])  #[x for x in range(NoR) if x not in ValidationSets[set] ]
+        TrainingSets[s] = Substract (range(NoR), notTrainingSets[s])  #[x for x in range(NoR) if x not in ValidationSets[set] ]
 #    print ('********************** TrainingSets ***',SvF.TrainingSets)
 
     SvF.CV_NoRs.append(NoR)
     print ('CVmakeSets    SvF.CV_NoRs', SvF.CV_NoRs, CV_NumSets)
+    SvF.ValidationSets.extend(ValidationSets) # = ValidationSets
+    SvF.TrainingSets.extend(TrainingSets)
     SvF.CV_NoSets = len (SvF.ValidationSets)
+    return SvF.ValidationSets, SvF.TrainingSets
+
 
  ############################## 21.10 #################################
 def make_CV_Sets ( NoR =0, NoSubSets =7, ValidationPartSize=1,  Data =None, Margin=0, Border=None ) :
@@ -128,7 +133,7 @@ def SvF_MakeSets_byParam( arr, CVstep=0, CVmargin=0, border=None ):  # sort if m
     SvF.CV_NoRs.append(NoR)
     SvF.CV_NoSets = len(ValidationSets)
     SvF.ValidationSets  = ValidationSets    #  номера точек тестирования
-    SvF.notTrainingSets = notTrainingSets   #  номера точек которые выбрасываются
+##26/10    SvF.notTrainingSets = notTrainingSets   #  номера точек которые выбрасываются
     SvF.TrainingSets = TrainingSets
     print("EofMakeSets_byParam, Unique param.num =", len(unique_par), 'Parts=', CVstep, "\n")
 #    for nSet in range (CVstep) :
@@ -170,7 +175,7 @@ def MakeSets_byParts ( NoR, CVstep=7, CVpart_size=1, CVmargin=0) :
  #       TrainingSets[set] = [x for x in range(NoR) if x not in notTrainingSets[set] ]
 
     SvF.CV_NoRs.append(NoR)
-    print ('SvF.CV_NoRs', SvF.CV_NoRs)
+    print ('MakeSets_byParts       SvF.CV_NoRs', SvF.CV_NoRs)
     SvF.CV_NoSets = len (ValidationSets)
 
     for s in range(CVstep) : print (str(len(ValidationSets[s]))+'/'+str(len(notTrainingSets[s])),)

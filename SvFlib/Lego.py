@@ -5,16 +5,13 @@ from __future__ import division
 import numpy as np
 #from   numpy import *
 #from   pyomo.environ import *
-import pyomo.environ as py
 #import matplotlib.pyplot as plt
 from   os.path  import *
 
-from sympy import false
 
 #import sys
 
 from Object import *
-import os.path
 
 from Vari      import *     # 30
 
@@ -24,8 +21,6 @@ from InData import *
 from Polynome import *
 
 from   copy   import *
-from   shutil import move
-import Table as Tab
 #from ModelFiles import *  #to_logOut
 #import MakeModel as MM
 #from MakeModel import ParseSelect30
@@ -110,10 +105,8 @@ class BaseFun (Tensor) :
 #        self.var   = None           # 29
         self.mu    = None
         self.CVerr = None           # 04.23
-#        self.tesValidationSets  = []
-#        self.notTrainingSets = []
         self.ValidationSets  = SvF.ValidationSets
-        self.notTrainingSets = SvF.notTrainingSets
+##        self.notTrainingSets = SvF.notTrainingSets
         self.TrainingSets = SvF.TrainingSets
 
         self.Nxx   = 0
@@ -908,23 +901,24 @@ class BaseFun (Tensor) :
             return ret  / self.V.sigma2 / num
 
 
-    def Compl ( self, bets ) :
-            return self.ComplDer2 ( bets )
+    def Compl ( self, *bets ) :                    #  [] -> *     26/10
+            return self.ComplDer2 ( *bets )
 
-    def ComplMean2 ( self, bets ) :
-            return self.ComplDer2 ( bets ) / self.Mean()**2
+    def ComplMean2 ( self, *bets ) :
+            return self.ComplDer2 ( *bets ) / self.Mean()**2
 
-    def ComplSig2 ( self, bets ) :
-            return self.ComplDer2 ( bets ) / self.V.sigma2
+    def ComplSig2 ( self, *bets ) :
+            return self.ComplDer2 ( *bets ) / self.V.sigma2
 
-    def Complexity ( self, bets ) :
-            return self.ComplDer2 ( bets )
+    def Complexity ( self, *pens ) :
+#            return self.ComplDer2 ( [pen[0],pen[1]] )
+         return self.ComplDer2 ( *pens )
 
 
-    def ComplDer2 ( self, bets ) :
+    def ComplDer2 ( self, *bets ) :
 #            print ('ComplDer2', self.type)
             if self.dim == 1 :
-              return    bets[0]**4 * self.INTxx ( )
+                return    bets[0]**4 * self.INTxx ( )
             elif self.dim == 3:
                 return (  bets[0] ** 4 * self.INTxx()
                         + bets[1] ** 4 * self.INTyy()
@@ -939,7 +933,7 @@ class BaseFun (Tensor) :
                       + bets[0]**2 * bets[1]**2 * self.INTxy ( )                     #      * 2  ????
                      )   
 
-    def ComplDer1 ( self, bets ) :
+    def ComplDer1 ( self, *bets ) :
             if self.dim == 1 :
                 return  bets[0]**4  * self.INTx()
             else:
@@ -1607,15 +1601,33 @@ class BaseFun (Tensor) :
      #   return self.F (ArS_real )
 
 
-    def INTx ( self ) :                                                                    # self.fneNDT(x) ??
-      if self.type[0] == 'g' and self.dim==1 :
-        return  sum ( self.fneNDT(x-1) * self.fneNDT(x) * self.fneNDT(x+1) * self.f_gap(x) *
-                     ( self.grd[x+1] - self.grd[x-1] )**2  
-		    for x in self.A[0].mNodSm )
-      elif self.type[0] == 'g' and self.dim==2 :
-        return  sum ( self.fneNDT(x-1,y) * self.fneNDT(x,y) * self.fneNDT(x+1,y) * self.f_gap(x,y) *
-                     ( self.grd[x+1,y] - self.grd[x-1,y] )**2  
-                    for y in self.A[1].NodS    for x in self.A[0].mNodSm )
+    def INTx(self):  # self.fneNDT(x) ??
+        #       if self.param or not SvF.Use_var:            gr = self.grd
+        #      else:            gr = self.var  # 29
+
+        if self.type[0] == 'g' and self.dim == 1:
+            return sum( self.fneNDT(x) * self.fneNDT(x + 1) * self.f_gap(x) *
+                       (self.gr[x + 1] - self.gr[x]) ** 2
+                       for x in self.A[0].NodSm)
+        elif self.type[0] == 'g' and self.dim == 2:
+            return sum(self.fneNDT(x - 1, y) * self.fneNDT(x, y) * self.fneNDT(x + 1, y) * self.f_gap(x, y) *
+                       (self.grd[x + 1, y] - self.grd[x - 1, y]) ** 2
+                       for y in self.A[1].NodS for x in self.A[0].mNodSm)
+
+
+    def INTx_left(self):  # self.fneNDT(x) ??
+        #       if self.param or not SvF.Use_var:            gr = self.grd
+        #      else:            gr = self.var  # 29
+
+        if self.type[0] == 'g' and self.dim == 1:
+            return sum(self.fneNDT(x - 1) * self.fneNDT(x) * self.fneNDT(x + 1) * self.f_gap(x) *
+                       (self.gr[x + 1] - self.gr[x - 1]) ** 2
+                       for x in self.A[0].mNodSm)
+        elif self.type[0] == 'g' and self.dim == 2:
+            return sum(self.fneNDT(x - 1, y) * self.fneNDT(x, y) * self.fneNDT(x + 1, y) * self.f_gap(x, y) *
+                       (self.grd[x + 1, y] - self.grd[x - 1, y]) ** 2
+                       for y in self.A[1].NodS for x in self.A[0].mNodSm)
+
 
     def derivXX (self, xy ) :
    #     if self.param or not SvF.Use_var:   gr = self.grd

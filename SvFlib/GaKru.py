@@ -47,20 +47,20 @@ def dB( Bd, Ld, H) :
     L = Ld * Pi / 180;
     M = a * (1 - e2) / pow((1 - e2 * pow(np.sin(B) , 2)) , 1.5);
     N = a * pow((1 - e2 * pow(np.sin(B) , 2)) , -0.5);
-    return ro / (M + H) * (N / a * e2 * np.sin(B) * np.cos(B) * da + ((N * N) / (a * a) + 1) * N * np.sin(B) * np.np.cos(B) * de2 / 2 - (dx * np.np.cos(L) + dy * np.sin(L)) * np.sin(B) + dz * np.np.cos(B)) - wx * np.sin(L) * (1 + e2 * np.np.cos(2 * B)) + wy * np.np.cos(L) * (1 + e2 * np.np.cos(2 * B)) - ro * ms * e2 * np.sin(B) * np.np.cos(B);
+    return ro / (M + H) * (N / a * e2 * np.sin(B) * np.cos(B) * da + ((N * N) / (a * a) + 1) * N * np.sin(B) * np.cos(B) * de2 / 2 - (dx * np.cos(L) + dy * np.sin(L)) * np.sin(B) + dz * np.cos(B)) - wx * np.sin(L) * (1 + e2 * np.cos(2 * B)) + wy * np.cos(L) * (1 + e2 * np.cos(2 * B)) - ro * ms * e2 * np.sin(B) * np.cos(B);
 
 
 def dL( Bd, Ld, H) :
     B = Bd * Pi / 180;
     L = Ld * Pi / 180;
     N = a * pow((1 - e2 * pow(np.sin(B) , 2)) , -0.5);
-    return ro / ((N + H) * np.np.cos(B)) * (-dx * np.sin(L) + dy * np.np.cos(L)) + tan(B) * (1 - e2) * (wx * np.np.cos(L) + wy * np.sin(L)) - wz;
+    return ro / ((N + H) * np.cos(B)) * (-dx * np.sin(L) + dy * np.cos(L)) + np.tan(B) * (1 - e2) * (wx * np.cos(L) + wy * np.sin(L)) - wz;
 
 def WGS84Alt( Bd, Ld, H) :
     B = Bd * Pi / 180;
     L = Ld * Pi / 180;
     N = a * pow((1 - e2 * pow(np.sin(B) , 2)) , -0.5);
-    dH = -a / N * da + N * pow(np.sin(B) , 2) * de2 / 2 + (dx * np.np.cos(L) + dy * np.sin(L)) * np.np.cos(B) + dz * np.sin(B) - N * e2 * np.sin(B) * np.np.cos(B) * (wx / ro * np.sin(L) - wy / ro * np.np.cos(L)) + ((a * a) / N + H) * ms;
+    dH = -a / N * da + N * pow(np.sin(B) , 2) * de2 / 2 + (dx * np.cos(L) + dy * np.sin(L)) * np.cos(B) + dz * np.sin(B) - N * e2 * np.sin(B) * np.cos(B) * (wx / ro * np.sin(L) - wy / ro * np.cos(L)) + ((a * a) / N + H) * ms;
     return H + dH;
 
 ###################  градусы в градусы  ############################
@@ -104,7 +104,7 @@ def SK42LTOY( B, L, H) :   #lat, long
     Ya = pow(Lo , 2) * (79690 - 866190 * pow(np.sin(Bo) , 2) + 1730360 * pow(np.sin(Bo) , 4) - 945460 * pow(np.sin(Bo) , 6));
     Yb = pow(Lo , 2) * (270806 - 1523417 * pow(np.sin(Bo) , 2) + 1327645 * pow(np.sin(Bo) , 4) - 21701 * pow(np.sin(Bo) , 6) + Ya);
     Yc = pow(Lo , 2) * (1070204.16 - 2136826.66 * pow(np.sin(Bo) , 2) + 17.98 * pow(np.sin(Bo) , 4) - 11.99 * pow(np.sin(Bo) , 6) + Yb);
-    return (5 + 10 * No) * 100000 + Lo * np.np.cos(Bo) * (6378245 + 21346.1415 * pow(np.sin(Bo) , 2) + 107.159 * pow(np.sin(Bo) , 4) + 0.5977 * pow(np.sin(Bo) , 6) + Yc);
+    return (5 + 10 * No) * 100000 + Lo * np.cos(Bo) * (6378245 + 21346.1415 * pow(np.sin(Bo) , 2) + 107.159 * pow(np.sin(Bo) , 4) + 0.5977 * pow(np.sin(Bo) , 6) + Yc);
 
 def SK42toGausKru( B42, L42, H) :   # lat, lon
     return SK42LTOY( B42, L42, H), SK42BTOX(B42, L42, H)
@@ -131,7 +131,7 @@ def SK42XTOB(X, Y, Z) :
     No = int(No)
     Bi = X / 6367558.4968
     Bo = Bi + np.sin(Bi * 2) * (0.00252588685 - 0.0000149186 * np.sin(Bi) ** 2 + 0.00000011904 * np.sin(Bi) ** 4)
-    Zo = (Y - (10 * No + 5) * 10 ** 5) / (6378245 * np.np.cos(Bo))
+    Zo = (Y - (10 * No + 5) * 10 ** 5) / (6378245 * np.cos(Bo))
     Ba = Zo ** 2 * (0.01672 - 0.0063 * np.sin(Bo) ** 2 + 0.01188 * np.sin(Bo) ** 4 - 0.00328 * np.sin(Bo) ** 6)
     Bb = Zo ** 2 * (0.042858 - 0.025318 * np.sin(Bo) ** 2 + 0.014346 * np.sin(Bo) ** 4 - 0.001264 * np.sin(Bo) ** 6 - Ba)
     Bc = Zo ** 2 * (0.10500614 - 0.04559916 * np.sin(Bo) ** 2 + 0.00228901 * np.sin(Bo) ** 4 - 0.00002987 * np.sin(Bo) ** 6 - Bb)
@@ -148,7 +148,7 @@ def SK42YTOL(X, Y, Z) :
      No = int(No)
      Bi = X / 6367558.4968
      Bo = Bi + np.sin(Bi * 2) * (0.00252588685 - 0.0000149186 * np.sin(Bi) ** 2 + 0.00000011904 * np.sin(Bi) ** 4)
-     Zo = (Y - (10 * No + 5) * 10 ** 5) / (6378245 * np.np.cos(Bo))
+     Zo = (Y - (10 * No + 5) * 10 ** 5) / (6378245 * np.cos(Bo))
      La = Zo ** 2 * (0.0038 + 0.0524 * np.sin(Bo) ** 2 + 0.0482 * np.sin(Bo) ** 4 + 0.0032 * np.sin(Bo) ** 6)
      Lb = Zo ** 2 * (0.01225 + 0.09477 * np.sin(Bo) ** 2 + 0.03282 * np.sin(Bo) ** 4 - 0.00034 * np.sin(Bo) ** 6 - La)
      Lc = Zo ** 2 * (0.0420025 + 0.1487407 * np.sin(Bo) ** 2 + 0.005942 * np.sin(Bo) ** 4 - 0.000015 * np.sin(Bo) ** 6 - Lb)
@@ -203,21 +203,21 @@ def AzimutToLatLon ( km_x, km_y ):  # B,  L  return lat_grad, lon_grad
 
         Z = np.sqrt ( Z )
         sin_lat = np.sin ( co.lat_center_rad )
-        np.cos_lat = np.np.cos ( co.lat_center_rad )
+        np.cos_lat = np.cos ( co.lat_center_rad )
         ar = Z * sin_lat + Ykm * np.cos_lat
         if ( ar >  1. ): ar =  1
         if ( ar < -1. ):  ar = -1
-        mat_y  = asin ( ar )
+        mat_y  = np.arcsin ( ar )
 
         np.cos_la = np.cos ( mat_y  )
-        if ( fabs ( np.cos_la ) < 1.0e-20 ) : ar = 1;
+        if ( np.abs ( np.cos_la ) < 1.0e-20 ) : ar = 1;
         else 				             : ar = Xkm / np.cos_la;
         if ( ar >  1 ) : ar =  1;
         if ( ar < -1 ) : ar = -1;
         if((Z-np.sin(mat_y)*sin_lat)*np.cos_la*np.cos_lat<0.):
-            mat_x = 180+(co.lon_center_rad-asin(ar))/RADpGRAD
+            mat_x = 180+(co.lon_center_rad-np.arcsin(ar))/RADpGRAD
         else :
-            mat_x =     (co.lon_center_rad+asin(ar))/RADpGRAD
+            mat_x =     (co.lon_center_rad+np.arcsin(ar))/RADpGRAD
         mat_y /= RADpGRAD
 
         if ( mat_x <    0. ): mat_x += 360

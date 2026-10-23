@@ -6,10 +6,7 @@ from copy   import *
 #from pyomo.environ import *
 import pyomo.environ as py
 
-from SolverTools import Factory #*
-
-#import COMMON as co
-
+#from SolverTools import Factory #*
 
 #   for index, string in enumerate(strings):
 #   np.linspace(0, 2, 9)  # 9 чисел от 0 до 2 включительно
@@ -27,22 +24,18 @@ from SolverTools import Factory #*
 #
 
 coprintL = 0    # чтобы отделиться от роекта
-#from pyomo.opt import SolverFactory
+from pyomo.opt import SolverFactory
 
-#def LittleFactory (optFile , py_max_iter, py_tol ): # , warm_start_bound_push      =1e-6,
- #   opt = SolverFactory('ipopt')
-#
- #   opt.options["print_level"] = 4 #4 #6
-  #  opt.options['warm_start_init_point']      = 'yes'
-   # opt.options['max_iter']             = py_max_iter
-    #opt.options["tol"]                  = py_tol
-#    #opt.options['acceptable_tol']       = 1e-10
-#    opt.options['print_user_options']      = 'yes'
+def LocalFactory ( pany_ipopt ): # , warm_start_bound_push      =1e-6,
+    opt = SolverFactory( pany_ipopt ) #ipopt')
 
-#    if  optFile != None :
- #       if co.RunMode[0] != 'L' or co.RunMode[2] != 'L' :
-  #          makeSolverOptionsFile(co.tmpFileDir+'/'+optFile, "ipopt", opt.options)
- #   return opt
+    opt.options["print_level"] = 4 #4 #6
+    opt.options['warm_start_init_point']      = 'yes'
+    opt.options['max_iter']             = 10000
+    opt.options["tol"]                  = 1e-9
+    #opt.options['acceptable_tol']       = 1e-10
+    opt.options['print_user_options']      = 'yes'
+    return opt
 
 
 def CrePolyPow2 ( dim, maxP ) :            # np.arrays
@@ -348,16 +341,14 @@ def SetAllArgs (Arg, InArg, stepsIN ) :
     return InArg
 
 
-
-
-def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal ) :
+def SurMin ( CVNumOfIter, stepsIN, ExitStep, InArg, getVal, path_ipopt: 'ipopt' ) :
     old_points = []
     old_cCos = []
     old_stepMult = 1
     par_der = []   # deriv
     firstDerec = True
-#    opt = LittleFactory ( None, 10000, 1e-9 )  # чтобы отделиться
-    opt = Factory ( None )  # чтобы отделиться
+    opt = LocalFactory ( path_ipopt  )  #'/opt/scipopt911/bin/ipopt' )  # чтобы отделиться
+ #   opt = Factory ( None )  # чтобы отделиться
 
     Arg = []
     steps = []

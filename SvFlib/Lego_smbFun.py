@@ -1,8 +1,6 @@
 # -*- coding: UTF-8 -*-
 
 from Lego import *
-import sympy as sy
-from itertools import combinations_with_replacement
 
 class smbFun (BaseFun) :
     def __init__ (self, Vname='',  As=[], param=False, Degree=-1,  Finitialize = 0, DataReadFrom = '',Data=[], Type='smbFun',

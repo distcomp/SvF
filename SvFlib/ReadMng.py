@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 from __future__ import division
 
+import os
+
 from Object import *
 
 #import COMMON as co
@@ -8,7 +10,6 @@ from Object import *
 
 from  time import *
 #import os
-from  os  import listdir, getcwd, chdir
 from  sys import *
 
 from Lego import *
@@ -26,7 +27,6 @@ from ModelFiles import *
 #import COMMON as co
 from SvFconf import DrawMode
 
-import io
 from datetime import datetime
 current_datetime = datetime.now()
 print(current_datetime)
@@ -461,11 +461,11 @@ def ReadMng ( ) :
             Swr('SvF_MakeSets_byParam ( SvF.currentTab'+col_name+', '+','.join(args[1:])+' )' )
             wr('    Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
 
-    elif Is(Q, "MakeSets_byParts") :                #  out of date      24-12-26
-            args = buf.split(' ')
-            SvF.numCV += 1
-            Swr('SvF.ValidationSets, SvF.notTrainingSets = MakeSets_byParts ( SvF.currentTab.NoR, '+','.join(args)+' )' )
-            wr('    Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
+#    elif Is(Q, "MakeSets_byParts") :                #  out of date      24-12-26
+#            args = buf.split(' ')
+#            SvF.numCV += 1
+#            Swr('SvF.ValidationSets, SvF.notTrainingSets = MakeSets_byParts ( SvF.currentTab.NoR, '+','.join(args)+' )' )
+#            wr('    Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
     elif Is(Q, "WriteSvFtbl" ):
                     Swr( '\nSvF.currentTab.WriteSvFtbl (  \'' + buf + '\' )')
 ## 30                    if not SvF.Preproc: SvF.currentTab.WriteSvFtbl ( readEqStr() )

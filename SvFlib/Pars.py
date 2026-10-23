@@ -1,8 +1,6 @@
 # -*- coding: UTF-8 -*-
 
 #from  numpy import *
-import numpy as np
-import sys
 #from InData import * 
 from   GridArgs  import *
 from   math         import *

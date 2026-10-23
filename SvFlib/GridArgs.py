@@ -1,13 +1,11 @@
 #from  numpy import *
 import numpy as np
 #from  GaKru import *
-import sys
 from copy   import *
 from Object import *
 #from Table  import *
 #import COMMON as com
 from Tools import *
-import openpyxl
 #from Table  import *
 #from Table import getCurrentFieldData
 

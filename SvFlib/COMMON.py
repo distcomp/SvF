@@ -17,7 +17,7 @@ UsePrime = True
 max_workers = 3
 
 jobId_s = []
-maxJobs = 0
+maxJobsEverestFiles = 0
 
 
 ShowAll = True
@@ -36,7 +36,7 @@ funPrefix = 'f'             #  в ReadMng добавить обработку
 Prefix   = ''
 Comment = False              #  в ReadMng
 
-UseGreek = False
+UseGreek = True   #  26.09   False
 
 comment_buf = ''
 StartModel_pos = 0   #  кол-во записанных символов в последней строке
@@ -113,6 +113,7 @@ SavePoints   = False
 
 #Version  = 63
 Version  = 31
+ResFileVer = 31
 DataPath = ''
 
 
@@ -123,7 +124,7 @@ mngF = ''
 
 resF = ''    #      #resF = None - not read Penalty
 
-#lenPenalty   = 0   25 02 10
+lenPenalty   = 0   # 25 02 10  восстановил 26.09.30
 Penalty      = []
 OptNames = []
 #fromPenalty = None
@@ -139,7 +140,7 @@ currentTab  = None
 numCV      = -1
 CV_NoRs     = []     # 23.11    = 0
 ValidationSets      = []
-notTrainingSets     = []           #  notTrainingSets содержит кого выбрасываем
+## 26/09 notTrainingSets     = []           #  notTrainingSets содержит кого выбрасываем
 TrainingSets        = []           #  TrainingSets содержит точки обучени
 fun_with_mu = []
 CVparam      = ''

@@ -3,7 +3,7 @@ from __future__ import division
 #from  numpy import *
 from  time import *
 #import os
-from  os  import listdir, getcwd, chdir
+from  os  import listdir, getcwd
 from  sys import *
 
 from Object import *
@@ -14,8 +14,6 @@ from Task import *
 from CVSets import *
 from GaKru import *
 from Tools import *
-import Table as Tab
-from MakeModel import *
 from Pars      import *
 from Parser    import *
 
@@ -23,14 +21,12 @@ from Parser    import *
 #import COMMON as co
 
 import io
-import re
 
-import ezodf
-from docx2python import docx2python
-import tkinter as tk
 from datetime import datetime
 
 def save_clipboard(filename="clipboard.txt"):
+    import tkinter as tk
+
     root = tk.Tk()
     root.withdraw()  # не показывать окно
     try:
@@ -140,6 +136,8 @@ def readMNGfile ( fName ):
     lines_buf = []
     print ('fNane', fName)
     if fName.count('.odt'):
+        import ezodf
+
         fi = ezodf.opendoc(fName)
         start = False
         print('Len', len(fi.body))
@@ -177,6 +175,8 @@ def readMNGfile ( fName ):
     ###            fi.close()  #  ???????       &&&&&&&&&&&&&&&
   #      print('{*', lines_buf, "*}")
     elif fName.count('.docx'):
+        from docx2python import docx2python
+
         with docx2python(fName) as docx_content:
             tmp = docx_content.text.split('\n')
             BoF = False
@@ -362,6 +362,7 @@ def startStartModel () :
     Swr('SvF.Compile = False\n')   # 2026.07           #SvF.Preproc = False') ## 30
 
 def endObjStartModel () :
+ #   print ('SvF.ModelBuf', SvF.ModelBuf)
     for l in SvF.ModelBuf :
         Swrs(l)
     SvF.ModelBuf = 1  # >> Null
@@ -376,8 +377,6 @@ def endObjStartModel () :
     Swr('\nfrom SvFstart62 import SvFstart19')
     Swr('\nSvFstart19 ( Task )')  # 27   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-
 def startModel () :
      SvF.ModelBuf = []                         #   список строк
 #     wr('from  numpy import *')
@@ -388,11 +387,4 @@ def startModel () :
      wr('    Funs = Task.Funs')
      wr('    Gr = py.ConcreteModel()')
      wr('    Task.Gr = Gr')
- #    wr('    if SvF.CV_NoR > 0:')
- #    wr('        Gr.mu = py.Param ( range(SvF.CV_NoR), mutable=True, initialize = 1 )')
- #    wr('        for f in Funs :')
-  #   wr('            if (not f.param) and (not f.V.dat is None):')
-   #  wr('                f.mu  = Gr.mu')
-    # wr('                f.ValidationSets  = SvF.ValidationSets')
-     #wr('                f.notTrainingSets = SvF.notTrainingSets')
 

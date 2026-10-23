@@ -1,5 +1,7 @@
 # -*- coding: UTF-8 -*-
-from fontTools.misc.cython import returns
+
+import os
+import pyomo.environ as py
 
 from   ModelFiles import *
 from Table import *
@@ -98,9 +100,11 @@ def WriteCV(buf):
          #   buf = buf.replace ('Margin','CV_Margin')
 #            arg = ','.join(buf.split(';'))
  #           Swr('CVmakeSets ( ' + arg + ' )')
+########            SvF.numCV += 1    ###################################################
             SvF.numCV += 1
-            wr('\n    if len (SvF.CV_NoRs) > 0 :')  # 23.11
-            wr('        Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
+            if SvF.numCV == 0:        #  26/10/17        Озера    пространство + время   !!!!!!!!!!!!!!!!!!!!!!!!!
+              wr('\n    if len (SvF.CV_NoRs) > 0 :')  # 23.11
+              wr('        Gr.mu'+str(SvF.numCV)+' = py.Param ( range(SvF.CV_NoRs['+str(SvF.numCV)+']), mutable=True, initialize = 1 )')   #  23.11
 
 
 def WritePenalty ( buf ):       # Penalty:   [Inf.Period, Imm.Period]=0.999; RR=7;    SvF.resF = None
@@ -1350,7 +1354,7 @@ def ParseEQplus31 ( buf, Mode = 'EQ' ):
         eqPars.substAllNames_but_dot(g.name, g.ind)  ## 30g+
         eqPars.substAllNames(g.name + '__p', g.name)
  #       print('substAllNames', eqPars.join())
- #   eqPars.myprint()
+    #eqPars.myprint()
     for fu in Task.Funs:
         if fu.dim != 0 :
             eqPars.substAllNames_but_dot_plus(fu.V.name, SvF.funPrefix + fu.V.name)
@@ -1573,28 +1577,30 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
  #       eqPars.substAllNames_but_dot('Compl', 'Complexity')
 
         obj = eqPars.join()
-        beg = 0
-        while 1:                                                                    #  Add []
-            beg = obj.find('.Compl', beg)
-            if beg < 0 : break
-            if    obj.find('.Compl(',     beg) == beg :     beg +=  len('.Compl(')
-            elif  obj.find('.Complexity(',beg) == beg :     beg +=  len('.Complexity(')
-            elif  obj.find('.ComplCycle(',beg) == beg :     beg +=  len('.ComplCycle(')
-            elif  obj.find('.ComplCyc0E(',beg) == beg :     beg +=  len('.ComplCyc0E(')
-            elif  obj.find('.ComplSig2(', beg) == beg :     beg +=  len('.ComplSig2(')
-            elif  obj.find('.ComplMean2(',beg) == beg :     beg +=  len('.ComplMean2(')
-            else : break
-            if obj[beg] == '[' : continue
-            begi, in_br, end = getFromBrackets ( obj, '(', beg-1 )
-            obj = begi + '([' + in_br + '])' + end
+    #    beg = 0                        #  26/10
+     #   while 1:                                                                    #  Add []
+      #      beg = obj.find('.Compl', beg)
+       #     if beg < 0 : break
+          #  if    obj.find('.Compl(',     beg) == beg :     beg +=  len('.Compl(')
+         #   elif  obj.find('.Complexity(',beg) == beg :     beg +=  len('.Complexity(')
+        #    if  obj.find('.ComplCycle(',beg) == beg :     beg +=  len('.ComplCycle(')
+ #           elif  obj.find('.ComplCyc0E(',beg) == beg :     beg +=  len('.ComplCyc0E(')
+     #       elif  obj.find('.ComplSig2(', beg) == beg :     beg +=  len('.ComplSig2(')
+       #     elif  obj.find('.ComplDer1(', beg) == beg :     beg +=  len('.ComplDer1(')
+    #        elif  obj.find('.ComplMean2(',beg) == beg :     beg +=  len('.ComplMean2(')
+         #   else : break
+          #  if obj[beg] == '[' : continue
+           # begi, in_br, end = getFromBrackets ( obj, '(', beg-1 )
+            #obj = begi + '([' + in_br + '])' + end
         if SvF.printL:  print ('OBJ:', obj)
 
         obj, eqPars, constraint_Sets, dif_minus, dif_plus = ParseEQUATION ( obj, [] )
 
-#        SvF.lenPenalty = 0
- #       for itn, it in enumerate (eqPars.items) :
-  #          if it.part == 'Penal' :
-   #             SvF.lenPenalty = max (SvF.lenPenalty, int(eqPars.items[itn+2].part)+1 )
+        SvF.lenPenalty = 0
+        for itn, it in enumerate (eqPars.items) :
+            if it.part == 'Penal' :
+                SvF.lenPenalty = max (SvF.lenPenalty, int(eqPars.items[itn+2].part)+1 )
+        Swr('SvF.lenPenalty = ' + str (SvF.lenPenalty ) )
 
         if obj == 'N' :
           obj = ''
@@ -1632,14 +1638,11 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
             if SvF.printL:  print (delta)
             obj = objP[0][:p_plus+1] + 'defMSD(Gr,'+str(fNum)+')'+end
             if SvF.printL:  print (obj)
-#       Penalty
         if len (SvF.Penalty) == 0 :
-#            print '********C', obj.count('Penal[')
-#            for p in range(obj.count('Penal[')) : SvF.Penalty.append (.1)
             for p in range(obj.count('Penal[')) : SvF.Penalty.append (.03)      #   26.04
 
         if SvF.numCV == -1 and SvF.OptMode == 'SvF':   # CV по умолчанию  2023.11
-            wr('\n    make_CV_Sets(0, SvF.CVstep)')  # CV_Sets (fu )    -   25.05
+            wr('\n    if SvF.numCV == -1:  make_CV_Sets(0, SvF.CVstep)')  # CV_Sets (fu )    -   25.05
             wr('\n    if len (SvF.CV_NoRs) > 0 :')  # 23.11
             wr('\n       Gr.mu0 = py.Param ( range(SvF.CV_NoRs[0]), mutable=True, initialize = 1 )')  # 23.11
 
@@ -1651,7 +1654,7 @@ def WriteModelOBJ19 ( Q, obj ):                        #   OBJ:
                 if 1 :
                     wr('    if ' + fn + '.mu is None : '+ fn + '.mu = Gr.mu0')
                     wr('    ' + fn + '.ValidationSets = SvF.ValidationSets')
-                    wr('    ' + fn + '.notTrainingSets = SvF.notTrainingSets')
+  #26/10                  wr('    ' + fn + '.notTrainingSets = SvF.notTrainingSets')
                     wr('    ' + fn + '.TrainingSets = SvF.TrainingSets')
             elif it.part[0:3] == 'MSD':
                 fn = (eqPars.items[itn-2].part)
@@ -1733,25 +1736,44 @@ def WritePolyline ( buf ) :
         from GIS import Polyline
         Polyline (None,None,None,buf[:first])           # для регистрации на этапе компиляции
 
-def WriteRESIDUAL(buf) :                #  26.07    RESIDUAL: DB, E, E(ROWNUM), hours  # -> RESID_E_hours.mng + .dat
-    pars = buf.split(',')
-    dbName = pars[0]
-    dataField = pars[1]
-    func = pars[2]
-    fun_rr = func[:-1] + '[rr])'
-    fun_rr = fun_rr.replace('(', '('+dbName+'.')
-    args = pars[3:]
+def parse_resid(s):
+    # Делим только по первым двум запятым
+    db, field, rest = [x.strip() for x in s.split(",", 2)]
+    # Отделяем последнее поле, например t
+    expr, x_axe = [x.strip() for x in rest.rsplit(",", 1)]
+    # Разбираем E(X,Y,Z,...)
+    func_name = expr[:expr.index("(")].strip()
+    args_text = expr[expr.index("(") + 1:expr.rindex(")")]
+    args = [arg.strip() for arg in args_text.split(",")]
+    # Data.X[rr], Data.Y[rr], Data.Z[rr], ...
+    converted_args = ", ".join(
+        f"{db}.{arg}[rr]"
+        for arg in args
+    )
+    return (
+        f"{db}.Residual_{field}[rr] = "
+        f"{db}.{field}[rr] - "
+        f"{func_name}({converted_args})" #,
+    ),         db, field, func_name, converted_args, x_axe
+
+
+def WriteRESIDUAL(buf) :         #  26.07    RESIDUAL: DB, E,   E(ROWNUM),                hours  # -> RESID_E_hours.mng + .dat
+    pars = buf.split(',')                        # имя ДБ  поле функция(аргументы из БД), ось Х
+    resid_str, dbName, dataField, func_n, converted_args, x_axe = parse_resid(buf)
+    args = [x_axe]     #pars[3:]
     fName = 'RESID_' + dataField
     for p in args : fName += '_'+ p
-    Residual_fld = 'Residual_' + dataField
+    os.makedirs( fName, exist_ok=True)                      # каталог
 
-    Swr(dbName + '.AddField ("'+Residual_fld+'")')              #   подготовка и запись таблицы
+    Residual_fld = 'Residual_' + dataField                  #   подготовка и запись таблицы
+    Swr(dbName + '.AddField ("'+Residual_fld+'")')
     Swr('for rr in ' + dbName + '.sR:')
-    WriteString31('    '+dbName+'.'+Residual_fld+'[rr] = ' +dbName+'.'+ dataField + '[rr] - ' + fun_rr )
-    Swr(dbName+'.WriteSvFtbl("' + fName + '.dat")')
+    WriteString31('    ' + resid_str)  # convert_resid(buf) )
+    print ('.WriteSvFtbl("' + fName + '//' + fName + '.dat")')
+    Swr(dbName+'.WriteSvFtbl("' + fName + '//' + fName + '.dat")')
     Swr(dbName + '.KillField ("' + Residual_fld + '")')
 
-    with (open( fName + '.mng', 'w') as f):                     #   mng file
+    with (open( fName + '//' + fName + '.mng', 'w') as f):                     #   mng file
         f.write('SELECT * from ' + fName + '.dat\n')
         for a in args :
             f.write('SET: '+ a +' = [,,]\n')
@@ -1760,9 +1782,13 @@ def WriteRESIDUAL(buf) :                #  26.07    RESIDUAL: DB, E, E(ROWNUM), 
         f.write('RUN: MaxIter = 11;    #  RunMode="S&S" \n')
         f.write('OBJ: ' + Residual_fld + '.MSD() + ' + Residual_fld + '.Complexity('
         +",".join(f"Penal[{i}]" for i in range(len(args))) + ')\n' )
+
+        f.write(Residual_fld+".V.name = 'Δ" + func_n + "'\n")
         if len(args) == 1 :
-            f.write('POLY: P1([0, ' +Residual_fld+ '.A[0].max], [0, 0])\n')
-            f.write('PLOT: '+Residual_fld+', dms=1 + P1, c = green\n')
+          #  f.write('POLY: P1(['+Residual_fld+ '.A[0].min, ' +Residual_fld+ '.A[0].max], [0, 0])\n')
+            f.write('PLOT: '+Residual_fld+', dms=1 \n')
         else :
             f.write('PLOT: ' + Residual_fld + ', dms=1\n')
-        f.write('EoF')
+        f.write('EoF\n')
+        f.write("### !!! plt.axhline (0, color='black', lw=0.5) ")
+

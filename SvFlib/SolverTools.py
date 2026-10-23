@@ -5,9 +5,7 @@ import subprocess
 import COMMON as SvF
 import SvFconf as CONF
 
-from Task    import Grd_to_Var
 
-import platform
 
 #from pyomo.environ import *
 #import pyomo.environ as py
@@ -55,12 +53,21 @@ def makeNlFile ( Gr, stab_file ) :
   #          Gr.mu0[:] = 1
    #         for s in notTrainingSets: Gr.mu0[s] = 0
 
-def setMuToTeach_k (k) :                 #  notTrainingSets 1 - выбрасываем, 0 - берем
+def setMuToTeach_k (k) :                 #  notTrainingSets 1 - выбрасываем, 0 - берем 26.10 отказался от notTrainingSets
     for f in SvF.fun_with_mu:
-#        print (len(SvF.fun_with_mu), f.name, len (f.mu), k)
-        f.mu[:] = 1
-        if type(k) == type(1):
-           for s in f.notTrainingSets[k]:   f.mu[s].value = 0
+        if type(k) != type(1):
+            f.mu[:] = 1                 # все точки
+        else :
+            f.mu[:] = 0
+     #   for m in range (SvF.CV_NoRs[0]) :print(f.mu[m]())
+
+ #       for m in f.mu:  print(m())
+      #  if type(k) == type(1):
+            for s in f.TrainingSets[k]:   f.mu[s].value = 1
+ #           for s in f.notTrainingSets[k]:   f.mu[s].value = 0
+    #        print(f.TrainingSets[k])
+       #     for m in range(SvF.CV_NoRs[0]): print(f.mu[m]())
+        #    exit (-1)
 
 
 #def makeNlFileTeach(Gr, stab_file, notTrainingSets_k):
@@ -127,8 +134,8 @@ def solveNlFileS ( sym_maps, __peProblems, tmpFileDir, RunMo ) :
                                      workdir=tmpFileDir, debug=False)
             print (__peProblems )
             print ( SvF.optFile )
-            if SvF.maxJobs > 0 :
-                while ( len (SvF.jobId_s) > SvF.maxJobs ) :
+            if SvF.maxJobsEverestFiles > 0 :
+                while ( len (SvF.jobId_s) > SvF.maxJobsEverestFiles ) :
                     theSession.session.deleteJob( SvF.jobId_s[0] )
                     print ('Job  ', SvF.jobId_s[0], '  was killed' )
                     SvF.jobId_s.pop(0)

@@ -5,14 +5,11 @@ import numpy as np
 
 from  GaKru import *
 
-import sys
 
-import COMMON as com
 #from   Table import *
 
 from   GridArgs  import *
 
-import openpyxl
 
 #class Rectangle :                  #  Rectangle  ############
 

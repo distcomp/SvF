@@ -9,7 +9,6 @@ from  pyomo.environ import *
 #from PyomoEverestEnv import *
 ##from InData    import *
 from Polynome  import * 
-from MakeModel import *
 
 from Lego_pFun  import *
 from Lego_smbFun  import *
@@ -18,7 +17,7 @@ from Lego_CycleFun import *
 
 #import Lego
 from Pars  import *
-from Draw  import *
+from Draw import DrawComb, Plot
 
 #import copy
 from copy   import *

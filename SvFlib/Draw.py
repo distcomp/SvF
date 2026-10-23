@@ -2,6 +2,7 @@
 
 from __future__ import division
 import matplotlib.pyplot as plt
+from sympy.printing.pretty.pretty_symbology import line_width
 
 from GridArgs import *
 from Pars        import *
@@ -16,7 +17,6 @@ from GIS     import *
 
 import matplotlib.ticker
 from matplotlib.ticker import FuncFormatter
-from matplotlib.ticker import ScalarFormatter
 
 from SvFconf import DrawMode
 
@@ -41,6 +41,7 @@ def Plot (plots) :
     if SvF.yaxis_step != 0:     ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=SvF.yaxis_step))
     if len(SvF.X_lim) != 0: plt.xlim(SvF.X_lim )
     if len(SvF.Y_lim) != 0: plt.ylim(SvF.Y_lim )
+    plt.axhline (0, color='black', lw=0.5)    #####################  для ОСТАТКОВ
 
     TRANSPOSE = False
 
@@ -51,7 +52,7 @@ def Plot (plots) :
     file_name = ''
 
     C = 'red';  LW = 1.5;  LS = '-'
-    MS = 6.0;  MEC = 'auto';  MFC = 'auto'; MARK = None; MEW = 1
+    MS = 6.0;  MEC = 'auto';  MFC = 'auto'; MARK = None; MEW = 1;   MARKEVERY = 1
 #    LAB = None
     LAB = ''
 
@@ -127,6 +128,7 @@ def Plot (plots) :
                 elif PAR in ['markerfacecolor',	'mfc'] :        MFC = VAL                   # Цвет заливки (внутренней части) маркера mfc=none-не заливать
                 elif PAR in ['markeredgecolor', 'mec'] :        MEC = VAL                   # Цвет границы маркера
                 elif PAR in ['markeredgewidth', 'mew'] :        MEW = float(VAL)            # Толщина границы маркера
+                elif PAR in ['markevery'] :                     MARKEVERY = int(VAL)            # Толщина границы маркера
                 elif PAR in ['label', 'lab' ] :                 LAB = VAL                   # Текст названия линии. Отображается только при вызове plt.legend()
                 #                  Для данных
                 elif PAR in ['dcolor', 'dc' ] :                   dC  = VAL                	# Цвет линии или маркера (например, 'red', '#FF0000')
@@ -548,7 +550,6 @@ def DrawComb( param ):
                     for i in Ay.NodS:
                         if Transp:      z[i, j] = fun.grdNaNreal (i, j)
                         else:           z[i, j] = fun.grdNaNreal (j, i)
-                from matplotlib import ticker, cm
 
                 z = np.ma.masked_where(z <= -9999, z)  #################### NODATA == nan  !!!
                 if mii == maa and type(levs) == type(1): levs = [mii - 1, mii, mii + 1]     #28

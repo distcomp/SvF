@@ -52,7 +52,7 @@ class CycleFun (Fun) :
             print ("INTxx:  No cycle")
             exit (-1)
 
-    def ComplCycle ( self, bets ) :                                 #  Устарело
+    def ComplCycle ( self, *bets ) :                                 #  Устарело
             return    bets[0]**4 * self.INTxxcycle ( )
 
 
@@ -78,7 +78,7 @@ class CycleFun (Fun) :
             exit (-1)
 
 
-    def ComplCyc0E ( self, bets ) :                 #28    первая точка должна быть равна последней
+    def ComplCyc0E ( self, *bets ) :                 #28    первая точка должна быть равна последней
             return    bets[0]**4 * self.INTxxcyc0E ( )
 
     def Complexity ( self, bets ) :

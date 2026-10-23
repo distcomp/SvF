@@ -1,3 +1,4 @@
+import pyomo.environ as py
 from Lego import *
 
 class SPWLFun (Fun) :

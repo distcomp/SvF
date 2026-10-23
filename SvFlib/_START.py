@@ -41,17 +41,16 @@ while (1) :
         print('\n\n\n *********  END OF TASK! **************')
      #   brak
  #       SvF.SModelFile = None
-  #      SvF.ModelBuf = None
+        SvF.ModelBuf = None
    #     SvF.resF = ''
     #    SvF.OptStep = '0.01'
      #   SvF.optEstim = sys.float_info.max
       #  SvF.currentTab = None
        # SvF.useNaN = True    #      26.02.01  False#
 #        ValidationSets = []
- #       notTrainingSets = []  # notTrainingSets содержит кого выбрасываем
   #      TrainingSets = []  # TrainingSets содержит точки обучени
-   #     SvF.CV_NoRs = []
-    #    SvF.numCV = -1
+        SvF.CV_NoRs = []
+        SvF.numCV = -1
 
 
 print ('END OF FILE!')

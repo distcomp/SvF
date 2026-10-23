@@ -3,16 +3,13 @@
 from __future__ import division
 #from   numpy import *
 #from   pyomo.environ import *
-import pyomo.environ as py
 #import matplotlib.pyplot as plt
 from   os.path  import *
 
-from sympy import false
 
 #import sys
 
 from Object import *
-import os.path
 
 from Vari      import *     # 30
 
@@ -22,8 +19,6 @@ from InData import *
 from Polynome import * 
 
 from   copy   import *
-from   shutil import move
-import Table as Tab
 
 
 
@@ -34,7 +29,6 @@ def str_val (val) :
 
 
 def cnstrFun2 (args, V_name, NDT) :   #
-    from Lego import Fun
     fu = Func()     #   Устарело! Надо заменить!
     fu.dim = 2
  #   print ('*******************',fu.name)

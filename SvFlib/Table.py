@@ -5,7 +5,6 @@
 import numpy as np
 from   os.path  import *
 import openpyxl
-import sys
 #import COMMON as co
 from   Pars   import *
 ##from   InData import *
@@ -444,7 +443,6 @@ class Table (Object):
 
     def Read30_JSON(self):
         import json
-        import pandas as pd
 
         # Считываем JSON
         with open(self.fromFile, "r", encoding="utf-8") as f:

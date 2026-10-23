@@ -3,7 +3,6 @@ from __future__ import division
 
 import COMMON as SvF            #   общий импорт
 #from  numpy import *            #    -- / ---
-import numpy as np
 
 class Object :
 #    def __init__ ( self, name='', Otype='NoType' ): #, object=None) :   #

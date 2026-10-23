@@ -5,7 +5,6 @@ from __future__ import division
 from Object import *
 
 from Lego import *
-from Task import *
 
 
 class Polyline (Object):

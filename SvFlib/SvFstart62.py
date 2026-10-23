@@ -4,11 +4,9 @@ from __future__ import division
 import numpy as np
 import time 
 #from  time import *
-import os
 
 #import COMMON as co
 from ssop_session import *
-import ssop_config
 #from Ssop import *
 
 # import Lego_symFun
@@ -20,8 +18,7 @@ from GaKru   import *
 from SurMin  import SurMin
 from Pars    import *
 from Tools   import *
-#from Task    import Grd_to_Var
-from Task    import Var_to_Grd, FillNaNAll, setUse_var
+from Task    import Grd_to_Var, Var_to_Grd, FillNaNAll, setUse_var
 from ModelFiles import to_logOut
 
 #from StartModel import Model
@@ -31,7 +28,6 @@ from ModelFiles import to_logOut
 from SolverTools import *
 
 #from pyomo.environ import *
-from pyomo.opt import SolverFactory
 
 
 #from PyomoEverestEnv import *
@@ -63,13 +59,25 @@ def SvFstart19 ( Task ) :
 
         try:
                 with (open(SvF.resF,'r') as f):
-                    s = f.readline().strip().replace(',', ' ').replace('   ', ' ').replace('  ', ' ').replace(' ', ',')  #.split(', ')
-                    Penal = readListFloat19 (s)
+                    s = f.readline()  #.strip().replace(',', ' ').replace('   ', ' ').replace('  ', ' ').replace(' ', ',')  #.split(', ')
+                    pen_ver = s.split ('#ResFileVer_')
+         #           pen_ver[1]
+                    if len(pen_ver) == 2 :
+                        ResFileVer = int(pen_ver[1])   ####################### пока не используется   №№№№№№№№№№№№№№
+                        print(ResFileVer)
+                    pen = pen_ver[0].strip().replace(',', ' ').replace('   ', ' ').replace('  ', ' ').replace(' ', ',')  #.split(', ')
+
+                    Penal = readListFloat19 ( pen)
+                    print(s,Penal)
                     print ('read PENALTY:', Penal)
+                    SvF.Penalty = Penal
         except IOError as e:
                 print ("******* Can''t open RES file: ", SvF.resF)
+                ans = input('Create new? (Y/N) ')
+                if not ( ans == 'Y' or ans == 'y' ): exit (-7)
+                SvF.Penalty = SvF.lenPenalty * [0.03]
         #        if len (Penal) == 0 :  exit(-1)
-        SvF.Penalty = Penal
+    #    SvF.Penalty = Penal
     # print (SvF.Penalty); exit(22)
  #   SvF.Penalty = [0.1 if x is None else x for x in SvF.Penalty]    26.04
     SvF.Penalty = [0.03 if x is None else x for x in SvF.Penalty]
@@ -94,7 +102,7 @@ def SvFstart19 ( Task ) :
       # Start surrogate optimization to find better regularization parameters if iterations are > 0.
       # Two ways of optimization are available: 1) new based on spotoptim module 2) old self-written
         if SvF.SurMinMethodName == 'SvF':
-            points, step = SurMin ( SvF.CVNumOfIter, SvF.OptStep, SvF.ExitStep, SvF.Penalty, get_sigCV )   ######## START ###########
+            points, step = SurMin ( SvF.CVNumOfIter, SvF.OptStep, SvF.ExitStep, SvF.Penalty, get_sigCV, '/opt/scipopt911/bin/ipopt' )   ######## START ###########
    #     else:
     #        points = SurMinMethod ( co.CVNumOfIter, arg, steps, get_sigCV, Task )
         # Write all points to a .res file
@@ -267,6 +275,7 @@ def get_sigCV( Penal ):
                     testEstim(Gr, nres)
             else:                 ## SvF.RunMode[2] == 'L' :
                 for k in range(SvF.CV_NoSets):                                  # LOAD RES,  culculation
+     #               print ('SvF.CV_NoSets', SvF.CV_NoSets)
                     #               if SvF.NotCulcBorder :  #  границ не считаем
                     #                  if k == 0 or k == len(ValidationSets) - 1:   1/0;  continue  #########  ???????????????????
                     #             printS (str(k)+' |')
@@ -307,7 +316,7 @@ def get_sigCV( Penal ):
 
 def write_res (Penal):
             with open(SvF.resF,'w') as f:      #  RES filewrite
-                f.write (str(Penal))
+                f.write (str(Penal) + ' #ResFileVer_'+str(SvF.ResFileVer))          #ResFileVer_
                 for fu in SvF.Task.Funs :           # v21
                       if fu.type == 'tensor': continue
                       if fu.V.dat is None or fu.param: continue  # 23.11
