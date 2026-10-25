@@ -1,12 +1,10 @@
 # -*- coding: UTF-8 -*-
 import sys
-path_SvF = "/home/sokol/D/SvF/"
 sys.path.append("/home/sokol/D/SvF/SvFlib")
-sys.path.append(path_SvF + "pyomo-everest/python-api")
-sys.path.append(path_SvF + "pyomo-everest/ssop")
+sys.path.append( "/home/sokol/D/SvF/pyomo-everest/python-api")
+sys.path.append( "/home/sokol/D/SvF/pyomo-everest/ssop")
 import COMMON as SvF
-SvF.path_SvF = path_SvF
-SvF.tmpFileDir = SvF.path_SvF + 'TMP/'
+SvF.tmpFileDir = "/home/sokol/D/SvF/TMP/"
 from CVSets import *
 from Table  import *
 from Task   import *
@@ -15,15 +13,18 @@ from GIS import *
 
 SvF.Task = TaskClass()
 Task = SvF.Task
-SvF.mngF = 'MAN.mng'
+SvF.mngF = 'Ni_distribution.mng'
+SvF.Compile = False
+
 SvF.TaskName="Ni_field_XY_Kola"; 
-Data = Table ( 'EXP_LAKE.xlsx','Data','X,Y,nP,"Avg-TNi" AS Ni' )
+Data = Table ( 'EXP_LAKE.xlsx','Data','X,Y,nP,Avg-TNi AS Ni' )
 X = Set('X',-100,100,-50,'','X')
 Y = Set('Y',-100,100,-50,'','Y')
 Ni = Fun('Ni',[X,Y])
 def fNi(X,Y) : return Ni.F([X,Y])
 CVmakeSets (  CV_NumSets=7, GroupBy='nP' )
 SvF.CVNumOfIter=1; 
+SvF.lenPenalty = 2
 import  numpy as np
 
 from Lego import *
@@ -43,12 +44,11 @@ def createGr ( Task, Penal ) :
     SvF.fun_with_mu.append(getFun('Ni'))
     if Ni.mu is None : Ni.mu = Gr.mu0
     Ni.ValidationSets = SvF.ValidationSets
-    Ni.notTrainingSets = SvF.notTrainingSets
     Ni.TrainingSets = SvF.TrainingSets
- 											# Ni.MSDrel(2.0)+Ni.Complexity([Penal[0],Penal[1]])
+ 											# Ni.MSDrel(2.0)+Ni.Compl(Penal[0],Penal[1])
     def obj_expression(Gr):  
         return (
-             Ni.MSDrel(2.0)+Ni.Complexity([Penal[0],Penal[1]])
+             Ni.MSDrel(2.0)+Ni.Compl(Penal[0],Penal[1])
         )  
     Gr.OBJ = py.Objective(rule=obj_expression)  
 
@@ -60,17 +60,17 @@ def print_res(Task, Penal, f__f):
 
     Ni = Task.Funs[0]
 
-    OBJ_ = Gr.OBJ ()
+    OBJ_ = SvF.optOBJ
     print (  '    OBJ =', OBJ_ )
     f__f.write ( '\n    OBJ ='+ str(OBJ_)+'\n')
     tmp = (Ni.MSDrel(2.0))
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi.MSDrel(2.0) =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi.MSDrel(2.0) ='+ stmp+'\n')
-    tmp = (Ni.Complexity([Penal[0],Penal[1]]))
+    tmp = (Ni.Compl(Penal[0],Penal[1]))
     stmp = str(tmp)
-    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi.Complexity([Penal[0],Penal[1]]) =', stmp )
-    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi.Complexity([Penal[0],Penal[1]]) ='+ stmp+'\n')
+    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi.Compl(Penal[0],Penal[1]) =', stmp )
+    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi.Compl(Penal[0],Penal[1]) ='+ stmp+'\n')
 
     return
 
@@ -90,6 +90,10 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-Task.PlotAll ( )
+Plot( [ [ Ni, 'ylab=Y(km)', 'ylab_x=.1', 'xlab=X(km)', 'xlab_x=.9', 'xlab_y=.07'] ] )
+9
 
 if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")
+if SvF.addStrToRes != '':
+    with open(SvF.resF, 'a') as f:  # RES filewrite
+        f.write('addStrToRes: ' + SvF.addStrToRes)

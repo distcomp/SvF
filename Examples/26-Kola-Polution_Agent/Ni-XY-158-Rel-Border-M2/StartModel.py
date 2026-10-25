@@ -23,7 +23,7 @@ Y = Set('Y',-100,100,-50,'','Y')
 Ni = Fun('Ni',[X,Y])
 def fNi(X,Y) : return Ni.F([X,Y])
 CVmakeSets (  CV_NumSets=7, GroupBy='nP' )
-SvF.CVNumOfIter=21; 
+SvF.CVNumOfIter=1; 
 SvF.lenPenalty = 3
 import  numpy as np
 
@@ -95,7 +95,7 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-Task.PlotAll ( )
+Plot( [ [ Ni, 'ylab=Y(km)', 'ylab_x=.1', 'xlab=X(km)', 'xlab_x=.9', 'xlab_y=.07'] ] )
 
 if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")
 if SvF.addStrToRes != '':

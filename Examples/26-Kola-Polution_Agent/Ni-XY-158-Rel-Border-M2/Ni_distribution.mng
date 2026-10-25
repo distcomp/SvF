@@ -18,7 +18,7 @@ VAR:    Ni ( X, Y );  Ni >= 0
 CV:     NumOfSets = 7;  GroupByParam = 'nP'
 
 # 5) Быстрый проход оптимизации
-RUN:    MaxIter = 21
+RUN:    MaxIter = 1
 
 # 6) Критерий: относительная ошибка + сглаживание + прижатие по границе
 OBJ:    Ni.MSDrel(2.0) \
@@ -26,6 +26,5 @@ OBJ:    Ni.MSDrel(2.0) \
       + Ni.Norma_L2mL2Border() * Penal[2] * 0.01
 
 # 7) Графика
-PLOT:   *
-
+PLOT:   Ni,ylab=Y(km),ylab_x=.1,xlab=X(km),xlab_x=.9,xlab_y=.07
 

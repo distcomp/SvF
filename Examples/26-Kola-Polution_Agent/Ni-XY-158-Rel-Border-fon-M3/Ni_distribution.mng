@@ -20,7 +20,7 @@ VAR:    Ni_xy ( X, Y ) >=0;
 CV:     NumOfSets = 7;  GroupByParam = 'nP'
 
 # 5) Быстрый проход оптимизации
-RUN:    MaxIter = -1
+RUN:    MaxIter = 1
 
 # 6) Критерий: относительная ошибка + сглаживание поля + прижатие на границе
 OBJ:    Ni.MSDrel(2.0) \
@@ -30,7 +30,8 @@ OBJ:    Ni.MSDrel(2.0) \
 RESIDUAL: Data, Ni, Ni(X,Y), t
 
 # 7) Визуализация
-PLOT:   *
+PLOT:   Ni,ylab=Y(km),ylab_x=.1,xlab=X(km),xlab_x=.9,xlab_y=.07
+
 
 
 

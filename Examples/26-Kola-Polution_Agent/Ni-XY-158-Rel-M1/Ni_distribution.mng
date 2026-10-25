@@ -21,8 +21,22 @@ CV:     NumOfSets = 7;  GroupByParam = 'nP'
 RUN:    MaxIter = 1
 
 # 6) Критерий: относительная ошибка + сглаживание
-OBJ:    Ni.MSDrel(2.0) + Ni.Complexity( Penal[0], Penal[1] )
+OBJ:    Ni.MSDrel(2.0) + Ni.Compl( Penal[0], Penal[1] )
 
 # 7) Графика
-PLOT:   *
+PLOT:   Ni,ylab=Y(km),ylab_x=.1,xlab=X(km),xlab_x=.9,xlab_y=.07
+
+
+
+
+
+
+
+
+
+
+
+
+
+9
 

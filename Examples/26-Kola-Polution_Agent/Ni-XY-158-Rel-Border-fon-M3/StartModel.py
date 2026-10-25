@@ -35,7 +35,7 @@ def Ni_smbF00(Args) :
    return ret
 Ni.smbF = Ni_smbF00
 CVmakeSets (  CV_NumSets=7, GroupBy='nP' )
-SvF.CVNumOfIter=-1; 
+SvF.CVNumOfIter=1; 
 SvF.lenPenalty = 3
 import  numpy as np
 
@@ -66,12 +66,11 @@ def createGr ( Task, Penal ) :
     SvF.fun_with_mu.append(getFun('Ni'))
     if Ni.mu is None : Ni.mu = Gr.mu0
     Ni.ValidationSets = SvF.ValidationSets
-    Ni.notTrainingSets = SvF.notTrainingSets
     Ni.TrainingSets = SvF.TrainingSets
- 											# Ni.MSDrel(2.0)+Ni_xy.Complexity([Penal[0],Penal[1]])+Ni_xy.Norma_L2mL2Border()*Penal[2]*0.01
+ 											# Ni.MSDrel(2.0)+Ni_xy.Complexity(Penal[0],Penal[1])+Ni_xy.Norma_L2mL2Border()*Penal[2]*0.01
     def obj_expression(Gr):  
         return (
-             Ni.MSDrel(2.0)+Ni_xy.Complexity([Penal[0],Penal[1]])+Ni_xy.Norma_L2mL2Border()*Penal[2]*0.01
+             Ni.MSDrel(2.0)+Ni_xy.Complexity(Penal[0],Penal[1])+Ni_xy.Norma_L2mL2Border()*Penal[2]*0.01
         )  
     Gr.OBJ = py.Objective(rule=obj_expression)  
 
@@ -92,10 +91,10 @@ def print_res(Task, Penal, f__f):
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi.MSDrel(2.0) =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi.MSDrel(2.0) ='+ stmp+'\n')
-    tmp = (Ni_xy.Complexity([Penal[0],Penal[1]]))
+    tmp = (Ni_xy.Complexity(Penal[0],Penal[1]))
     stmp = str(tmp)
-    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_xy.Complexity([Penal[0],Penal[1]]) =', stmp )
-    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi_xy.Complexity([Penal[0],Penal[1]]) ='+ stmp+'\n')
+    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_xy.Complexity(Penal[0],Penal[1]) =', stmp )
+    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi_xy.Complexity(Penal[0],Penal[1]) ='+ stmp+'\n')
     tmp = (Ni_xy.Norma_L2mL2Border()*Penal[2]*0.01)
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_xy.Norma_L2mL2Border()*Penal[2]*0.01 =', stmp )
@@ -124,7 +123,7 @@ for rr in Data.sR:
   Data.dat('Residual_Ni')[rr] = Data.dat('Ni')[rr] - fNi(Data.dat('X')[rr], Data.dat('Y')[rr])
 Data.WriteSvFtbl("RESID_Ni_t//RESID_Ni_t.dat")
 Data.KillField ("Residual_Ni")
-Task.PlotAll ( )
+Plot( [ [ Ni, 'ylab=Y(km)', 'ylab_x=.1', 'xlab=X(km)', 'xlab_x=.9', 'xlab_y=.07'] ] )
 
 if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")
 if SvF.addStrToRes != '':

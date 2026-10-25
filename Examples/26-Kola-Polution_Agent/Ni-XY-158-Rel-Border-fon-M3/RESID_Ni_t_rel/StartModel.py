@@ -21,7 +21,7 @@ t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),-5
 Residual_Ni = Fun('Residual_Ni',[t])
 def fResidual_Ni(t) : return Residual_Ni.F([t])
 CVmakeSets (  CV_NumSets=7 )
-SvF.CVNumOfIter=11; 
+SvF.CVNumOfIter=31; 
 SvF.lenPenalty = 1
 import  numpy as np
 
@@ -42,12 +42,11 @@ def createGr ( Task, Penal ) :
     SvF.fun_with_mu.append(getFun('Residual_Ni'))
     if Residual_Ni.mu is None : Residual_Ni.mu = Gr.mu0
     Residual_Ni.ValidationSets = SvF.ValidationSets
-    Residual_Ni.notTrainingSets = SvF.notTrainingSets
     Residual_Ni.TrainingSets = SvF.TrainingSets
- 											# Residual_Ni.MSDrel(2.0)+Residual_Ni.Complexity([Penal[0]])
+ 											# Residual_Ni.MSDrel(2.0)+Residual_Ni.Complexity(Penal[0])
     def obj_expression(Gr):  
         return (
-             Residual_Ni.MSDrel(2.0)+Residual_Ni.Complexity([Penal[0]])
+             Residual_Ni.MSDrel(2.0)+Residual_Ni.Complexity(Penal[0])
         )  
     Gr.OBJ = py.Objective(rule=obj_expression)  
 
@@ -66,10 +65,10 @@ def print_res(Task, Penal, f__f):
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tResidual_Ni.MSDrel(2.0) =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tResidual_Ni.MSDrel(2.0) ='+ stmp+'\n')
-    tmp = (Residual_Ni.Complexity([Penal[0]]))
+    tmp = (Residual_Ni.Complexity(Penal[0]))
     stmp = str(tmp)
-    print (      '    ',int(tmp/OBJ_*1000)/10,'\tResidual_Ni.Complexity([Penal[0]]) =', stmp )
-    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tResidual_Ni.Complexity([Penal[0]]) ='+ stmp+'\n')
+    print (      '    ',int(tmp/OBJ_*1000)/10,'\tResidual_Ni.Complexity(Penal[0]) =', stmp )
+    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tResidual_Ni.Complexity(Penal[0]) ='+ stmp+'\n')
 
     return
 
@@ -89,8 +88,8 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-P1 = Polyline([Residual_Ni.A[0].min,Residual_Ni.A[0].max],[0,0], None, "P1")
-Plot( [ [ Residual_Ni, 'dms=1'], [P1, 'c=green'] ] )
+Residual_Ni.V.name='ΔNi'
+Plot( [ [ Residual_Ni, 'dms=1', 'xlab=t(Year)', 'xlab_x=.9', 'xlab_y=.08'] ] )
 
 if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")
 if SvF.addStrToRes != '':

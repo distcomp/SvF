@@ -16,13 +16,13 @@ Task = SvF.Task
 SvF.mngF = 'Ni_distribution.mng'
 SvF.Compile = False
 
-SvF.TaskName="Ni_field_XY_Kola_with_fon"; 
+SvF.TaskName="Ni_xy_XY_Kola_with_fon"; 
 Data = Table ( 'EXP_LAKE.xlsx','Data','Year as t,X,Y,nP,Avg-TNi AS Ni' )
 X = Set('X',-100,100,-50,'','X')
 Y = Set('Y',-100,100,-50,'','Y')
 t = Set('t',SvF.currentTab.dat('t')[:].min(),SvF.currentTab.dat('t')[:].max(),1,'','t')
-Ni_field = Fun('Ni_field',[X,Y], ArgNorm=False)
-def fNi_field(X,Y) : return Ni_field.F([X,Y])
+Ni_xy = Fun('Ni_xy',[X,Y], ArgNorm=False)
+def fNi_xy(X,Y) : return Ni_xy.F([X,Y])
 Ni_t = Fun('Ni_t',[t], ArgNorm=False)
 def fNi_t(t) : return Ni_t.F([t])
 fon = Tensor('fon',[])
@@ -33,11 +33,13 @@ def Ni_smbF00(Args) :
    X = Args[0]
    Y = Args[1]
    t = Args[2]
-   ret = fNi_field(X,Y)*fNi_t(t)+ffon()
+   ret = fNi_xy(X,Y)*fNi_t(t)+ffon()
    return ret
 Ni.smbF = Ni_smbF00
 CVmakeSets (  CV_NumSets=7, GroupBy='t' )
-SvF.CVNumOfIter=1; SvF.RunMode="S&S"; 
+CVmakeSets (  CV_NumSets=7, GroupBy='nP' )
+SvF.CVNumOfIter=-1; SvF.RunMode="L&S"; 
+SvF.maxJobsEverestFiles=3
 SvF.lenPenalty = 3
 import  numpy as np
 
@@ -49,9 +51,9 @@ def createGr ( Task, Penal ) :
     Gr = py.ConcreteModel()
     Task.Gr = Gr
 
-    Ni_field.var = py.Var ( Ni_field.A[0].NodS,Ni_field.A[1].NodS,domain=Reals, bounds=(0,None) )
-    Ni_field.gr =  Ni_field.var
-    Gr.Ni_field =  Ni_field.var
+    Ni_xy.var = py.Var ( Ni_xy.A[0].NodS,Ni_xy.A[1].NodS,domain=Reals, bounds=(0,None) )
+    Ni_xy.gr =  Ni_xy.var
+    Gr.Ni_xy =  Ni_xy.var
 
     Ni_t.var = py.Var ( Ni_t.A[0].NodS,domain=Reals, bounds=(0,None) )
     Ni_t.gr =  Ni_t.var
@@ -78,12 +80,11 @@ def createGr ( Task, Penal ) :
     SvF.fun_with_mu.append(getFun('Ni'))
     if Ni.mu is None : Ni.mu = Gr.mu0
     Ni.ValidationSets = SvF.ValidationSets
-    Ni.notTrainingSets = SvF.notTrainingSets
     Ni.TrainingSets = SvF.TrainingSets
- 											# Ni.MSDrel(2.0)+Ni_field.Complexity([Penal[0],Penal[1]])+Ni_t.Complexity([Penal[2]])+Ni_field.Norma_L2mL2Border()*0.0001
+ 											# Ni.MSDrel(2.0)+Ni_xy.Complexity(Penal[0],Penal[1])+Ni_t.ComplDer1(Penal[2])+Ni_xy.Norma_L2mL2Border()*0.0001
     def obj_expression(Gr):  
         return (
-             Ni.MSDrel(2.0)+Ni_field.Complexity([Penal[0],Penal[1]])+Ni_t.Complexity([Penal[2]])+Ni_field.Norma_L2mL2Border()*0.0001
+             Ni.MSDrel(2.0)+Ni_xy.Complexity(Penal[0],Penal[1])+Ni_t.ComplDer1(Penal[2])+Ni_xy.Norma_L2mL2Border()*0.0001
         )  
     Gr.OBJ = py.Objective(rule=obj_expression)  
 
@@ -93,7 +94,7 @@ def print_res(Task, Penal, f__f):
 
     Gr = Task.Gr
 
-    Ni_field = Task.Funs[0]
+    Ni_xy = Task.Funs[0]
 
     Ni_t = Task.Funs[1]
 
@@ -106,18 +107,18 @@ def print_res(Task, Penal, f__f):
     stmp = str(tmp)
     print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi.MSDrel(2.0) =', stmp )
     f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi.MSDrel(2.0) ='+ stmp+'\n')
-    tmp = (Ni_field.Complexity([Penal[0],Penal[1]]))
+    tmp = (Ni_xy.Complexity(Penal[0],Penal[1]))
     stmp = str(tmp)
-    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_field.Complexity([Penal[0],Penal[1]]) =', stmp )
-    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi_field.Complexity([Penal[0],Penal[1]]) ='+ stmp+'\n')
-    tmp = (Ni_t.Complexity([Penal[2]]))
+    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_xy.Complexity(Penal[0],Penal[1]) =', stmp )
+    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi_xy.Complexity(Penal[0],Penal[1]) ='+ stmp+'\n')
+    tmp = (Ni_t.ComplDer1(Penal[2]))
     stmp = str(tmp)
-    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_t.Complexity([Penal[2]]) =', stmp )
-    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi_t.Complexity([Penal[2]]) ='+ stmp+'\n')
-    tmp = (Ni_field.Norma_L2mL2Border()*0.0001)
+    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_t.ComplDer1(Penal[2]) =', stmp )
+    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi_t.ComplDer1(Penal[2]) ='+ stmp+'\n')
+    tmp = (Ni_xy.Norma_L2mL2Border()*0.0001)
     stmp = str(tmp)
-    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_field.Norma_L2mL2Border()*0.0001 =', stmp )
-    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi_field.Norma_L2mL2Border()*0.0001 ='+ stmp+'\n')
+    print (      '    ',int(tmp/OBJ_*1000)/10,'\tNi_xy.Norma_L2mL2Border()*0.0001 =', stmp )
+    f__f.write ( '    '+str(int(tmp/OBJ_*1000)/10)+'\tNi_xy.Norma_L2mL2Border()*0.0001 ='+ stmp+'\n')
 
     return
 
@@ -137,8 +138,13 @@ SvF.Task.print_res = print_res
 from SvFstart62 import SvFstart19
 
 SvFstart19 ( Task )
-Plot( [ [ Ni_t] ] )
-Plot( [ [ Ni_field] ] )
+Data.AddField ("Residual_Ni")
+for rr in Data.sR:
+  Data.dat('Residual_Ni')[rr] = Data.dat('Ni')[rr] - fNi(Data.dat('X')[rr], Data.dat('Y')[rr], Data.dat('t')[rr])
+Data.WriteSvFtbl("RESID_Ni_t//RESID_Ni_t.dat")
+Data.KillField ("Residual_Ni")
+Plot( [ [ Ni_t, 'xlab=t(Year)', 'xlab_x=.9', 'xlab_y=.08'] ] )
+Plot( [ [ Ni_xy, 'ylab=Y(km)', 'ylab_x=.1', 'xlab=X(km)', 'xlab_x=.9', 'xlab_y=.07'] ] )
 
 if SvF.ShowAll:  input("         Нажмите ENTER, чтобы продолжить (закрыть все графики) ")
 if SvF.addStrToRes != '':
